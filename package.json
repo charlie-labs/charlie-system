@@ -1,0 +1,13 @@
+{
+  "name": "charlie-system",
+  "version": "0.0.0",
+  "description": "Public Charlie skills, rules, and supporting resources.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test scripts/validate.test.ts",
+    "validate": "node scripts/validate.ts"
+  }
+}
