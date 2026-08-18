@@ -218,7 +218,7 @@ function validateRepository(root = ROOT) {
   const skills = [];
   for (const entry of listEntries(skillsRoot)) {
     if (entry.name.startsWith('.')) continue;
-    const skillDirectory = path.join(SKILLS_ROOT, entry.name);
+    const skillDirectory = path.join(skillsRoot, entry.name);
     if (!entry.isDirectory()) {
       errors.push(`.agents/skills/${entry.name}: skills must be directories`);
       continue;
