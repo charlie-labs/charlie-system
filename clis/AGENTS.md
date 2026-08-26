@@ -86,12 +86,3 @@ behaviors that the command promises:
 - shared error handling and stable exit codes; and
 - dependency stubbing through `buildDeps()` or the helper package's test
   dependency hooks.
-
-## Do not copy or expand scope
-
-Do not copy stale direct-oclif implementations, interactive prompts or other
-interactive CLI behavior, legacy `apps/cli` patterns, or the placeholder
-`clis/system-cli`; they are not the production architecture. This guidance
-does not authorize implementing or migrating a CLI, adding dependencies,
-changing workspaces/CI/quality policy, or changing runtime, prompt, daemon,
-rule, or customer state.
