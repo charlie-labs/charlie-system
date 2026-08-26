@@ -2,10 +2,6 @@
 
 ## Stack
 
-This repository is a small strict ESM TypeScript monorepo managed with Bun.
-Bun 1.3.14 is the package manager, and Node.js 22.22.1 or newer is supported.
-The runtime versions and package metadata are authoritative in `package.json`.
-
 The repository uses Bun workspaces, Oxfmt, Oxlint, Knip, Husky, and
 lint-staged. Keep the baseline focused on the root scripts and the two sample
 workspace packages.
@@ -19,10 +15,6 @@ workspace packages.
 - `package.json`: workspace, dependency, and script source of truth.
 - `bunfig.toml`: Bun installation policy.
 - `tsconfig.json`: shared TypeScript checking configuration.
-
-The sample CLI at `clis/system-cli` consumes `@charlie-labs/system-core`
-through a `workspace:*` dependency. Keep workspace coverage limited to
-`clis/*` and `packages/*`.
 
 ## Commands
 
@@ -41,7 +33,24 @@ Use Bun for package and script operations.
 | `bun run precommit` | Run lint-staged and Knip as the pre-commit gate.          |
 | `bun run check`     | Run formatting, lint, Knip, typecheck, and the CLI proof. |
 
-Do not hand-edit `bun.lock`; regenerate it with Bun after changing manifests.
+## Guardrails
+
+Oxfmt, Oxlint, Knip, TypeScript, Bun, Husky/lint-staged, package scripts, and
+CI are human-owned quality policy. Fix code to comply; do not weaken rules,
+add ignores or suppressions, use unsafe type escapes, narrow test/type
+coverage, or make checks tolerate failures. Any change to these configs or
+their enforcement requires explicit human approval for that exact
+change—a request to implement or fix code does not imply approval. If a
+guardrail appears wrong, leave it unchanged, explain the conflict, propose the
+smallest change, and wait for approval.
+
+Sources: [.oxfmtrc.json](./.oxfmtrc.json),
+[oxlint.config.ts](./oxlint.config.ts), [knip.ts](./knip.ts),
+[tsconfig.json](./tsconfig.json), [bunfig.toml](./bunfig.toml),
+[lint-staged.config.ts](./lint-staged.config.ts), [package.json](./package.json),
+and [CI](./.github/workflows/ci.yml).
+
+Use Bun, not npm, pnpm, or Yarn. Do not hand-edit `bun.lock`.
 
 ## Handoff
 
@@ -56,7 +65,3 @@ bun run typecheck
 bun run cli
 git diff --check
 ```
-
-Also exercise `bun run precommit` with the intended files staged, and confirm
-the required top-level paths and workspace package paths exist. Report any
-check that could not be run and why.
