@@ -25,6 +25,7 @@
         "@charlie-labs/oclif-plugin-helpers": "^0.4.0",
         "@oclif/core": "^4.10.6",
         "@oclif/plugin-help": "^6.2.25",
+        "zod": "^4.4.3",
       },
     },
   },

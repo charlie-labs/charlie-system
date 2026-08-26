@@ -1,19 +1,19 @@
 import type { Dirent, Stats } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 
-type AsyncFileSystem = Readonly<{
+export type AsyncFileSystem = Readonly<{
   readonly readFile: (filePath: string) => Promise<string>;
   readonly readdir: (directoryPath: string) => Promise<Dirent[]>;
   readonly stat: (filePath: string) => Promise<Stats>;
 }>;
 
-type ProcessResult = Readonly<{
+export type ProcessResult = Readonly<{
   readonly exitCode: number;
   readonly stderr: string;
   readonly stdout: string;
 }>;
 
-type ProcessRunner = Readonly<{
+export type ProcessRunner = Readonly<{
   readonly run: (
     command: string,
     args: readonly string[],
