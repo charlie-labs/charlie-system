@@ -1,0 +1,49 @@
+{
+  "name": "@charlie-labs/charlie-system",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "clis/*",
+      "packages/*"
+    ]
+  },
+  "type": "module",
+  "scripts": {
+    "check": "bun run fmt:check && bun run lint && bun run knip && bun run typecheck && bun run cli",
+    "cli": "bun run --cwd clis/system-cli start",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "lint": "oxlint --report-unused-disable-directives",
+    "lint:ci": "oxlint --report-unused-disable-directives --format=github",
+    "lint:fix": "oxlint --fix",
+    "knip": "knip",
+    "knip:ci": "knip --reporter github-actions",
+    "lint-staged": "lint-staged --concurrent false",
+    "precommit": "bun run lint-staged && bun run knip",
+    "prepare": "husky",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "husky": "^9.1.7",
+    "knip": "6.29.0",
+    "lint-staged": "^17.2.0",
+    "oxfmt": "^0.61.0",
+    "oxlint": "1.76.0",
+    "oxlint-tsgolint": "7.0.2001",
+    "typescript": "7.0.2"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.15.0",
+      "onFail": "error"
+    }
+  },
+  "engines": {
+    "bun": "1.3.14",
+    "node": ">=22.22.1"
+  },
+  "packageManager": "bun@1.3.14"
+}
