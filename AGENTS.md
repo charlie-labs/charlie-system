@@ -16,6 +16,15 @@ workspace packages.
 - `bunfig.toml`: Bun installation policy.
 - `tsconfig.json`: shared TypeScript checking configuration.
 
+## Mounted system checkout semantics
+
+When this checkout is mounted as `charlie-system`, `system/skills` is the
+shared-system Skill root. A mounted checkout contributes no root
+`.agents/daemons/**` content to a customer's daemon inventory. When
+`charlie-system` itself is the active task repository, root `.agents/skills`
+and `.agents/daemons` are repo-local and eligible normally. There is no
+`system/daemons` root.
+
 ## Commands
 
 Use Bun for package and script operations.
