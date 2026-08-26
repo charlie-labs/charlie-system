@@ -6,8 +6,7 @@ operations; do not weaken the repository's existing quality gates.
 
 ## Standard
 
-- Use oclif v4 with
-  [`@charlie-labs/oclif-plugin-helpers`](https://github.com/charlie-labs/oclif-plugin-helpers).
+- Use oclif v4 with `@charlie-labs/oclif-plugin-helpers`.
 - Keep commands thin: parse and validate input, call reusable library code,
   and own only CLI I/O. Do not extend oclif `Command` directly or override
   `run()` when `BaseCommand` applies.
@@ -19,9 +18,6 @@ operations; do not weaken the repository's existing quality gates.
   src/cli/utils/              # CLI-only helpers
   src/lib/                    # reusable operations/services; no CLI imports
   ```
-
-Read the [current CLI Authoring Reference](https://github.com/charlie-labs/charlie/blob/master/knowledge/docs/reference/cli-authoring-reference.md)
-before adding a package.
 
 ## Entrypoint, configuration, and dependencies
 
@@ -91,29 +87,11 @@ behaviors that the command promises:
 - dependency stubbing through `buildDeps()` or the helper package's test
   dependency hooks.
 
-## Current examples
-
-Use current examples, not historical copies:
-
-- [`templates` BaseCommand](https://github.com/charlie-labs/templates/blob/master/cli-oclif/src/cli/commands/base-command.ts)
-  shows the approved command boundary.
-- [`cquery` flag manifest](https://github.com/charlie-labs/charlie/blob/master/packages/cquery/src/cli/utils/flag-manifest.ts)
-  and [typed list command](https://github.com/charlie-labs/charlie/blob/master/packages/cquery/src/cli/commands/enriched-event/list.ts)
-  show typed flags and command structure.
-- [`creflect` Bun entrypoint](https://github.com/charlie-labs/charlie/blob/master/packages/creflect/bin/run.js)
-  and [cross-field validation](https://github.com/charlie-labs/charlie/blob/master/packages/creflect/src/cli/commands/insights/generate.ts)
-  show the entrypoint and validation patterns.
-- [`ch-slack` command example](https://github.com/charlie-labs/ch-slack/blob/master/src/cli/commands/dm/send.ts),
-  [`ch-linear` command example](https://github.com/charlie-labs/ch-linear/blob/master/src/cli/commands/team/list.ts),
-  and [`ch-sentry` command example](https://github.com/charlie-labs/ch-sentry/blob/master/src/commands/tags/list.ts)
-  show current cross-repository usage.
-
 ## Do not copy or expand scope
 
 Do not copy stale direct-oclif implementations, interactive prompts or other
 interactive CLI behavior, legacy `apps/cli` patterns, or the placeholder
 `clis/system-cli`; they are not the production architecture. This guidance
-does not authorize implementing or migrating a CLI, changing
-`ch-slack`/`ch-linear`/`ch-sentry`, updating the canonical reference, adding
-dependencies, changing workspaces/CI/quality policy, or changing runtime,
-prompt, daemon, rule, or customer state.
+does not authorize implementing or migrating a CLI, adding dependencies,
+changing workspaces/CI/quality policy, or changing runtime, prompt, daemon,
+rule, or customer state.
