@@ -1,15 +1,17 @@
 # charlie-system
 
-This repository currently contains a minimal placeholder CLI and package used
-only to prove the Bun workspace wiring:
+This repository contains the internal Flywheel CLI workspace and the shared
+system checkout contents:
 
-- [`clis/system-cli`](./clis/system-cli) is a placeholder CLI.
-- [`packages/system-core`](./packages/system-core) is a placeholder package
-  consumed by that CLI.
+- [`clis/flywheel`](./clis/flywheel) is the oclif v4 Flywheel CLI foundation.
+- [`system/skills`](./system/skills) is the shared-system Skill root when this
+  checkout is mounted for customer Tasks.
 
-Both are temporary scaffolding. Delete both placeholder directories, including
-these README files, as soon as the real CLI and package code are added to this
-repository.
+The Flywheel foundation currently exposes oclif-generated root help and keeps
+repository-path resolution plus asynchronous filesystem/process dependencies
+ready for later read-only commands. The default repository path is
+`/home/user/.charlie/customer-knowledge`; no general configuration file or
+Task/customer context is read.
 
 ## Mounted system checkout semantics
 

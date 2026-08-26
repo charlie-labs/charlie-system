@@ -11,7 +11,7 @@
   "type": "module",
   "scripts": {
     "check": "bun run fmt:check && bun run lint && bun run knip && bun run typecheck && bun run cli",
-    "cli": "bun run --cwd clis/system-cli start",
+    "cli": "bun run --cwd clis/flywheel start",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint --report-unused-disable-directives",
