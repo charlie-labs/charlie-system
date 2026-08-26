@@ -7,11 +7,22 @@ system checkout contents:
 - [`system/skills`](./system/skills) is the shared-system Skill root when this
   checkout is mounted for customer Tasks.
 
-The Flywheel foundation currently exposes oclif-generated root help and keeps
-repository-path resolution plus asynchronous filesystem/process dependencies
-ready for later read-only commands. The default repository path is
-`/home/user/.charlie/customer-knowledge`; no general configuration file or
-Task/customer context is read.
+The checkout exposes exactly four read-only Flywheel commands:
+`content rg`, `content validate`, `skill preset list`, and
+`skill preset show <preset>`. The executable and integration proof live under
+[`clis/flywheel`](./clis/flywheel); no other CLI is introduced here.
+
+The default repository path is `/home/user/.charlie/customer-knowledge`.
+Pass `--repository-path` for a test or development repository. The CLI does
+not read a general configuration file or ambient Task, customer, provider,
+source-repository, or transcript context.
+
+Run the checkout-local executable and its proof with:
+
+```sh
+bun run cli --help
+bun run test:flywheel
+```
 
 ## Mounted system checkout semantics
 

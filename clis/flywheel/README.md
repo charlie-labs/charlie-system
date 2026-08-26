@@ -3,11 +3,16 @@
 The internal Flywheel CLI is the command-line entrypoint for inspecting
 checkout-local Flywheel content.
 
-The CLI provides read-only `content rg`, `content validate`, `skill preset
-list`, and `skill preset show` commands. Skill preset inspection reads only
-the inert sources under `presets/skills/`; it never materializes or installs a
-preset. The CLI does not read or modify source repositories, providers, tasks,
-transcripts, or lifecycle state.
+The CLI provides exactly four read-only commands:
+
+- `content rg`
+- `content validate`
+- `skill preset list`
+- `skill preset show <preset>`
+
+Skill preset inspection reads only the inert sources under `presets/skills/`;
+it never materializes or installs a preset. The CLI does not read or modify
+source repositories, providers, tasks, transcripts, or lifecycle state.
 
 ## Development
 
@@ -15,6 +20,12 @@ Run the CLI from the repository root:
 
 ```sh
 bun run cli --help
+```
+
+Run the executable proof from the repository root with:
+
+```sh
+bun run test:flywheel
 ```
 
 The default repository path is `/home/user/.charlie/customer-knowledge`.
