@@ -1,6 +1,7 @@
 import type { KnipConfig } from 'knip';
 
 const config = {
+  ignoreFiles: ['.agents/**'],
   rules: {
     files: 'error',
     dependencies: 'error',
