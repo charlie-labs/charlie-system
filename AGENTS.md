@@ -16,14 +16,17 @@ workspace packages.
 - `bunfig.toml`: Bun installation policy.
 - `tsconfig.json`: shared TypeScript checking configuration.
 
-## Mounted system checkout semantics
+## `charlie-system` checkout and context
 
-When this checkout is mounted as `charlie-system`, `system/skills` is the
-shared-system Skill root. A mounted checkout contributes no root
-`.agents/daemons/**` content to a customer's daemon inventory. When
-`charlie-system` itself is the active task repository, root `.agents/skills`
-and `.agents/daemons` are repo-local and eligible normally. There is no
-`system/daemons` root.
+The Charlie harness always clones `charlie-system` at
+`/home/user/.charlie/charlie-system/`. For all customers, the harness parses
+and loads that checkout's `system/skills/` as the shared-system Skill root. It
+does not load that checkout's `.agents/` tree for customer Tasks.
+
+The harness loads `.agents/` only in a devbox where `charlie-system` is the
+source repository cloned for work on `charlie-system`; there, `.agents/` is
+repo-local to that repository and is not shared system content. There is no
+`system/daemons/` root.
 
 ## Commands
 
