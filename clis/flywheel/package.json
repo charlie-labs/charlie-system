@@ -1,0 +1,28 @@
+{
+  "name": "@charlie-labs/flywheel",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "flywheel": "./bin/run.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "bun run ./bin/run.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@charlie-labs/oclif-plugin-helpers": "^0.4.0",
+    "@oclif/core": "^4.10.6",
+    "@oclif/plugin-help": "^6.2.25",
+    "zod": "^4.4.3"
+  },
+  "oclif": {
+    "bin": "flywheel",
+    "commands": "./src/cli/commands",
+    "dirname": "flywheel",
+    "plugins": [
+      "@oclif/plugin-help"
+    ],
+    "topicSeparator": " "
+  }
+}
