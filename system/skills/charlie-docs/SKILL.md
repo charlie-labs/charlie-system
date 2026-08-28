@@ -60,10 +60,19 @@ not wait for a customer to report the problem. Use documentation feedback for
 the page itself, not for a product support request, a product bug, a feature
 request, or feedback about Charlie or this helper.
 
-Include the specific page, a concise description of what is wrong, what the
-available evidence or source indicates instead, and a relevant source link
-when one is available. Feedback is a maintenance signal for the documentation
-team, not authority to edit public documentation without verification.
+Feedback should report the problem, not solve it. Do not propose or specify a
+fix, replacement wording, implementation, or documentation structure. Include:
+
+- the affected page and precise context, such as a heading, table, paragraph,
+  or example;
+- what the page currently says or does and what is wrong;
+- why the problem matters to a reader or operator; and
+- supporting evidence, such as observed behavior, a version or date, or a
+  source link, when available.
+
+Feedback is a maintenance signal for the documentation team, not authority to
+edit public documentation without verification. State what you observed and
+avoid guessing about the remedy.
 
 Submit feedback with:
 
@@ -74,7 +83,13 @@ bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <f
 For example:
 
 ```text
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /changelog "The July 31, 2026 entry says daemon-powered PR reviews replace the previous automatic reviewer, but the July 9, 2026 notes say pull requests opened or marked ready for review still use the automatic review path when no daemon takes ownership. Please clarify whether that path is a fallback for repositories without a `pr-review` daemon and link the setup or migration guidance: https://docs.charlielabs.ai/pr-reviews"
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /integrations/slack "Under `Thread follow-ups`, the page says every reply in an existing thread is treated as a continuation. In a shared channel, a reply that mentions @Charlie starts a new request instead, so this guidance can cause a follow-up to be missed. I observed this with the current Slack behavior; the routing reference describes mentions as explicit requests: https://charlie-v3.mintlify.site/runtime/interaction-and-routing"
+
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /runtime/durable-work "The `Task`, `Run`, and `Turn` definitions use `work` for both the durable Task and an individual model execution. I cannot tell which identifier to use when asking for status after a delegated job, making the status examples ambiguous for operators. The page's status example uses `taskId` while its glossary example refers to a run without distinguishing the two: https://charlie-v3.mintlify.site/runtime/durable-work"
+
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /integrations/github "The supported-events table lists pull-request review comments but does not say whether a comment on a closed pull request is eligible. That omission leaves maintainers unsure whether to expect routing or whether the pull request must be open; the event payload I received had `action=created` on a closed pull request: https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request_review_comment"
+
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /runtime/agent-harness/devboxes "The shell example sets `FOO=bar` in one command and reads `$FOO` in a later command, but the displayed output is `bar` even though the example runs each command in a fresh shell. Following the snippet produces an empty value, so readers cannot reproduce the shown result. Reproduced with Bun 1.3.13 on August 28, 2026: https://charlie-v3.mintlify.site/runtime/agent-harness/devboxes"
 ```
 
 The retrieval commands (`page`, `index`, `full`, `search`, and
