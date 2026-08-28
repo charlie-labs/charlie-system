@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-const DOCS_ORIGIN = 'https://docs.charlielabs.ai';
+const DOCS_ORIGIN = 'https://charlie-v3.mintlify.site';
 const MCP_URL = `${DOCS_ORIGIN}/mcp`;
 const MCP_PROTOCOL_VERSION = '2025-03-26';
 const SEARCH_TOOL = 'search_charlie_labs';

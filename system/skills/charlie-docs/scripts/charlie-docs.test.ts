@@ -35,13 +35,15 @@ describe('failure handling', () => {
 async function testExactPageUrl(): Promise<void> {
   const { fetch, calls } = mockFetch(new Response('exact page content'));
   const content = await execute(
-    ['page', 'https://docs.charlielabs.ai/guides/exact.md'],
+    ['page', 'https://charlie-v3.mintlify.site/guides/exact.md'],
     fetch
   );
 
   expect(content).toBe('exact page content');
   expect(calls).toHaveLength(1);
-  expect(calls[0]?.input).toBe('https://docs.charlielabs.ai/guides/exact.md');
+  expect(calls[0]?.input).toBe(
+    'https://charlie-v3.mintlify.site/guides/exact.md'
+  );
   expect(calls[0]?.init?.headers).toEqual({ Accept: 'text/markdown' });
 }
 
@@ -50,7 +52,7 @@ async function testPagePath(): Promise<void> {
   const content = await execute(['page', '/installation'], fetch);
 
   expect(content).toBe('# Installation\n');
-  expect(calls[0]?.input).toBe('https://docs.charlielabs.ai/installation');
+  expect(calls[0]?.input).toBe('https://charlie-v3.mintlify.site/installation');
   expect(calls[0]?.init?.headers).toEqual({ Accept: 'text/markdown' });
 }
 
@@ -62,7 +64,7 @@ async function testSearchQuery(): Promise<void> {
   const content = await execute(['search', query], fetch);
 
   expect(content).toBe('Title: Configuration\nContent: exact result');
-  expect(calls[0]?.input).toBe('https://docs.charlielabs.ai/mcp');
+  expect(calls[0]?.input).toBe('https://charlie-v3.mintlify.site/mcp');
   expect(calls[0]?.init?.headers).toEqual(mcpHeaders());
   expect(JSON.parse(requestBody(calls[0]?.init))).toEqual({
     jsonrpc: '2.0',

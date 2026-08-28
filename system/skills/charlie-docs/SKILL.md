@@ -9,14 +9,23 @@ Use this Skill when a Task needs authoritative information from Charlie Labs' pu
 
 ## Retrieval workflow
 
-1. Start with `GET https://docs.charlielabs.ai/llms.txt`. It is the live indexed discovery surface: follow the page URLs it returns, but do not assume it contains every publicly reachable page.
-2. For exact or freshness-sensitive reading, fetch a page URL from the index with `Accept: text/markdown`, or use the exact `.md` URL returned by the index. Do not blindly append `.md` to an arbitrary URL.
-3. `https://docs.charlielabs.ai/llms-full.txt` is a bulk indexed corpus useful for broad local searching. It may be cached, transform some MDX, and omit image sources, so it does not replace page-level Markdown for exact reading.
-4. After using search excerpts, retrieve the complete relevant page. If the index or excerpt is incomplete, follow relevant owning links from the page and continue reading until the answer is supported.
+Use the bundled helper from the repository root. It owns the documentation
+retrieval details, so use its commands rather than reproducing requests
+directly.
 
-## Read-only helper
+1. Start with `search <query>` for broad discovery when you know the topic but
+   not the relevant page.
+2. Use `index` to browse the live documentation index and find current page
+   paths.
+3. After discovery, use `page <path-or-url>` to read the complete relevant
+   page. Do not treat search excerpts or index entries as a substitute for
+   page-level reading.
+4. If the index or search results are incomplete, follow relevant links from
+   the returned page and continue reading until the answer is supported.
 
-Use the bundled helper for repetitive transport mechanics, while keeping retrieval judgment in the workflow above:
+## Bundled helper commands
+
+Run these commands with Bun:
 
 ```text
 bun system/skills/charlie-docs/scripts/charlie-docs.ts page <path-or-url>
@@ -26,4 +35,18 @@ bun system/skills/charlie-docs/scripts/charlie-docs.ts search <query>
 bun system/skills/charlie-docs/scripts/charlie-docs.ts filesystem <read-only-command>
 ```
 
-`search` is for broad semantic discovery. `filesystem` is for exact matching or reading a page exposed by the documentation filesystem, such as `rg`, `head`, or `cat`. Both commands are read-only and expose only the supported Charlie Labs search and documentation-filesystem operations. Use the returned links and page content to decide what to read next; the helper does not replace that judgment.
+- `page <path-or-url>` reads one complete documentation page and returns its
+  page content.
+- `index` returns the live documentation index for discovering current page
+  paths and links.
+- `full` returns the bulk documentation corpus for broad local searching. Use
+  `page` afterward when you need the complete authoritative content of a
+  specific page.
+- `search <query>` searches the documentation and returns matching result
+  content for topic discovery.
+- `filesystem <read-only-command>` runs a supported read-only documentation
+  filesystem command, such as `rg`, `head`, or `cat`, and returns its stdout.
+  A failed command is reported as an error.
+
+All helper commands are read-only. Use the returned results to decide what to
+read next; the helper does not replace that judgment.
