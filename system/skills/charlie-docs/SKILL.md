@@ -1,6 +1,6 @@
 ---
 name: charlie-docs
-description: Read Charlie Labs public documentation for product concepts, Customer Guides, Charlie Reference, setup, integrations, configuration, and troubleshooting using live indexes, Markdown pages, and read-only search helpers.
+description: Read current Charlie reference documentation. Use when work depends on Charlie's lifecycle, Signals and interaction/routing, durable Tasks, Runs, Turns, mailboxes, delegation, worker agents and Task trees, agent-harness behavior, Devboxes, repositories, tools/CLIs, capabilities, credentials, secrets and environment variables, Skills, Rules/instructions, Daemons, Roles, Flywheel Knowledge, maintenance/adaptation, GitHub/Linear/Slack/Sentry integrations, provider events/actions, setup, limits, evidence, or troubleshooting missing or unexpected work.
 ---
 
 # Charlie Docs
