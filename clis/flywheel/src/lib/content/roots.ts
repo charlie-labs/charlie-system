@@ -71,46 +71,6 @@ export async function discoverContentSearchRoots(
   return existingRoots(filesystem, selection.repositoryPath, relativeRoots);
 }
 
-export async function discoverValidationRoots(
-  filesystem: AsyncFileSystem,
-  repositoryPath: string
-): Promise<readonly string[]> {
-  await assertRepositoryDirectory(filesystem, repositoryPath);
-  const repositoryIds = await discoverRepositoryIds(filesystem, repositoryPath);
-  const relativeRoots = [
-    'roles',
-    'customer-wide',
-    ...repositoryIds.map((repositoryId) => `repo-specific/${repositoryId}`),
-  ];
-  return existingRoots(filesystem, repositoryPath, relativeRoots);
-}
-
-export function resolveValidationPath(
-  repositoryPath: string,
-  requestedPath: string
-): string {
-  if (requestedPath.trim() === '' || requestedPath.includes('\\')) {
-    throw new ContentInvocationError(
-      `invalid repository path: ${requestedPath}`
-    );
-  }
-  const candidate = path.isAbsolute(requestedPath)
-    ? path.resolve(requestedPath)
-    : path.resolve(repositoryPath, requestedPath);
-  if (!isWithin(repositoryPath, candidate)) {
-    throw new ContentInvocationError(
-      `repository path escapes the selected repository: ${requestedPath}`
-    );
-  }
-  const relativePath = toRepositoryRelative(repositoryPath, candidate);
-  if (!isValidationPathInScope(relativePath)) {
-    throw new ContentInvocationError(
-      `path is outside admitted Flywheel content roots: ${requestedPath}`
-    );
-  }
-  return candidate;
-}
-
 export function toRepositoryRelative(
   repositoryPath: string,
   filePath: string
@@ -246,28 +206,6 @@ async function assertRepositoryDirectory(
       { cause: error }
     );
   }
-}
-
-function isValidationPathInScope(relativePath: string): boolean {
-  const segments = relativePath.split('/');
-  if (segments[0] === 'roles' || segments[0] === 'customer-wide') {
-    return true;
-  }
-  return (
-    segments[0] === 'repo-specific' &&
-    segments.length > 2 &&
-    isValidRepositoryId(`${segments[1]}/${segments[2]}`)
-  );
-}
-
-function isWithin(root: string, candidate: string): boolean {
-  const relative = path.relative(root, candidate);
-  return (
-    relative === '' ||
-    (!relative.startsWith(`..${path.sep}`) &&
-      relative !== '..' &&
-      !path.isAbsolute(relative))
-  );
 }
 
 function isValidRepositoryId(repositoryId: string): boolean {

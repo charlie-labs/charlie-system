@@ -65,18 +65,26 @@ export default class Validate extends ContentCommand<
         ? {}
         : { explicitPath: parsed['repository-path'] }),
     });
+    const state = validationState(parsed);
     const result = await validateContent({
       filesystem: deps.filesystem,
       paths: extractValidationPaths(this.argv),
+      process: deps.process,
       repositoryPath,
+      ...(state === undefined ? {} : { state }),
     });
+    const errors = result.diagnostics.filter(
+      (diagnostic) => diagnostic.severity === 'error'
+    );
     if (result.diagnostics.length > 0) {
       if (!this.jsonEnabled()) {
         for (const diagnostic of result.diagnostics) {
           this.logWarn(formatDiagnostic(diagnostic));
         }
       }
-      throw new ContentValidationError(result.diagnostics);
+      if (errors.length > 0) {
+        throw new ContentValidationError(result.diagnostics);
+      }
     }
     this.logInfo(`validated ${result.filesChecked} content file(s)`);
     return result;
@@ -98,6 +106,24 @@ export default class Validate extends ContentCommand<
   }
 }
 
+function validationState(
+  parsed: Readonly<{
+    readonly commit?: string | undefined;
+    readonly staged?: boolean | undefined;
+  }>
+):
+  | Readonly<{ readonly kind: 'index' }>
+  | Readonly<{ readonly kind: 'commit'; readonly ref: string }>
+  | undefined {
+  if (parsed.staged === true) {
+    return { kind: 'index' };
+  }
+  if (parsed.commit !== undefined) {
+    return { kind: 'commit', ref: parsed.commit };
+  }
+  return undefined;
+}
+
 function extractValidationPaths(argv: readonly string[]): readonly string[] {
   const paths: string[] = [];
   for (let index = 0; index < argv.length; index += 1) {
@@ -113,6 +139,16 @@ function extractValidationPaths(argv: readonly string[]): readonly string[] {
       continue;
     }
     if (argument.startsWith('--repository-path=')) {
+      continue;
+    }
+    if (argument === '--commit') {
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith('--commit=')) {
+      continue;
+    }
+    if (argument === '--staged') {
       continue;
     }
     if (argument.startsWith('-')) {

@@ -199,6 +199,7 @@ describe('content validate is deterministic', () => {
     expect(first).toEqual(second);
     expect(first.filesChecked).toBe(4);
     expect(diagnosticKeys(first.diagnostics)).toEqual([
+      'customer-wide/.agents/skills/example.md:FW-PATH-002',
       'customer-wide/docs/bad.md:FW-DOC-003',
       'customer-wide/docs/bad.md:FW-DOC-003',
       'customer-wide/docs/bad.md:FW-DOC-005',

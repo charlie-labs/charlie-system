@@ -42,5 +42,25 @@ export const contentRgFlags = defineFlags({
 );
 
 export const contentValidateFlags = defineFlags({
+  commit: {
+    oclif: Flags.string({
+      description: 'Validate one explicit committed Git tree',
+    }),
+    schema: z.string().optional(),
+  },
   'repository-path': repositoryPathFlag,
-});
+  staged: {
+    oclif: Flags.boolean({
+      default: false,
+      description: 'Validate the exact Git index, excluding unstaged changes',
+    }),
+    schema: z.boolean().default(false),
+  },
+}).withPredicate(
+  'repository state options are mutually exclusive',
+  ({ commit, staged }) => !staged || commit === undefined,
+  {
+    message: '--staged cannot be combined with --commit',
+    path: ['commit'],
+  }
+);

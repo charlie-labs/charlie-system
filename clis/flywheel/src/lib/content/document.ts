@@ -1,5 +1,11 @@
-import { addDiagnostic, makeDiagnostic } from './diagnostics.js';
+import { makeDiagnostic } from './diagnostics.js';
 import type { ContentDiagnostic } from './errors.js';
+import {
+  asString,
+  parseFrontmatter,
+  type ParsedFrontmatter,
+  type YamlField,
+} from './yaml.js';
 
 const DOCUMENT_FIELDS = new Set([
   'about',
@@ -9,161 +15,66 @@ const DOCUMENT_FIELDS = new Set([
   'status',
 ]);
 
-type DocumentField = Readonly<{
-  readonly line: number;
-  readonly value: string;
-}>;
-
-type Frontmatter = Readonly<{
-  readonly closingIndex: number;
-  readonly fields: ReadonlyMap<string, DocumentField>;
-}>;
-
 export function validateDocument(
   relativePath: string,
   content: string
 ): readonly ContentDiagnostic[] {
-  const diagnostics: ContentDiagnostic[] = [];
-  const lines = content.split(/\r?\n/u);
-  const frontmatter = parseFrontmatter(relativePath, lines, diagnostics);
+  const frontmatter = parseFrontmatter(relativePath, content, 'FW-DOC-001');
   if (frontmatter === undefined) {
-    return diagnostics;
+    return [];
   }
+  return [
+    ...frontmatter.diagnostics,
+    ...validateParsedDocument(relativePath, frontmatter),
+  ];
+}
 
+function validateParsedDocument(
+  relativePath: string,
+  frontmatter: ParsedFrontmatter
+): readonly ContentDiagnostic[] {
+  if (frontmatter.closingLine < 0) {
+    return [];
+  }
+  const diagnostics: ContentDiagnostic[] = [];
+  validateFieldNames(relativePath, frontmatter.fields, diagnostics);
   validateDocumentMetadata(relativePath, frontmatter.fields, diagnostics);
   validateDocumentBody(
     relativePath,
-    lines.slice(frontmatter.closingIndex + 1),
-    frontmatter.closingIndex + 1,
+    frontmatter.bodyLines,
+    frontmatter.closingLine,
     diagnostics
   );
   return diagnostics;
 }
 
-function parseFrontmatter(
+function validateFieldNames(
   relativePath: string,
-  lines: readonly string[],
+  fields: ReadonlyMap<string, YamlField>,
   diagnostics: ContentDiagnostic[]
-): Frontmatter | undefined {
-  if (lines[0]?.trim() !== '---') {
-    diagnostics.push(
-      makeDiagnostic({
-        message: 'Markdown Docs require YAML frontmatter',
-        path: relativePath,
-        ruleId: 'FW-DOC-001',
-        source: { column: 1, line: 1 },
-      })
-    );
-    return undefined;
-  }
-
-  const closingIndex = lines.findIndex(
-    (line, index) => index > 0 && line.trim() === '---'
-  );
-  if (closingIndex < 0) {
-    diagnostics.push(
-      makeDiagnostic({
-        message: 'frontmatter must have a closing --- delimiter',
-        path: relativePath,
-        ruleId: 'FW-DOC-001',
-        source: { column: 1, line: 1 },
-      })
-    );
-    return undefined;
-  }
-
-  return {
-    closingIndex,
-    fields: parseFrontmatterFields(
-      relativePath,
-      lines.slice(1, closingIndex),
-      diagnostics
-    ),
-  };
-}
-
-function parseFrontmatterFields(
-  relativePath: string,
-  lines: readonly string[],
-  diagnostics: ContentDiagnostic[]
-): ReadonlyMap<string, DocumentField> {
-  const fields = new Map<string, DocumentField>();
-  for (const [index, line] of lines.entries()) {
-    const entry = parseFrontmatterLine({
-      diagnostics,
-      fields,
-      line,
-      lineNumber: index + 2,
-      relativePath,
-    });
-    if (entry !== undefined) {
-      fields.set(entry.key, entry.field);
+): void {
+  for (const field of fields.keys()) {
+    if (DOCUMENT_FIELDS.has(field)) {
+      continue;
     }
+    diagnostics.push(
+      makeDiagnostic({
+        field,
+        message: `frontmatter field is not supported: ${field}`,
+        path: relativePath,
+        ruleId: 'FW-DOC-002',
+        source: {
+          column: 1,
+          line: fields.get(field)?.line ?? 1,
+        },
+      })
+    );
   }
-  return fields;
-}
-
-type FrontmatterLineContext = Readonly<{
-  readonly diagnostics: ContentDiagnostic[];
-  readonly fields: ReadonlyMap<string, DocumentField>;
-  readonly line: string;
-  readonly lineNumber: number;
-  readonly relativePath: string;
-}>;
-
-type FrontmatterEntry = Readonly<{
-  readonly field: DocumentField;
-  readonly key: string;
-}>;
-
-function parseFrontmatterLine(
-  context: FrontmatterLineContext
-): FrontmatterEntry | undefined {
-  if (context.line.trim() === '') {
-    return undefined;
-  }
-  const match = /^(?<key>[A-Za-z][A-Za-z0-9-]*):\s*(?<value>.*)$/u.exec(
-    context.line
-  );
-  const key = match?.groups?.key;
-  const value = match?.groups?.value;
-  if (key === undefined || value === undefined) {
-    addDiagnostic(context.diagnostics, {
-      message: 'frontmatter entries must use key: value syntax',
-      path: context.relativePath,
-      ruleId: 'FW-DOC-002',
-      source: { column: 1, line: context.lineNumber },
-    });
-    return undefined;
-  }
-  if (context.fields.has(key)) {
-    addDiagnostic(context.diagnostics, {
-      field: key,
-      message: `frontmatter field is duplicated: ${key}`,
-      path: context.relativePath,
-      ruleId: 'FW-DOC-002',
-      source: { column: 1, line: context.lineNumber },
-    });
-    return undefined;
-  }
-  if (!DOCUMENT_FIELDS.has(key)) {
-    addDiagnostic(context.diagnostics, {
-      field: key,
-      message: `frontmatter field is not supported: ${key}`,
-      path: context.relativePath,
-      ruleId: 'FW-DOC-002',
-      source: { column: 1, line: context.lineNumber },
-    });
-  }
-  return {
-    field: { line: context.lineNumber, value: value.trim() },
-    key,
-  };
 }
 
 function validateDocumentMetadata(
   relativePath: string,
-  fields: ReadonlyMap<string, DocumentField>,
+  fields: ReadonlyMap<string, YamlField>,
   diagnostics: ContentDiagnostic[]
 ): void {
   validatePurpose(relativePath, fields, diagnostics);
@@ -173,11 +84,11 @@ function validateDocumentMetadata(
 
 function validatePurpose(
   relativePath: string,
-  fields: ReadonlyMap<string, DocumentField>,
+  fields: ReadonlyMap<string, YamlField>,
   diagnostics: ContentDiagnostic[]
 ): void {
   const purpose = fields.get('purpose');
-  if (purpose !== undefined && purpose.value !== '') {
+  if (typeof purpose?.value === 'string' && purpose.value.trim() !== '') {
     return;
   }
   diagnostics.push(
@@ -186,20 +97,21 @@ function validatePurpose(
       message: 'purpose is required',
       path: relativePath,
       ruleId: 'FW-DOC-003',
+      ...(purpose === undefined
+        ? {}
+        : { source: { column: 1, line: purpose.line } }),
     })
   );
 }
 
 function validateReviewEvery(
   relativePath: string,
-  fields: ReadonlyMap<string, DocumentField>,
+  fields: ReadonlyMap<string, YamlField>,
   diagnostics: ContentDiagnostic[]
 ): void {
   const reviewEvery = fields.get('reviewEvery');
-  if (
-    reviewEvery !== undefined &&
-    /^[1-9][0-9]*[dhmy]$/u.test(reviewEvery.value)
-  ) {
+  const value = asString(reviewEvery?.value);
+  if (value !== undefined && /^[1-9][0-9]*[dhmy]$/u.test(value)) {
     return;
   }
   diagnostics.push(
@@ -217,46 +129,34 @@ function validateReviewEvery(
 
 function validateStatus(
   relativePath: string,
-  fields: ReadonlyMap<string, DocumentField>,
+  fields: ReadonlyMap<string, YamlField>,
   diagnostics: ContentDiagnostic[]
 ): void {
   const status = fields.get('status');
   const replacedBy = fields.get('replacedBy');
-  validateStatusValue(relativePath, status, diagnostics);
-  if (status?.value === 'superseded' && (replacedBy?.value ?? '') === '') {
-    diagnostics.push(
-      makeDiagnostic({
-        field: 'replacedBy',
-        message: 'replacedBy is required for superseded Docs',
-        path: relativePath,
-        ruleId: 'FW-DOC-004',
-        source: { column: 1, line: status.line },
-      })
-    );
+  const statusValue = asString(status?.value);
+  const replacedByValue = asString(replacedBy?.value);
+  validateStatusField(relativePath, status, statusValue, diagnostics);
+  if (statusValue === 'superseded') {
+    validateSupersededStatus({
+      diagnostics,
+      relativePath,
+      replacedBy,
+      replacedByValue,
+      status,
+    });
+    return;
   }
-  if (status?.value !== 'superseded' && replacedBy !== undefined) {
-    diagnostics.push(
-      makeDiagnostic({
-        field: 'replacedBy',
-        message: 'replacedBy is only allowed for superseded Docs',
-        path: relativePath,
-        ruleId: 'FW-DOC-004',
-        source: { column: 1, line: replacedBy.line },
-      })
-    );
-  }
+  validateReplacementField(relativePath, replacedBy, diagnostics);
 }
 
-function validateStatusValue(
+function validateStatusField(
   relativePath: string,
-  status: DocumentField | undefined,
+  status: YamlField | undefined,
+  statusValue: string | undefined,
   diagnostics: ContentDiagnostic[]
 ): void {
-  if (
-    status === undefined ||
-    status.value === 'deprecated' ||
-    status.value === 'superseded'
-  ) {
+  if (status === undefined || isDocumentStatus(statusValue)) {
     return;
   }
   diagnostics.push(
@@ -266,6 +166,66 @@ function validateStatusValue(
       path: relativePath,
       ruleId: 'FW-DOC-004',
       source: { column: 1, line: status.line },
+    })
+  );
+}
+
+function validateSupersededStatus(
+  input: Readonly<{
+    readonly diagnostics: ContentDiagnostic[];
+    readonly relativePath: string;
+    readonly replacedBy: YamlField | undefined;
+    readonly replacedByValue: string | undefined;
+    readonly status: YamlField | undefined;
+  }>
+): void {
+  if ((input.replacedByValue ?? '') === '') {
+    input.diagnostics.push(
+      makeDiagnostic({
+        field: 'replacedBy',
+        message: 'replacedBy is required for superseded Docs',
+        path: input.relativePath,
+        ruleId: 'FW-DOC-004',
+        source: { column: 1, line: input.status?.line ?? 1 },
+      })
+    );
+  }
+  if (input.replacedBy !== undefined && input.replacedByValue === undefined) {
+    addInvalidReplacedByDiagnostic(
+      input.relativePath,
+      input.replacedBy,
+      input.diagnostics
+    );
+  }
+}
+
+function validateReplacementField(
+  relativePath: string,
+  replacedBy: YamlField | undefined,
+  diagnostics: ContentDiagnostic[]
+): void {
+  if (replacedBy === undefined) {
+    return;
+  }
+  addInvalidReplacedByDiagnostic(relativePath, replacedBy, diagnostics);
+}
+
+function isDocumentStatus(value: string | undefined): boolean {
+  return value === 'deprecated' || value === 'superseded';
+}
+
+function addInvalidReplacedByDiagnostic(
+  relativePath: string,
+  replacedBy: YamlField,
+  diagnostics: ContentDiagnostic[]
+): void {
+  diagnostics.push(
+    makeDiagnostic({
+      field: 'replacedBy',
+      message: 'replacedBy is only allowed for superseded Docs',
+      path: relativePath,
+      ruleId: 'FW-DOC-004',
+      source: { column: 1, line: replacedBy.line },
     })
   );
 }
