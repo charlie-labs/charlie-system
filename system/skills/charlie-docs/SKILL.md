@@ -5,7 +5,7 @@ description: Read current Charlie reference documentation. Use when work depends
 
 # Charlie Docs
 
-Use this Skill when a Task needs authoritative information from Charlie Labs' public documentation, including product concepts, Customer Guides, Charlie Reference, setup, integrations, configuration, or troubleshooting. The live documentation is the authority for current public behavior; prior knowledge and search snippets are leads, not substitutes for reading the relevant page.
+This Skill gives Charlie—the agent built by Charlie Labs—authoritative, current reference documentation for its own operation. Use it when a Task depends on Charlie's lifecycle, Signals and interaction/routing, durable Tasks, Runs, Turns, mailboxes, delegation, worker agents and Task trees, agent-harness behavior, Devboxes, repositories, tools/CLIs, capabilities, credentials, secrets and environment variables, Skills, Rules/instructions, Daemons, Roles, Flywheel Knowledge, maintenance/adaptation, GitHub/Linear/Slack/Sentry integrations, provider events/actions, setup, limits, evidence, or troubleshooting missing or unexpected work. Treat the live documentation as the authority for current behavior; prior knowledge and search results are leads, not substitutes for reading the relevant page.
 
 ## Retrieval workflow
 
