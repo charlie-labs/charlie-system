@@ -74,7 +74,7 @@ bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <f
 For example:
 
 ```text
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /tasks/runs "The example uses the removed `run_id` field; the current API response and source link use `id` instead: https://example.com/api-reference"
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /changelog "The July 31, 2026 entry says daemon-powered PR reviews replace the previous automatic reviewer, but the July 9, 2026 notes say pull requests opened or marked ready for review still use the automatic review path when no daemon takes ownership. Please clarify whether that path is a fallback for repositories without a `pr-review` daemon and link the setup or migration guidance: https://docs.charlielabs.ai/pr-reviews"
 ```
 
 The retrieval commands (`page`, `index`, `full`, `search`, and
