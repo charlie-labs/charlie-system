@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { AsyncFileSystem } from '../../runtime/deps.js';
@@ -63,6 +63,10 @@ test('reads the selected payload and specialization without writes', async () =>
       calls.push(`readdir:${directoryPath}`);
       return baseFilesystem.readdir(directoryPath);
     },
+    lstat: async (filePath) => {
+      calls.push(`lstat:${filePath}`);
+      return baseFilesystem.lstat(filePath);
+    },
     stat: async (filePath) => {
       calls.push(`stat:${filePath}`);
       return baseFilesystem.stat(filePath);
@@ -96,6 +100,27 @@ test('rejects missing and unsafe preset identities', async () => {
 
   expect(await missing).toBeInstanceOf(PresetNotFoundError);
   expect(await unsafe).toBeInstanceOf(PresetInvocationError);
+});
+
+test('does not follow a symlinked preset directory', async () => {
+  const sourceRoot = await makePresetRoot({
+    'target-skill': 'payload text',
+  });
+  await symlink(
+    path.join(sourceRoot, 'target-skill'),
+    path.join(sourceRoot, 'alpha-skill'),
+    'dir'
+  );
+
+  const error = await captureFailure(() =>
+    showSkillPreset({
+      filesystem: createFlywheelDeps().filesystem,
+      preset: 'alpha-skill',
+      sourceRoot,
+    })
+  );
+
+  expect(error).toBeInstanceOf(PresetNotFoundError);
 });
 
 async function captureFailure(

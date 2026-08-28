@@ -123,7 +123,7 @@ async function assertPresetDirectory(
   preset: string
 ): Promise<void> {
   try {
-    const stats = await filesystem.stat(presetRoot);
+    const stats = await filesystem.lstat(presetRoot);
     if (!stats.isDirectory()) {
       throw new PresetNotFoundError(preset);
     }

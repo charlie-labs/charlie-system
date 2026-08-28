@@ -213,7 +213,7 @@ async function existingDirectory(
 ): Promise<string | undefined> {
   const absoluteRoot = path.join(repositoryPath, relativeRoot);
   try {
-    const rootStats = await filesystem.stat(absoluteRoot);
+    const rootStats = await filesystem.lstat(absoluteRoot);
     return rootStats.isDirectory() ? absoluteRoot : undefined;
   } catch (error) {
     if (isMissing(error)) {

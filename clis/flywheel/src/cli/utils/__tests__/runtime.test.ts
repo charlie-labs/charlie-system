@@ -8,6 +8,7 @@ const testDeps: FlywheelDeps = {
   filesystem: {
     readFile: () => Promise.resolve(''),
     readdir: () => Promise.resolve([]),
+    lstat: () => Promise.reject(new Error('unused in this test')),
     stat: () => Promise.reject(new Error('unused in this test')),
   },
   process: {

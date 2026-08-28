@@ -159,7 +159,13 @@ function hasInlineValue(argument: string): boolean {
 }
 
 function isPatternOption(argument: string): boolean {
-  return argument === '-e' || argument.startsWith('--regexp=');
+  return (
+    argument === '-e' ||
+    argument === '-f' ||
+    argument === '--regexp' ||
+    argument.startsWith('-f') ||
+    argument.startsWith('--regexp=')
+  );
 }
 
 type RgArgumentState = {
@@ -186,7 +192,7 @@ function consumeRgArgument(argument: string, state: RgArgumentState): number {
     return 0;
   }
   if (RIPGREP_VALUE_OPTIONS.has(argument)) {
-    state.patternSeen ||= argument === '-e' || argument === '--regexp';
+    state.patternSeen ||= isPatternOption(argument);
     return 1;
   }
   return 0;
