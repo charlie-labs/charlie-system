@@ -58,7 +58,7 @@ function validateSchemaVersion(
           ?.replace(/^schemaVersion:\s*/u, '')
           .replace(/\s+#.*$/u, '')
           .trim();
-  if (schemaValue === '1' || schemaValue === '"1"' || schemaValue === "'1'") {
+  if (schemaValue === '1') {
     return;
   }
   diagnostics.push(
@@ -76,12 +76,26 @@ function validateTopLevelFields(
   lines: readonly string[],
   diagnostics: ContentDiagnostic[]
 ): void {
+  const seenFields = new Set<string>();
   for (const [index, line] of lines.entries()) {
     if (line.trim() === '' || line.trimStart() !== line) {
       continue;
     }
     const key = /^([A-Za-z][A-Za-z0-9]*):/u.exec(line)?.[1];
     if (key === 'schemaVersion' || key === 'reviews') {
+      if (seenFields.has(key)) {
+        diagnostics.push(
+          makeDiagnostic({
+            field: key,
+            message: `review manifest field is duplicated: ${key}`,
+            path: relativePath,
+            ruleId: 'FW-REVIEW-001',
+            source: { column: 1, line: index + 1 },
+          })
+        );
+      } else {
+        seenFields.add(key);
+      }
       continue;
     }
     diagnostics.push(

@@ -56,6 +56,55 @@ test('proves content JSON shape and stdout/stderr separation', async () => {
   expect(invalidHuman.stderr).toContain('error FW-DOC-001');
 });
 
+test('returns a nonzero result for invalid review manifests', async () => {
+  const repositoryPath = await makeRepository({
+    '.flywheel/reviews.yaml': [
+      'schemaVersion: "1"',
+      'schemaVersion: 1',
+      'reviews:',
+      'reviews:',
+      '',
+    ].join('\n'),
+  });
+  const [json, human] = await Promise.all([
+    runCli([
+      'content',
+      'validate',
+      '--repository-path',
+      repositoryPath,
+      '--json',
+    ]),
+    runCli(['content', 'validate', '--repository-path', repositoryPath]),
+  ]);
+
+  expect(json.exitCode).toBe(1);
+  expect(json.stderr).toBe('');
+  expect(JSON.parse(json.stdout)).toMatchObject({
+    error: {
+      diagnostics: [
+        {
+          field: 'reviews',
+          ruleId: 'FW-REVIEW-001',
+        },
+        {
+          field: 'schemaVersion',
+          message: 'review manifest schemaVersion must be 1',
+          ruleId: 'FW-REVIEW-001',
+        },
+        {
+          field: 'schemaVersion',
+          ruleId: 'FW-REVIEW-001',
+        },
+      ],
+      exitCode: 1,
+      type: 'ContentValidationError',
+    },
+  });
+  expect(human.exitCode).toBe(1);
+  expect(human.stdout).toBe('');
+  expect(human.stderr).toContain('error FW-REVIEW-001');
+});
+
 test('proves Skill preset discovery and JSON output shapes', async () => {
   const [list, show, missing] = await Promise.all([
     runCli(['skill', 'preset', 'list', '--json']),
