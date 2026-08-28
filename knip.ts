@@ -2,6 +2,11 @@ import type { KnipConfig } from 'knip';
 
 const config = {
   ignoreFiles: ['.agents/**'],
+  workspaces: {
+    '.': {
+      entry: ['system/skills/**/scripts/*.ts'],
+    },
+  },
   rules: {
     files: 'error',
     dependencies: 'error',

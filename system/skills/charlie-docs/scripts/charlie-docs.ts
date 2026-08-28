@@ -95,14 +95,14 @@ export async function main(
 }
 
 function parseArguments(argv: readonly string[]): ParsedArguments {
-  if (argv.length === 0) {
+  const command = argv[0];
+  if (command === undefined) {
     throw new CliError(USAGE, 2);
   }
-  if (argv.length === 1 && (argv[0] === '--help' || argv[0] === '-h')) {
+  if (argv.length === 1 && (command === '--help' || command === '-h')) {
     return { command: 'help', value: '' };
   }
 
-  const command = argv[0];
   switch (command) {
     case 'index':
     case 'full':
@@ -128,10 +128,11 @@ function parseNoArgumentCommand(
 }
 
 function parsePageCommand(argv: readonly string[]): ParsedArguments {
-  if (argv.length !== 2 || !argv[1]) {
+  const value = argv[1];
+  if (argv.length !== 2 || value === undefined || value === '') {
     throw new CliError(`page expects exactly one argument.\n${USAGE}`, 2);
   }
-  return { command: 'page', value: argv[1] };
+  return { command: 'page', value };
 }
 
 function parseTextCommand(
