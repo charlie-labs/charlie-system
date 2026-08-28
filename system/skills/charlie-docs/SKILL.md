@@ -33,6 +33,7 @@ bun system/skills/charlie-docs/scripts/charlie-docs.ts index
 bun system/skills/charlie-docs/scripts/charlie-docs.ts full
 bun system/skills/charlie-docs/scripts/charlie-docs.ts search <query>
 bun system/skills/charlie-docs/scripts/charlie-docs.ts filesystem <read-only-command>
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <feedback...>
 ```
 
 - `page <path-or-url>` reads one complete documentation page and returns its
@@ -48,5 +49,34 @@ bun system/skills/charlie-docs/scripts/charlie-docs.ts filesystem <read-only-com
   filesystem command, such as `rg`, `head`, or `cat`, and returns its stdout.
   A failed command is reported as an error.
 
-All helper commands are read-only. Use the returned results to decide what to
-read next; the helper does not replace that judgment.
+Use the returned results to decide what to read next; the helper does not
+replace that judgment.
+
+## Giving feedback
+
+While using the documentation, proactively submit feedback when a page is
+incorrect, outdated, confusing, incomplete, or contains a broken example. Do
+not wait for a customer to report the problem. Use documentation feedback for
+the page itself, not for a product support request, a product bug, a feature
+request, or feedback about Charlie or this helper.
+
+Include the specific page, a concise description of what is wrong, what the
+available evidence or source indicates instead, and a relevant source link
+when one is available. Feedback is a maintenance signal for the documentation
+team, not authority to edit public documentation without verification.
+
+Submit feedback with:
+
+```text
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <feedback...>
+```
+
+For example:
+
+```text
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /tasks/runs "The example uses the removed `run_id` field; the current API response and source link use `id` instead: https://example.com/api-reference"
+```
+
+The retrieval commands (`page`, `index`, `full`, `search`, and
+`filesystem`) are read-only. `feedback` is different: it creates an external
+Mintlify feedback record.
