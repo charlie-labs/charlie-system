@@ -4,9 +4,8 @@ import path from 'node:path';
 
 import type { AsyncFileSystem } from '../../runtime/deps.js';
 import { createFlywheelDeps } from '../../runtime/deps.js';
-import { SkillPresetInvocationError } from '../errors.js';
+import { PresetInvocationError, PresetNotFoundError } from '../errors.js';
 import { listSkillPresets, showSkillPreset } from '../inspection.js';
-import { SkillPresetNotFoundError } from '../not-found-error.js';
 
 const temporaryDirectories: string[] = [];
 
@@ -95,8 +94,8 @@ test('rejects missing and unsafe preset identities', async () => {
     showSkillPreset({ filesystem, preset: '../alpha-skill', sourceRoot })
   );
 
-  expect(await missing).toBeInstanceOf(SkillPresetNotFoundError);
-  expect(await unsafe).toBeInstanceOf(SkillPresetInvocationError);
+  expect(await missing).toBeInstanceOf(PresetNotFoundError);
+  expect(await unsafe).toBeInstanceOf(PresetInvocationError);
 });
 
 async function captureFailure(

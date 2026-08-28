@@ -8,13 +8,13 @@ import {
 } from '@charlie-labs/oclif-plugin-helpers';
 import { Args } from '@oclif/core';
 
+import { PresetOperationalError } from '../../../../lib/presets/errors.js';
 import {
   showSkillPreset,
   SKILL_PRESET_SOURCE_ROOT,
   type SkillPresetShowResult,
   type SkillPresetShowInput,
 } from '../../../../lib/presets/inspection.js';
-import { SkillPresetOperationalError } from '../../../../lib/presets/operational-error.js';
 import {
   createFlywheelDeps,
   type FlywheelDeps,
@@ -50,13 +50,13 @@ export default class Show extends BaseCommand<
     deps,
   }: ExecCtxOf<this>): Promise<SkillPresetShowResult> {
     if (deps === undefined) {
-      throw new SkillPresetOperationalError(
+      throw new PresetOperationalError(
         'Skill preset show dependencies were not provided'
       );
     }
     const preset = this.argv[0];
     if (preset === undefined) {
-      throw new SkillPresetOperationalError(
+      throw new PresetOperationalError(
         'Skill preset show requires a preset identity'
       );
     }

@@ -86,7 +86,7 @@ test('proves Skill preset discovery and JSON output shapes', async () => {
   expect(JSON.parse(missing.stdout)).toMatchObject({
     error: {
       exitCode: 2,
-      type: 'SkillPresetNotFoundError',
+      type: 'PresetNotFoundError',
     },
   });
 });

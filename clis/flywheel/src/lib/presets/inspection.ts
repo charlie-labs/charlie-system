@@ -2,9 +2,11 @@ import path from 'node:path';
 
 import { sortedCopy } from '../content/ordering.js';
 import type { AsyncFileSystem } from '../runtime/deps.js';
-import { SkillPresetInvocationError } from './errors.js';
-import { SkillPresetNotFoundError } from './not-found-error.js';
-import { SkillPresetOperationalError } from './operational-error.js';
+import {
+  PresetInvocationError,
+  PresetNotFoundError,
+  PresetOperationalError,
+} from './errors.js';
 
 export const SKILL_PRESET_SOURCE_ROOT = path.resolve(
   import.meta.dir,
@@ -54,7 +56,7 @@ export async function listSkillPresets(
     if (isMissing(error)) {
       return { presets: [] };
     }
-    throw new SkillPresetOperationalError(
+    throw new PresetOperationalError(
       `cannot read Skill preset source: ${input.sourceRoot}`,
       { cause: error }
     );
@@ -106,9 +108,7 @@ function createDescriptor(id: string): SkillPresetDescriptor {
 function normalizePresetId(preset: string): string {
   const normalized = preset.trim();
   if (!isPresetId(normalized)) {
-    throw new SkillPresetInvocationError(
-      `invalid Skill preset identity: ${preset}`
-    );
+    throw new PresetInvocationError(`invalid Skill preset identity: ${preset}`);
   }
   return normalized;
 }
@@ -125,19 +125,18 @@ async function assertPresetDirectory(
   try {
     const stats = await filesystem.stat(presetRoot);
     if (!stats.isDirectory()) {
-      throw new SkillPresetNotFoundError(preset);
+      throw new PresetNotFoundError(preset);
     }
   } catch (error) {
-    if (error instanceof SkillPresetNotFoundError) {
+    if (error instanceof PresetNotFoundError) {
       throw error;
     }
     if (isMissing(error)) {
-      throw new SkillPresetNotFoundError(preset);
+      throw new PresetNotFoundError(preset);
     }
-    throw new SkillPresetOperationalError(
-      `cannot inspect Skill preset: ${preset}`,
-      { cause: error }
-    );
+    throw new PresetOperationalError(`cannot inspect Skill preset: ${preset}`, {
+      cause: error,
+    });
   }
 }
 
@@ -150,7 +149,7 @@ async function readPresetFile(
   try {
     return await filesystem.readFile(filePath);
   } catch (error) {
-    throw new SkillPresetOperationalError(
+    throw new PresetOperationalError(
       `cannot read ${relativePath} for Skill preset: ${preset}`,
       { cause: error }
     );

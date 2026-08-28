@@ -75,7 +75,7 @@ test('reports a missing preset as one JSON error value', async () => {
   expect(result.stderr).toBe('');
   expect(JSON.parse(result.stdout)).toMatchObject({
     error: {
-      type: 'SkillPresetNotFoundError',
+      type: 'PresetNotFoundError',
       exitCode: 2,
     },
   });

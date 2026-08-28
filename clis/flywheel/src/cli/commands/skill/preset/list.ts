@@ -7,13 +7,13 @@ import {
   type Result,
 } from '@charlie-labs/oclif-plugin-helpers';
 
+import { PresetOperationalError } from '../../../../lib/presets/errors.js';
 import {
   listSkillPresets,
   SKILL_PRESET_SOURCE_ROOT,
   type SkillPresetInspectionInput,
   type SkillPresetListResult,
 } from '../../../../lib/presets/inspection.js';
-import { SkillPresetOperationalError } from '../../../../lib/presets/operational-error.js';
 import {
   createFlywheelDeps,
   type FlywheelDeps,
@@ -43,7 +43,7 @@ export default class List extends BaseCommand<
     deps,
   }: ExecCtxOf<this>): Promise<SkillPresetListResult> {
     if (deps === undefined) {
-      throw new SkillPresetOperationalError(
+      throw new PresetOperationalError(
         'Skill preset list dependencies were not provided'
       );
     }
