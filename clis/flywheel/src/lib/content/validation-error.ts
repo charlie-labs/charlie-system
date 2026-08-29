@@ -1,15 +1,22 @@
-import type { ContentDiagnostic } from './errors.js';
+import type { ValidationDiagnostic } from '../validation/contract.js';
+import type { ContentValidationResult } from './validation-contract.js';
 
 export class ContentValidationError extends Error {
   static readonly exitCode = 1;
 
   readonly code = 'ECONTENT_VALIDATION';
-  readonly diagnostics: readonly ContentDiagnostic[];
   readonly exitCode = 1;
+  readonly result: ContentValidationResult;
 
-  constructor(diagnostics: readonly ContentDiagnostic[]) {
-    super(`content validation failed with ${diagnostics.length} diagnostic(s)`);
+  constructor(result: ContentValidationResult) {
+    super(
+      `content validation failed with ${result.status} assessment and ${result.diagnostics.length} diagnostic(s)`
+    );
     this.name = 'ContentValidationError';
-    this.diagnostics = diagnostics;
+    this.result = result;
+  }
+
+  get diagnostics(): readonly ValidationDiagnostic[] {
+    return this.result.diagnostics;
   }
 }

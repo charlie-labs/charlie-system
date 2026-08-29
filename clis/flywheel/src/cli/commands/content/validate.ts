@@ -10,18 +10,16 @@ import {
   ContentOperationalError,
   ContentValidationError,
 } from '../../../lib/content/errors.js';
-import {
-  formatDiagnostic,
-  validateContent,
-  type ContentValidationResult,
-} from '../../../lib/content/validate.js';
-import { resolveRepositoryPath } from '../../../lib/repository/path.js';
+import { runContentValidation } from '../../../lib/content/validate.js';
+import type { ContentValidationResult } from '../../../lib/content/validation-contract.js';
 import {
   createFlywheelDeps,
   type FlywheelDeps,
 } from '../../../lib/runtime/deps.js';
+import { formatValidationDiagnostic } from '../../output/validation.js';
 import { ContentCommand } from '../../utils/content-command.js';
 import { contentValidateFlags } from '../../utils/content-flags.js';
+import { buildFlywheelRuntime } from '../../utils/runtime.js';
 
 export default class Validate extends ContentCommand<
   | CfgFlags<typeof contentValidateFlags>
@@ -36,9 +34,9 @@ export default class Validate extends ContentCommand<
     }),
   };
   static override flags = super.registerManifest(contentValidateFlags);
-  static override summary = 'Validate the supported Flywheel content slice';
+  static override summary = 'Validate the compiled Flywheel repository';
   static override description =
-    'Run deterministic offline validation without formatting, repairing, or rewriting content.';
+    'Compile and assess Flywheel artifacts, references, relationships, and repository invariants without formatting, repairing, or rewriting content.';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> customer-wide/docs',
@@ -59,25 +57,24 @@ export default class Validate extends ContentCommand<
       );
     }
 
-    const repositoryPath = resolveRepositoryPath({
+    const runtime = buildFlywheelRuntime({
       cwd: process.cwd(),
+      deps,
       ...(parsed['repository-path'] === undefined
         ? {}
-        : { explicitPath: parsed['repository-path'] }),
+        : { repositoryPath: parsed['repository-path'] }),
     });
-    const result = await validateContent({
-      filesystem: deps.filesystem,
+    const result = await runContentValidation({
+      filesystem: runtime.deps.filesystem,
       paths: extractValidationPaths(this.argv),
-      repositoryPath,
+      repositoryPath: runtime.repositoryPath,
     });
-    if (result.diagnostics.length > 0) {
-      if (!this.jsonEnabled()) {
-        for (const diagnostic of result.diagnostics) {
-          this.logWarn(formatDiagnostic(diagnostic));
-        }
+    if (!this.jsonEnabled()) {
+      for (const diagnostic of result.diagnostics) {
+        this.logWarn(formatValidationDiagnostic(diagnostic));
       }
-      throw new ContentValidationError(result.diagnostics);
     }
+    if (result.status !== 'valid') throw new ContentValidationError(result);
     this.logInfo(`validated ${result.filesChecked} content file(s)`);
     return result;
   }
@@ -93,6 +90,8 @@ export default class Validate extends ContentCommand<
       error: {
         ...result.error,
         diagnostics: error.diagnostics,
+        filesChecked: error.result.filesChecked,
+        status: error.result.status,
       },
     };
   }

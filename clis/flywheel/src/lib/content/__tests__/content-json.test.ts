@@ -27,7 +27,11 @@ describe('content validate JSON output', () => {
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toBe('');
     expect(JSON.parse(result.stdout)).toMatchObject({
-      error: { diagnostics: [{ ruleId: 'FW-DOC-001' }] },
+      error: {
+        diagnostics: [{ ruleId: 'FW-ARTIFACT-FRONTMATTER-REQUIRED' }],
+        filesChecked: 1,
+        status: 'incomplete',
+      },
     });
   });
 
@@ -42,7 +46,7 @@ describe('content validate JSON output', () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe('');
-    expect(result.stderr).toContain('error FW-DOC-001');
+    expect(result.stderr).toContain('error FW-ARTIFACT-FRONTMATTER-REQUIRED');
   });
 });
 
@@ -51,7 +55,7 @@ async function makeRepository(): Promise<string> {
   temporaryDirectories.push(repositoryPath);
   const filePath = path.join(repositoryPath, 'customer-wide/docs/bad.md');
   await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, 'not valid markdown\n', 'utf8');
+  await writeFile(filePath, '# Bad\n', 'utf8');
   return repositoryPath;
 }
 

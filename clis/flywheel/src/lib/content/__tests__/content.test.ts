@@ -4,8 +4,8 @@ import path from 'node:path';
 import Rg from '../../../cli/commands/content/rg.js';
 import Validate from '../../../cli/commands/content/validate.js';
 import { createFlywheelDeps, type ProcessResult } from '../../runtime/deps.js';
-import type { ContentDiagnostic } from '../errors.js';
-import { validateContent } from '../validate.js';
+import type { ValidationDiagnostic } from '../../validation/contract.js';
+import { runContentValidation } from '../validate.js';
 import {
   cleanupTemporaryDirectories,
   makeRepository,
@@ -81,59 +81,100 @@ describe('content rg validates invocation', () => {
 
 describe('content validate is deterministic', () => {
   test('returns deterministic diagnostics without rewriting content', async () => {
-    const repositoryPath = await makeRepository({
-      'customer-wide/.agents/skills/example.md': 'not validated\n',
-      'customer-wide/docs/bad.md': '---\n---\n# Bad\n',
+    const files = {
+      'README.md': 'Repository infrastructure.\n',
+      'customer-wide/AGENTS.md': 'Rules are not Flywheel content.\n',
+      'customer-wide/docs/bad.md': invalidCadenceDocument,
       'customer-wide/docs/good.md': validDocument,
-      'customer-wide/unknown.txt': 'unsupported\n',
-    });
-    const before = await readRepositoryFiles(repositoryPath);
-    const first = await validateContent({
+    };
+    const repositoryPath = await makeRepository(files);
+    const paths = Object.keys(files);
+    const before = await readRepositoryFiles(repositoryPath, paths);
+    const first = await runContentValidation({
       filesystem: createFlywheelDeps().filesystem,
       paths: [],
       repositoryPath,
     });
-    const second = await validateContent({
+    const second = await runContentValidation({
       filesystem: createFlywheelDeps().filesystem,
       paths: [],
       repositoryPath,
     });
-    const after = await readRepositoryFiles(repositoryPath);
+    const after = await readRepositoryFiles(repositoryPath, paths);
 
     expect(first).toEqual(second);
     expect(first.filesChecked).toBe(4);
+    expect(first.status).toBe('invalid');
     expect(diagnosticKeys(first.diagnostics)).toEqual([
-      'customer-wide/docs/bad.md:FW-DOC-003',
-      'customer-wide/docs/bad.md:FW-DOC-003',
-      'customer-wide/docs/bad.md:FW-DOC-005',
-      'customer-wide/unknown.txt:FW-PATH-002',
+      'customer-wide/AGENTS.md:FW-REPOSITORY-RULE-PROHIBITED',
+      'customer-wide/docs/bad.md:FW-DOCUMENT-REVIEW-CADENCE',
+      'README.md:FW-REPOSITORY-UNSUPPORTED',
     ]);
     expect(after).toEqual(before);
   });
+
+  test('keeps warnings visible without making the assessment fail', async () => {
+    const repositoryPath = await makeRepository({
+      'README.md': 'Repository infrastructure.\n',
+    });
+
+    const result = await runContentValidation({
+      filesystem: createFlywheelDeps().filesystem,
+      paths: [],
+      repositoryPath,
+    });
+
+    expect(result).toMatchObject({ filesChecked: 1, status: 'valid' });
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({
+        impact: 'none',
+        ruleId: 'FW-REPOSITORY-UNSUPPORTED',
+        severity: 'warning',
+      }),
+    ]);
+  });
 });
 
-describe('content validate rejects path escapes', () => {
-  test('rejects validation paths outside the admitted repository slice', async () => {
+describe('content validate path selection', () => {
+  test('scopes a full compiled assessment without rereading selected files', async () => {
     const repositoryPath = await makeRepository({
+      'customer-wide/docs/bad.md': invalidCadenceDocument,
       'customer-wide/docs/good.md': validDocument,
     });
 
-    await expectExitCode(
-      validateContent({
+    const result = await runContentValidation({
+      filesystem: createFlywheelDeps().filesystem,
+      paths: ['customer-wide/docs/good.md'],
+      repositoryPath,
+    });
+
+    expect(result).toEqual({
+      diagnostics: [],
+      filesChecked: 1,
+      status: 'valid',
+    });
+  });
+
+  test('rejects escapes, outside paths, and missing paths', async () => {
+    const repositoryPath = await makeRepository({
+      'customer-wide/docs/good.md': validDocument,
+    });
+    const validatePath = (selectedPath: string) =>
+      runContentValidation({
         filesystem: createFlywheelDeps().filesystem,
-        paths: ['../outside'],
+        paths: [selectedPath],
         repositoryPath,
-      }),
-      2
-    );
+      });
+
+    await expectExitCode(validatePath('../outside'), 2);
+    await expectExitCode(validatePath('README.md'), 2);
+    await expectExitCode(validatePath('customer-wide/docs/missing.md'), 2);
   });
 });
 
 describe('content validate command metadata', () => {
   test('registers the generated repository-path flag', () => {
-    expect(Validate.summary).toBe(
-      'Validate the supported Flywheel content slice'
-    );
+    expect(Validate.summary).toBe('Validate the compiled Flywheel repository');
     expect(Validate.flags).toHaveProperty('repository-path');
   });
 });
@@ -146,6 +187,17 @@ const validDocument = [
   '# Guide',
   '',
   'This is the guide body.',
+  '',
+].join('\n');
+
+const invalidCadenceDocument = [
+  '---',
+  'purpose: A useful guide',
+  'reviewEvery: eventually',
+  '---',
+  '# Guide',
+  '',
+  'This guide has an invalid review cadence.',
   '',
 ].join('\n');
 
@@ -205,7 +257,7 @@ async function expectExitCode(
 }
 
 function diagnosticKeys(
-  diagnostics: readonly ContentDiagnostic[]
+  diagnostics: readonly ValidationDiagnostic[]
 ): readonly string[] {
   return diagnostics.map(
     (diagnostic) => `${diagnostic.path}:${diagnostic.ruleId}`

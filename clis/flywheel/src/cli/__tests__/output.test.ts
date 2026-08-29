@@ -26,10 +26,11 @@ test('proves content JSON shape and stdout/stderr separation', async () => {
   expect(JSON.parse(valid.stdout)).toEqual({
     diagnostics: [],
     filesChecked: 1,
+    status: 'valid',
   });
 
   const invalidRepository = await makeRepository({
-    'customer-wide/docs/bad.md': 'not valid markdown\n',
+    'customer-wide/docs/bad.md': '# Bad\n',
   });
   const [invalidJson, invalidHuman] = await Promise.all([
     runCli([
@@ -46,14 +47,18 @@ test('proves content JSON shape and stdout/stderr separation', async () => {
   expect(invalidJson.stderr).toBe('');
   expect(JSON.parse(invalidJson.stdout)).toMatchObject({
     error: {
-      diagnostics: [{ ruleId: 'FW-DOC-001' }],
+      diagnostics: [{ ruleId: 'FW-ARTIFACT-FRONTMATTER-REQUIRED' }],
       exitCode: 1,
+      filesChecked: 1,
+      status: 'incomplete',
       type: 'ContentValidationError',
     },
   });
   expect(invalidHuman.exitCode).toBe(1);
   expect(invalidHuman.stdout).toBe('');
-  expect(invalidHuman.stderr).toContain('error FW-DOC-001');
+  expect(invalidHuman.stderr).toContain(
+    'error FW-ARTIFACT-FRONTMATTER-REQUIRED'
+  );
 });
 
 test('proves Skill preset discovery and JSON output shapes', async () => {
