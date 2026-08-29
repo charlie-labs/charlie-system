@@ -3,8 +3,8 @@ import type {
   DocumentArtifact,
   DocumentSection,
 } from '../../lib/artifacts/document/contract.js';
+import { renderFragments } from '../../lib/artifacts/document/render.js';
 import type { InspectableTarget } from '../../lib/targets/contract.js';
-import { renderFragments } from './fragments.js';
 
 export function renderDocumentDetails(
   artifact: DocumentArtifact,

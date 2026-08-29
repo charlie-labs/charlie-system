@@ -189,10 +189,20 @@ function tableFragment(
     citationKeys: citationKeys(node, contents),
     kind: 'table',
     rows: node.children.map((row) =>
-      row.children.map((cell) => nodeSourceText(cell, contents))
+      row.children.map((cell) => tableCellText(cell, contents))
     ),
     source: nodeLocation(node, locator),
   };
+}
+
+function tableCellText(
+  node: Table['children'][number]['children'][number],
+  contents: string
+): string {
+  return nodeSourceText(node, contents)
+    .replace(/^\s*\|\s?/u, '')
+    .replace(/\s*\|\s*$/u, '')
+    .trim();
 }
 
 function blockquoteFragment(
