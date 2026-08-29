@@ -6,26 +6,26 @@ Developer‑friendly CLI for your Slack workspace. Post messages, list channels,
 
 Prereqs: Bun 1.x (the CLI uses a Bun shebang).
 
-Clone and run from source:
+Run from a checked-out `charlie-system` workspace:
 
 ```bash
-git clone https://github.com/charlie-labs/ch-slack.git
-cd ch-slack
-bun install
+cd charlie-system
+bun ci
 
 # Show top-level help
-./bin/run.js --help
+./bin/ch-slack --help
 
-# Or run in dev mode (watch-friendly oclif run)
-bun run ./bin/dev.js --help
+# Or invoke the package-local development entrypoint
+bun run --cwd clis/ch-slack start -- --help
 ```
 
 Notes on invoking the CLI:
 
-- When running from source, use `./bin/run.js` (or `bun run ./bin/dev.js`).
+- From the workspace root, use `./bin/ch-slack`.
+- For package-local development, use `bun run --cwd clis/ch-slack start -- <args>`.
 - If you install the package so it’s on your PATH, the executable name is `ch-slack`.
 
-In all examples below, `ch-slack <command> [args]` is equivalent to `./bin/run.js <command> [args]` when running from a local clone.
+In all examples below, `ch-slack <command> [args]` is equivalent to `./bin/ch-slack <command> [args]` when run from the `charlie-system` root.
 
 ## Authentication
 
