@@ -1,6 +1,5 @@
 import { expect, test } from 'bun:test';
 
-import { retrievalCandidateArbitrary } from '../../../__tests__/arbitraries.js';
 import {
   assert,
   fc,
@@ -17,32 +16,21 @@ import { projectKnowledge } from '../../corpus/project.js';
 import { groupCandidates } from '../group.js';
 import { createLexicalCandidateSource } from '../lexical.js';
 import { searchAssessedRepository } from '../search.js';
+import {
+  expectedArtifactIds,
+  retrievalCandidateArbitrary,
+  retrievalQueryArbitrary,
+  retrievalScenarioArbitrary,
+  retrievalScopeArbitrary,
+  searchResultArtifactIds,
+} from './property-arbitraries.js';
+import type { RetrievalScenario } from './property-arbitraries.js';
 
 test('retrieval eligibility is monotonic and materializes only selected artifacts and units', async () => {
   const repository = await compileAndAssessRepository(corpusSource());
   const source = projectKnowledge(repository);
-  const scopes = [
-    createRetrievalScope({
-      contentTypes: [],
-      customerWideOnly: false,
-      includeNonActive: false,
-      repositoryIds: [],
-    }),
-    createRetrievalScope({
-      contentTypes: ['document'],
-      customerWideOnly: true,
-      includeNonActive: false,
-      repositoryIds: [],
-    }),
-    createRetrievalScope({
-      contentTypes: ['catalog'],
-      customerWideOnly: false,
-      includeNonActive: true,
-      repositoryIds: ['acme/api'],
-    }),
-  ];
   assert(
-    fc.property(fc.constantFrom(...scopes), (scope) => {
+    fc.property(retrievalScopeArbitrary(), (scope) => {
       assertEligibility(source, repository.projection.inventory, scope);
     }),
     fastCheckParameters
@@ -62,32 +50,33 @@ test('lexical retrieval produces finite deterministic candidates tied to the cor
       repositoryIds: [],
     })
   );
-  const request = {
-    corpus: materializeEligibleKnowledge(source, corpus),
-    query: 'release deployment guidance',
-  };
   const candidateSource = createLexicalCandidateSource();
-  const first = await candidateSource.findCandidates(request);
-  const second = await candidateSource.findCandidates(request);
-  expect(first).toEqual(second);
-  expect(first.kind).toBe('candidates');
-  if (first.kind !== 'candidates') return;
-  const unitIds = new Set(request.corpus.units.map((unit) => unit.id));
-  expect(
-    first.candidates.every(
-      (candidate) =>
-        unitIds.has(candidate.unitId) &&
-        Number.isFinite(candidate.score) &&
-        candidate.score > 0
-    )
-  ).toBe(true);
-  assert(
-    fc.property(fc.constant(first.candidates), (candidates) => {
+  await fc.assert(
+    fc.asyncProperty(retrievalQueryArbitrary, async (query) => {
+      const request = {
+        corpus: materializeEligibleKnowledge(source, corpus),
+        query,
+      };
+      const first = await candidateSource.findCandidates(request);
+      const second = await candidateSource.findCandidates(request);
+      expect(first).toEqual(second);
+      expect(first.kind).toBe('candidates');
+      if (first.kind !== 'candidates') return;
+      const unitIds = new Set(request.corpus.units.map((unit) => unit.id));
       expect(
-        candidates.every(
+        first.candidates.every(
+          (candidate) =>
+            unitIds.has(candidate.unitId) &&
+            Number.isFinite(candidate.score) &&
+            candidate.score > 0
+        )
+      ).toBe(true);
+      expect(
+        first.candidates.every(
           (candidate, index) =>
             index === 0 ||
-            candidate.score <= (candidates[index - 1]?.score ?? candidate.score)
+            candidate.score <=
+              (first.candidates[index - 1]?.score ?? candidate.score)
         )
       ).toBe(true);
     }),
@@ -143,48 +132,67 @@ test('grouping deduplicates source units and applies artifact limits after group
   );
 });
 
-test('search applies eligibility before candidate ranking and artifact cutoff', async () => {
+test('search applies generated eligibility before ranking and grouped artifact cutoff', async () => {
   const repository = await compileAndAssessRepository(corpusSource());
-  const candidateSource: Parameters<
-    typeof searchAssessedRepository
-  >[0]['candidateSource'] = {
-    findCandidates: ({ corpus }) =>
-      Promise.resolve({
-        candidates: corpus.units.map((unit, index) => ({
-          artifact: unit.artifact,
-          score: 1000 - index,
-          unitId: unit.id,
-        })),
-        kind: 'candidates' as const,
-      }),
-  };
+  const source = projectKnowledge(repository);
   await fc.assert(
-    fc.asyncProperty(fc.integer({ min: 1, max: 3 }), async (artifactLimit) => {
-      const result = await searchAssessedRepository({
-        artifactLimit,
-        candidateSource,
-        passageLimitPerArtifact: 1,
-        query: 'deployment',
-        repository,
-        scope: createRetrievalScope({
-          contentTypes: ['document'],
-          customerWideOnly: false,
-          includeNonActive: false,
-          repositoryIds: [],
-        }),
-      });
-      expect(result.kind).toBe('results');
-      if (result.kind !== 'results') return;
-      expect(result.results.length).toBeLessThanOrEqual(artifactLimit);
-      expect(
-        result.results.every(
-          (item) => item.lifecycle.active && item.contentType === 'document'
-        )
-      ).toBe(true);
-    }),
+    fc.asyncProperty(
+      retrievalScenarioArbitrary(source, repository.projection.inventory),
+      (scenario) => assertGeneratedSearchScenario(repository, source, scenario)
+    ),
     fastCheckParameters
   );
 });
+
+async function assertGeneratedSearchScenario(
+  repository: Awaited<ReturnType<typeof compileAndAssessRepository>>,
+  source: ReturnType<typeof projectKnowledge>,
+  { artifactLimit, candidates, query, scope }: RetrievalScenario
+): Promise<void> {
+  const corpus = selectEligibleKnowledge(
+    source,
+    repository.projection.inventory,
+    scope
+  );
+  const observedCorpora: ReturnType<typeof materializeEligibleKnowledge>[] = [];
+  const candidateSource: Parameters<
+    typeof searchAssessedRepository
+  >[0]['candidateSource'] = {
+    findCandidates: ({ corpus: candidateCorpus }) => {
+      observedCorpora.push(candidateCorpus);
+      return Promise.resolve({
+        candidates,
+        kind: 'candidates' as const,
+      });
+    },
+  };
+  const result = await searchAssessedRepository({
+    artifactLimit,
+    candidateSource,
+    passageLimitPerArtifact: 1,
+    query,
+    repository,
+    scope,
+  });
+
+  expect(result.kind).toBe('results');
+  if (result.kind !== 'results') return;
+  expect(observedCorpora).toHaveLength(1);
+  expect(observedCorpora[0]?.units.map((unit) => unit.id)).toEqual(
+    materializeEligibleKnowledge(source, corpus).units.map((unit) => unit.id)
+  );
+  const resultArtifactIds = searchResultArtifactIds(result.results);
+  expect(resultArtifactIds).toEqual(
+    expectedArtifactIds(candidates, corpus, artifactLimit)
+  );
+  expect(result.results.length).toBeLessThanOrEqual(artifactLimit);
+  expect(new Set(resultArtifactIds).size).toBe(result.results.length);
+  expect(
+    resultArtifactIds.every((artifactId) =>
+      corpus.artifactIds.includes(artifactId)
+    )
+  ).toBe(true);
+}
 
 function assertEligibility(
   source: ReturnType<typeof projectKnowledge>,

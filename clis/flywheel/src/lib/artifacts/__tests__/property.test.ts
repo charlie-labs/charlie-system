@@ -5,6 +5,7 @@ import {
   artifactMetadataArbitrary,
   authoredReferenceArbitrary,
   headingAnchorArbitrary,
+  malformedArtifactArbitrary,
   secretBearingUrlArbitrary,
   sourceLocationArbitrary,
   urlArbitrary,
@@ -48,6 +49,31 @@ test('parser totality keeps arbitrary bytes as parsed or visible unparsed data',
   );
 });
 
+test('malformed generated artifacts remain unparsed with visible problems', () => {
+  assertParserProperty(
+    fc.property(malformedArtifactArbitrary, (example) => {
+      const input = artifactInput(
+        example.artifactKind,
+        example.path,
+        example.contents,
+        example.region
+      );
+      const compilation = parseArtifact(input);
+
+      expect(compilation).toMatchObject({
+        entry: input.entry,
+        kind: 'unparsed',
+      });
+      expect(compilation.problems.length).toBeGreaterThan(0);
+      expect(
+        compilation.problems.every(
+          (problem) => problem.source.path === example.path
+        )
+      ).toBe(true);
+    })
+  );
+});
+
 test('valid generated document metadata yields deterministic, unambiguous targets', () => {
   assertParserProperty(
     fc.property(
@@ -68,6 +94,24 @@ test('valid generated document metadata yields deterministic, unambiguous target
         expect(first.problems).toEqual([]);
         const artifact = first.artifacts[0];
         if (artifact?.kind !== 'document') return;
+        expect(artifact.metadata).toEqual({
+          about: metadata.about,
+          lifecycle: {
+            active: metadata.status === 'active',
+            status: metadata.status,
+          },
+          ...(metadata.replacedBy === undefined
+            ? {}
+            : { replacedBy: metadata.replacedBy }),
+          purpose: metadata.purpose,
+          reviewEvery: metadata.reviewEvery,
+        });
+        expect(
+          artifact.authoredReferences.map((reference) => reference.raw)
+        ).toEqual([
+          ...metadata.about,
+          ...(metadata.replacedBy === undefined ? [] : [metadata.replacedBy]),
+        ]);
         const ids = artifact.sections.map((section) => section.target.anchor);
         expect(new Set(ids).size).toBe(ids.length);
         expect(ids[0]).toBe(headings[0]?.anchor);
@@ -134,7 +178,7 @@ function documentContents(
     `reviewEvery: ${metadata.reviewEvery}`,
     ...(metadata.about.length === 0
       ? []
-      : [`about: ${metadata.about.join(', ')}`]),
+      : ['about:', ...metadata.about.map((reference) => `  - ${reference}`)]),
     ...(metadata.status === 'active' ? [] : [`status: ${metadata.status}`]),
     ...(metadata.replacedBy === undefined
       ? []

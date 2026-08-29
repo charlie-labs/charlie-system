@@ -15,6 +15,7 @@ import {
   createRepositorySelection,
   resolveSelectedRepositoryIds,
 } from '../selection.js';
+import { representativeClassificationCases } from './classification-cases.js';
 
 function compareRepositoryStrings(left: string, right: string): number {
   if (left === right) return 0;
@@ -37,28 +38,14 @@ test('governed repository paths normalize deterministically and idempotently', (
   );
 });
 
-test('repository classification is total and produces exactly one visible kind', () => {
+test('representative repository classification semantics are explicit', () => {
   assert(
     fc.property(
-      governedPathArbitrary,
-      fc.constantFrom<'file' | 'other' | 'symbolic-link'>(
-        'file',
-        'other',
-        'symbolic-link'
-      ),
-      (path, kind) => {
-        const entry = classifyRepositoryEntry(
-          { kind, path },
-          new Set(['acme/api'])
-        );
-        expect(entry.path).toBe(path);
-        expect([
-          'artifact',
-          'prohibited',
-          'support-file',
-          'tooling-state',
-          'unsupported',
-        ]).toContain(entry.kind);
+      fc.constantFrom(...representativeClassificationCases),
+      (item) => {
+        expect(
+          classifyRepositoryEntry(item.source, new Set(item.repositories))
+        ).toEqual(item.expected);
       }
     ),
     fastCheckParameters
