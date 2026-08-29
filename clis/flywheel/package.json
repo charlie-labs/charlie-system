@@ -14,7 +14,16 @@
     "@charlie-labs/oclif-plugin-helpers": "^0.4.0",
     "@oclif/core": "^4.10.6",
     "@oclif/plugin-help": "^6.2.25",
+    "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-frontmatter": "^2.0.1",
+    "mdast-util-gfm": "^3.1.0",
+    "micromark-extension-frontmatter": "^2.0.0",
+    "micromark-extension-gfm": "^3.0.0",
+    "yaml": "^2.9.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4"
   },
   "oclif": {
     "bin": "flywheel",

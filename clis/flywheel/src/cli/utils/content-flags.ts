@@ -44,3 +44,7 @@ export const contentRgFlags = defineFlags({
 export const contentValidateFlags = defineFlags({
   'repository-path': repositoryPathFlag,
 });
+
+export const contentShowFlags = defineFlags({
+  'repository-path': repositoryPathFlag,
+});

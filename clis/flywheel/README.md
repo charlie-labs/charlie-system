@@ -6,9 +6,10 @@ checkout-local Flywheel content.
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the durable component boundaries,
 invariants, and performance posture that guide implementation.
 
-The CLI provides exactly four read-only commands:
+The CLI provides exactly five read-only commands:
 
 - `content rg`
+- `content show <target>`
 - `content validate`
 - `skill preset list`
 - `skill preset show <preset>`
@@ -35,7 +36,12 @@ The default repository path is `/home/user/.charlie/customer-knowledge`.
 Use `--repository-path` to point at a checkout-local knowledge repository for
 tests and development. `content rg` requires a literal `--` before the
 ripgrep arguments; `content validate` is deterministic, offline, and
-read-only. Use `skill preset list` to inspect available local Skill identities
-and `skill preset show placeholder-skill` to print its payload and
-specialization guidance. The package does not read a general configuration
-file or ambient customer, source-repository, or Task context.
+read-only. Use `content show <target>` to inspect one compiled artifact by
+canonical target ID, alias, or local path; append a document-section anchor to
+inspect that section, for example
+`content show customer-wide/docs/guide.md#operations`. Add `--json` for the
+structured inspection result, and place `--repository-path` before or after the
+target. Use `skill preset list` to inspect available local Skill identities and
+`skill preset show placeholder-skill` to print its payload and specialization
+guidance. The package does not read a general configuration file or ambient
+customer, source-repository, or Task context.
