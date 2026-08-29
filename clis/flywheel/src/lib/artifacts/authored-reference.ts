@@ -60,6 +60,9 @@ function isSecretBearingUrl(raw: string): boolean {
       url.password !== '' ||
       [...url.searchParams.keys()].some((field) =>
         SECRET_QUERY_FIELD.test(field)
+      ) ||
+      [...new URLSearchParams(url.hash.slice(1)).keys()].some((field) =>
+        SECRET_QUERY_FIELD.test(field)
       )
     );
   } catch {

@@ -116,6 +116,7 @@ function catalogArtifact(): CatalogArtifact {
     apiVersion: 'backstage.io/v1alpha1',
     authoredReferences: [],
     entityKind: 'Component',
+    fields: [],
     kind: 'catalog',
     labels: {},
     lifecycle,

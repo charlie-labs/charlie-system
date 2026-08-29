@@ -28,17 +28,19 @@ export function catalogReferences(input: {
 }): readonly AuthoredReference[] | undefined {
   const constructions = Object.entries(REFERENCE_FIELDS).flatMap(
     ([field, relationship]) =>
-      catalogFieldReferences(
-        input.spec,
+      catalogFieldReferences({
         field,
+        problems: input.problems,
         relationship,
-        input.fieldSources.get(`spec.${field}`) ?? input.source
-      )
+        source: input.fieldSources.get(`spec.${field}`) ?? input.source,
+        spec: input.spec,
+      })
   );
   constructions.push(
     ...catalogLinks(
       input.metadata,
-      input.fieldSources.get('metadata.links') ?? input.source
+      input.fieldSources.get('metadata.links') ?? input.source,
+      input.problems
     )
   );
   const rejected = constructions.filter(
@@ -52,47 +54,77 @@ export function catalogReferences(input: {
 }
 
 function catalogFieldReferences(
-  spec: Readonly<Record<string, unknown>>,
-  field: string,
-  relationship: RelationshipKind,
-  source: SourceLocation
+  input: Readonly<{
+    readonly field: string;
+    readonly problems: ArtifactProblem[];
+    readonly relationship: RelationshipKind;
+    readonly source: SourceLocation;
+    readonly spec: Readonly<Record<string, unknown>>;
+  }>
 ): readonly ReturnType<typeof constructAuthoredReference>[] {
-  const values = referenceStrings(spec[field]);
-  const validValues = stringListField(spec, field);
-  return values.flatMap((raw) => {
-    const construction = constructAuthoredReference({
-      raw,
-      relationship,
-      source,
+  const values = referenceStrings(input.spec[input.field]);
+  const validValues = stringListField(input.spec, input.field);
+  if (
+    input.field in input.spec &&
+    (validValues === undefined ||
+      (typeof input.spec[input.field] === 'string' && values.length === 0))
+  ) {
+    input.problems.push({
+      code: 'CATALOG_REFERENCE_INVALID',
+      message: `Catalog spec.${input.field} must be a non-empty string or list of non-empty strings`,
+      source: input.source,
     });
-    return construction.kind === 'rejected' || validValues !== undefined
-      ? [construction]
-      : [];
-  });
+  }
+  return values.map((raw) =>
+    constructAuthoredReference({
+      raw,
+      relationship: input.relationship,
+      source: input.source,
+    })
+  );
 }
 
 function catalogLinks(
   metadata: Readonly<Record<string, unknown>>,
-  source: SourceLocation
+  source: SourceLocation,
+  problems: ArtifactProblem[]
 ): readonly ReturnType<typeof constructAuthoredReference>[] {
-  return Array.isArray(metadata.links)
-    ? metadata.links.flatMap((item) => {
-        const link = asRecord(item);
-        const raw = link === undefined ? undefined : stringField(link, 'url');
-        const label =
-          link === undefined ? undefined : stringField(link, 'title');
-        return raw === undefined
-          ? []
-          : [
-              constructAuthoredReference({
-                ...(label === undefined ? {} : { label }),
-                raw,
-                relationship: 'links-to',
-                source,
-              }),
-            ];
-      })
-    : [];
+  if (!('links' in metadata)) return [];
+  if (!Array.isArray(metadata.links)) {
+    problems.push(invalidLinksProblem(source));
+    return [];
+  }
+  return metadata.links.flatMap((item) => {
+    const link = asRecord(item);
+    const raw = link === undefined ? undefined : stringField(link, 'url');
+    const label = link === undefined ? undefined : stringField(link, 'title');
+    if (
+      link === undefined ||
+      raw === undefined ||
+      ('title' in link && label === undefined)
+    ) {
+      problems.push(invalidLinksProblem(source));
+    }
+    return raw === undefined
+      ? []
+      : [
+          constructAuthoredReference({
+            ...(label === undefined ? {} : { label }),
+            raw,
+            relationship: 'links-to',
+            source,
+          }),
+        ];
+  });
+}
+
+function invalidLinksProblem(source: SourceLocation): ArtifactProblem {
+  return {
+    code: 'CATALOG_REFERENCE_INVALID',
+    message:
+      'Catalog metadata.links must be a list of mappings with non-empty url and optional title strings',
+    source,
+  };
 }
 
 function referenceStrings(value: unknown): readonly string[] {

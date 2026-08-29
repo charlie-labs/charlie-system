@@ -40,6 +40,7 @@ export function parseDaemonArtifact(
   const problems = [...frontmatter.problems, ...markdown.referenceProblems];
   const artifact = daemonArtifact({
     contents: decoded.contents,
+    fieldSources: frontmatter.fieldSources,
     input,
     markdown,
     problems,
@@ -52,6 +53,7 @@ export function parseDaemonArtifact(
 
 function daemonArtifact(context: {
   readonly contents: string;
+  readonly fieldSources: ReadonlyMap<string, DaemonArtifact['source']>;
   readonly input: ArtifactParseInput;
   readonly markdown: ReturnType<typeof parseMarkdown>;
   readonly problems: ArtifactProblem[];
@@ -66,7 +68,7 @@ function daemonArtifact(context: {
   const deny = daemonListField(value, 'deny', problems, input);
   const schedule = stringField(value, 'schedule');
   const role = stringField(value, 'role');
-  const schemaVersion = stringField(value, 'schemaVersion') ?? 'daemon.v0';
+  const schema = daemonSchema(context);
   addRequiredDaemonProblems({
     daemonId,
     input,
@@ -77,7 +79,13 @@ function daemonArtifact(context: {
     schedule,
     watch,
   });
-  addLocalDaemonProblems({ daemonId, input, problems, schemaVersion, value });
+  addLocalDaemonProblems({
+    daemonId,
+    input,
+    problems,
+    schemaVersion: schema.version,
+    value,
+  });
   addDaemonBodyProblem(context.markdown.body, input, problems);
   const references = daemonReferences({
     markdown: context.markdown.authoredReferences,
@@ -96,11 +104,33 @@ function daemonArtifact(context: {
     references: references.references,
     role,
     routines,
-    schemaVersion,
+    schemaVersion: schema.version,
+    schemaVersionValid: schema.valid,
     validReferences: references.valid,
   };
   if (!daemonIsComplete(fields)) return undefined;
   return createDaemonArtifact(context, fields, deny);
+}
+
+function daemonSchema(context: {
+  readonly fieldSources: ReadonlyMap<string, DaemonArtifact['source']>;
+  readonly input: ArtifactParseInput;
+  readonly problems: ArtifactProblem[];
+  readonly value: Readonly<Record<string, unknown>> | undefined;
+}): Readonly<{ readonly valid: boolean; readonly version: string }> {
+  const value = context.value ?? {};
+  const authored = stringField(value, 'schemaVersion');
+  const valid = !('schemaVersion' in value) || authored !== undefined;
+  if (!valid) {
+    context.problems.push({
+      code: 'DAEMON_FIELD_INVALID',
+      message: 'Daemon schemaVersion must be a non-empty string',
+      source:
+        context.fieldSources.get('schemaVersion') ??
+        wholeFileLocation(context.input.entry.path, ''),
+    });
+  }
+  return { valid, version: authored ?? 'daemon.v0' };
 }
 
 function createDaemonArtifact(
@@ -149,6 +179,7 @@ function daemonIsComplete(input: {
   readonly role: string | undefined;
   readonly routines: readonly string[] | undefined;
   readonly schemaVersion: string;
+  readonly schemaVersionValid: boolean;
   readonly validReferences: boolean;
 }): input is typeof input & {
   readonly activation: DaemonActivation;
@@ -170,6 +201,7 @@ function daemonIsComplete(input: {
     input.routines !== undefined &&
     input.routines.length > 0 &&
     input.schemaVersion === 'daemon.v0' &&
+    input.schemaVersionValid &&
     input.body.trim() !== '' &&
     input.validReferences
   );

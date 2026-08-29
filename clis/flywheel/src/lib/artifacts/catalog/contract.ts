@@ -16,6 +16,11 @@ export type CatalogArtifact = ArtifactBase<'catalog', CatalogTarget> &
     readonly apiVersion: string;
     readonly description?: string;
     readonly entityKind: string;
+    readonly fields: readonly Readonly<{
+      readonly name: string;
+      readonly source: SourceLocation;
+      readonly value: CatalogValue;
+    }>[];
     readonly labels: Readonly<Record<string, string>>;
     readonly lifecycle: KnowledgeLifecycle;
     readonly name: string;

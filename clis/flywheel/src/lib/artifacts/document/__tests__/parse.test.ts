@@ -156,6 +156,21 @@ test('marks replacedBy metadata without reinterpreting Markdown labels', () => {
   expect(artifact.authoredReferences[1]?.origin).toBeUndefined();
 });
 
+test('reports a malformed optional replacement instead of dropping it', () => {
+  const compilation = parseDocumentArtifact(
+    artifactInput(
+      'document',
+      'customer-wide/docs/replaced.md',
+      `---\npurpose: Explain replacement.\nreviewEvery: 30d\nreplacedBy: [./new.md]\n---\n# Replaced\n\nStill active.\n`
+    )
+  );
+
+  expect(compilation.kind).toBe('parsed');
+  expect(compilation.problems.map((problem) => problem.code)).toContain(
+    'DOCUMENT_FIELD_INVALID'
+  );
+});
+
 test('rejects secret-bearing document references without returning secrets', () => {
   const secret = 'DOCUMENT-SECRET-VALUE';
   const inputs = [

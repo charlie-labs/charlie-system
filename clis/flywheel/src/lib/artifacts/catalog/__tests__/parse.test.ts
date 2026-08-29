@@ -61,6 +61,63 @@ test('parses every Catalog entity and extracts known authored references', () =>
     { raw: 'group:default/platform', relationship: 'owned-by' },
     { raw: 'https://example.com/api', relationship: 'links-to' },
   ]);
+  const owner = artifact.fields.find((field) => field.name === 'spec.owner');
+  expect(owner?.name).toBe('spec.owner');
+  expect(owner?.source.start).toEqual({ column: 3, line: 11 });
+  expect(owner?.value).toBe('group:default/platform');
+});
+
+test('distinguishes absent Catalog namespace from malformed authored metadata', () => {
+  const compilation = parseCatalogArtifact(
+    artifactInput(
+      'catalog',
+      'customer-wide/catalog/invalid-namespace.yaml',
+      `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api
+  namespace: [product]
+spec: {}
+`
+    )
+  );
+
+  expect(compilation.kind).toBe('unparsed');
+  const problem = compilation.problems.find(
+    (item) => item.code === 'CATALOG_METADATA_INVALID'
+  );
+  expect(problem?.source.start).toEqual({ column: 3, line: 5 });
+  expect(JSON.stringify(compilation)).not.toContain('"namespace":"default"');
+});
+
+test('retains valid Catalog references while reporting malformed containers', () => {
+  const compilation = parseCatalogArtifact(
+    artifactInput(
+      'catalog',
+      'customer-wide/catalog/invalid-references.yaml',
+      `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api
+  links:
+    - title: Missing URL
+spec:
+  dependsOn:
+    - resource:default/database
+    - 42
+`
+    )
+  );
+
+  expect(compilation.kind).toBe('parsed');
+  if (compilation.kind !== 'parsed') return;
+  expect(compilation.problems.map((problem) => problem.code)).toEqual([
+    'CATALOG_REFERENCE_INVALID',
+    'CATALOG_REFERENCE_INVALID',
+  ]);
+  expect(compilation.artifacts[0]?.authoredReferences).toMatchObject([
+    { raw: 'resource:default/database', relationship: 'depends-on' },
+  ]);
 });
 
 test('distinguishes absent, malformed, and unsupported Catalog lifecycle', () => {
@@ -113,6 +170,7 @@ test('rejects secret-bearing Catalog references without returning secrets', () =
   const inputs = [
     `apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: api\n  links:\n    - url: https://example.test/docs?access_token=${secret}\nspec: {}\n`,
     `apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: api\nspec:\n  dependsOn: https://example.test/resource?api_key=${secret}\n`,
+    `apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: api\n  links:\n    - url: https://example.test/callback#access_token=${secret}\nspec: {}\n`,
   ];
 
   for (const contents of inputs) {

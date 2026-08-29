@@ -93,3 +93,24 @@ test('accepts a core Daemon only when it omits customer Role ownership', () => {
   expect(compilation.kind).toBe('parsed');
   expect(compilation.problems).toEqual([]);
 });
+
+test('does not default a malformed authored Daemon schema', () => {
+  const compilation = parseDaemonArtifact(
+    artifactInput(
+      'daemon',
+      'customer-wide/.agents/daemons/release-review/DAEMON.md',
+      daemon.replace(
+        'id: release-review',
+        'schemaVersion: [daemon.v0]\nid: release-review'
+      )
+    )
+  );
+
+  expect(compilation.kind).toBe('unparsed');
+  expect(compilation.problems.map((problem) => problem.code)).toContain(
+    'DAEMON_FIELD_INVALID'
+  );
+  expect(JSON.stringify(compilation)).not.toContain(
+    '"schemaVersion":"daemon.v0"'
+  );
+});

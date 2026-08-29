@@ -118,6 +118,7 @@ function documentMetadata(
   const replacedBy = stringField(value, 'replacedBy');
   addMetadataProblems({
     about,
+    fieldSources,
     problems,
     purpose,
     replacedBy,
@@ -143,6 +144,7 @@ function documentMetadata(
 
 function addMetadataProblems(input: {
   readonly about: readonly string[];
+  readonly fieldSources: ReadonlyMap<string, DocumentArtifact['source']>;
   readonly problems: ArtifactProblem[];
   readonly purpose: string | undefined;
   readonly replacedBy: string | undefined;
@@ -165,6 +167,13 @@ function addMetadataProblems(input: {
     input.replacedBy === undefined
   ) {
     input.problems.push(fieldProblem(input.source, 'replacedBy'));
+  }
+  if ('replacedBy' in input.value && input.replacedBy === undefined) {
+    input.problems.push({
+      code: 'DOCUMENT_FIELD_INVALID',
+      message: 'document replacedBy must be a non-empty string',
+      source: input.fieldSources.get('replacedBy') ?? input.source,
+    });
   }
 }
 
