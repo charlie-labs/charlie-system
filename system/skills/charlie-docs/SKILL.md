@@ -83,13 +83,7 @@ bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <f
 For example:
 
 ```text
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /integrations/slack "Under `Thread follow-ups`, the page says every reply in an existing thread is treated as a continuation. In a shared channel, a reply that mentions @Charlie starts a new request instead, so this guidance can cause a follow-up to be missed. I observed this with the current Slack behavior; the routing reference describes mentions as explicit requests: https://charlie-v3.mintlify.site/runtime/interaction-and-routing"
-
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /runtime/durable-work "The `Task`, `Run`, and `Turn` definitions use `work` for both the durable Task and an individual model execution. I cannot tell which identifier to use when asking for status after a delegated job, making the status examples ambiguous for operators. The page's status example uses `taskId` while its glossary example refers to a run without distinguishing the two: https://charlie-v3.mintlify.site/runtime/durable-work"
-
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /integrations/github "The supported-events table lists pull-request review comments but does not say whether a comment on a closed pull request is eligible. That omission leaves maintainers unsure whether to expect routing or whether the pull request must be open; the event payload I received had `action=created` on a closed pull request: https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request_review_comment"
-
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /runtime/agent-harness/devboxes "The shell example sets `FOO=bar` in one command and reads `$FOO` in a later command, but the displayed output is `bar` even though the example runs each command in a fresh shell. Following the snippet produces an empty value, so readers cannot reproduce the shown result. Reproduced with Bun 1.3.13 on August 28, 2026: https://charlie-v3.mintlify.site/runtime/agent-harness/devboxes"
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /integrations/slack "Under `Thread follow-ups`, the page says every reply in an existing thread is treated as a continuation. In a shared channel, a reply that mentions @Charlie starts a new request instead, so this guidance can cause a follow-up to be missed. I observed this with the current Slack behavior; the routing reference describes mentions as explicit requests."
 ```
 
 The retrieval commands (`page`, `index`, `full`, `search`, and
