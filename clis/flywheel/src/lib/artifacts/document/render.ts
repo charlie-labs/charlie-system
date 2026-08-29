@@ -16,7 +16,7 @@ function renderFragment(fragment: SourceFragment): string {
     case 'code':
       return renderCode(fragment);
     case 'table':
-      return renderTable(fragment.rows);
+      return renderTable(fragment.rows, fragment.alignment);
     case 'blockquote':
       return renderFragments(fragment.fragments)
         .split('\n')
@@ -60,16 +60,28 @@ function renderCode(
   return `${fence}${info}\n${fragment.code}\n${fence}`;
 }
 
-function renderTable(rows: readonly (readonly string[])[]): string {
+function renderTable(
+  rows: readonly (readonly string[])[],
+  alignment: readonly ('center' | 'left' | 'right' | null)[]
+): string {
   const header = rows[0];
   if (header === undefined) return '';
-  const separator = header.map(() => '---');
+  const separator = header.map((_, index) =>
+    tableAlignmentSeparator(alignment[index])
+  );
   return [header, separator, ...rows.slice(1)]
     .map(
       (row) =>
         `| ${row.map((cell) => cell.replaceAll(/(?<!\\)\|/gu, '\\|')).join(' | ')} |`
     )
     .join('\n');
+}
+
+function tableAlignmentSeparator(
+  alignment: 'center' | 'left' | 'right' | null | undefined
+): string {
+  if (alignment === null || alignment === undefined) return '---';
+  return { center: ':-:', left: ':--', right: '--:' }[alignment];
 }
 
 function unreachable(value: never): never {
