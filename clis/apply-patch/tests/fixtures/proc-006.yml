@@ -1,0 +1,26 @@
+description: PROC-006 multi-hunk update with insertion
+expect: success
+before:
+  multi.txt: |-
+    line1
+    line2
+    line3
+    line4
+patch: |-
+  *** Begin Patch
+  *** Update File: multi.txt
+  @@
+   line1
+  -line2
+  +line2 updated
+   line3
+  +inserted line
+   line4
+  *** End Patch
+after:
+  multi.txt: |-
+    line1
+    line2 updated
+    line3
+    inserted line
+    line4

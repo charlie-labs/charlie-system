@@ -1,0 +1,14 @@
+description: ENV-003 whitespace outside sentinels ok
+expect: success
+before: {}
+patch: |-
+
+
+  *** Begin Patch
+  *** Add File: README.md
+  + # Project
+  *** End Patch
+
+after:
+  README.md: |
+    # Project

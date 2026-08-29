@@ -1,0 +1,13 @@
+description: REN-001 rename without content change
+expect: success
+before:
+  src/foo.txt: |-
+    hello world
+patch: |-
+  *** Begin Patch
+  *** Update File: src/foo.txt
+  *** Move to: src/bar.txt
+  *** End Patch
+after:
+  src/bar.txt: |-
+    hello world

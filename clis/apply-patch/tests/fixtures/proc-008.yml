@@ -1,0 +1,22 @@
+description: PROC-008 add + update + delete combo
+expect: success
+before:
+  upd.txt: |
+    old value
+  del.txt: |
+    delete me
+patch: |-
+  *** Begin Patch
+  *** Add File: added.txt
+  +added contents
+  *** Update File: upd.txt
+  @@
+  -old value
+  +new value
+  *** Delete File: del.txt
+  *** End Patch
+after:
+  added.txt: |
+    added contents
+  upd.txt: |
+    new value

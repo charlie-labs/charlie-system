@@ -1,0 +1,15 @@
+description: PROC-001 simple update file
+expect: success
+before:
+  a.txt: |
+    hello
+patch: |-
+  *** Begin Patch
+  *** Update File: a.txt
+  @@
+  -hello
+  +hello world
+  *** End Patch
+after:
+  a.txt: |
+    hello world

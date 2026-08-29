@@ -1,0 +1,7 @@
+description: DEL-003 delete non-existent file
+expect: error
+before: {}
+patch: |-
+  *** Begin Patch
+  *** Delete File: docs/missing.md
+  *** End Patch

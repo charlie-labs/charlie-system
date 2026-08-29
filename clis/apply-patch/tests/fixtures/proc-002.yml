@@ -1,0 +1,19 @@
+description: PROC-002 Unicode dash / hyphen canonicalisation
+expect: success
+before:
+  uni.txt: |
+    first
+    import foo  # local import – avoids top-level dep
+    last
+patch: |-
+  *** Begin Patch
+  *** Update File: uni.txt
+  @@
+  -import foo  # local import - avoids top-level dep
+  +import foo  # HANDLED
+  *** End Patch
+after:
+  uni.txt: |
+    first
+    import foo  # HANDLED
+    last

@@ -1,0 +1,10 @@
+description: 'ADD-005: adding file where one already exists should fail'
+expect: error
+before:
+  dup.txt: |
+    original
+patch: |-
+  *** Begin Patch
+  *** Add File: dup.txt
+  + new content
+  *** End Patch

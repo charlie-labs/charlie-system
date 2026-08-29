@@ -1,0 +1,10 @@
+description: DEL-001 delete existing file
+expect: success
+before:
+  src/temp/data.txt: |
+    Placeholder content that will be deleted.
+patch: |-
+  *** Begin Patch
+  *** Delete File: src/temp/data.txt
+  *** End Patch
+after: {}

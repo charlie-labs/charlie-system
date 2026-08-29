@@ -1,0 +1,21 @@
+description: UPD-001 single hunk 3-line context insertion+deletion
+expect: success
+before:
+  src/greet.ts: |-
+    export function greet(name: string): string {
+      return `Hello, ${name}!`;
+    }
+patch: |-
+  *** Begin Patch
+  *** Update File: src/greet.ts
+  @@ function greet
+   export function greet(name: string): string {
+  -  return `Hello, ${name}!`;
+  +  return `Hello, ${name}! Welcome!`;
+   }
+  *** End Patch
+after:
+  src/greet.ts: |-
+    export function greet(name: string): string {
+      return `Hello, ${name}! Welcome!`;
+    }

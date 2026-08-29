@@ -1,0 +1,26 @@
+description: UPD-004 breadcrumb order preserved
+expect: success
+before:
+  src/api.ts: |-
+    class API {
+      async fetch() {
+        // TODO
+      }
+    }
+patch: |-
+  *** Begin Patch
+  *** Update File: src/api.ts
+  @@ class API
+  @@   async fetch
+     async fetch() {
+  -    // TODO
+  +    // Implement fetch
+     }
+  *** End Patch
+after:
+  src/api.ts: |-
+    class API {
+      async fetch() {
+        // Implement fetch
+      }
+    }

@@ -1,0 +1,19 @@
+description: PROC-012 update and add in one patch
+expect: success
+before:
+  a.txt: |
+    old line
+patch: |-
+  *** Begin Patch
+  *** Update File: a.txt
+  @@
+  -old line
+  +new line
+  *** Add File: b.txt
+  +content new
+  *** End Patch
+after:
+  a.txt: |
+    new line
+  b.txt: |
+    content new

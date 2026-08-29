@@ -1,0 +1,13 @@
+description: REN-003 case-only path change on case-sensitive fs
+expect: success
+before:
+  README.md: |-
+    Top
+patch: |-
+  *** Begin Patch
+  *** Update File: README.md
+  *** Move to: readme.md
+  *** End Patch
+after:
+  readme.md: |-
+    Top
