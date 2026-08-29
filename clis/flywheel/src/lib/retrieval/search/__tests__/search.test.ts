@@ -36,6 +36,31 @@ test('returns ranked public results from one assessed repository without more I/
   });
 });
 
+test('returns source-faithful Catalog identity and relevant fields', async () => {
+  const repository = await compileAndAssessRepository(corpusSource());
+  const result = await searchAssessedRepository(
+    searchInput(repository, {
+      contentTypes: ['catalog'],
+      query: 'repository-api deployment',
+    })
+  );
+
+  expect(result.kind).toBe('results');
+  if (result.kind !== 'results') return;
+  const catalogResult = result.results.find(
+    (item) =>
+      item.contentType === 'catalog' &&
+      item.passages.some((passage) =>
+        passage.authoredText.includes('name: repository-api')
+      )
+  );
+  expect(catalogResult).toBeDefined();
+  expect(catalogResult?.citations).toEqual([]);
+  expect(catalogResult?.path).toBe(
+    'repo-specific/acme/api/catalog/entities.yaml'
+  );
+});
+
 test('fails closed instead of turning invalid or incomplete assessments into empty success', async () => {
   const invalid = await compileAndAssessRepository(
     validationSource({ 'customer-wide/AGENTS.md': 'Rules.\n' }).source

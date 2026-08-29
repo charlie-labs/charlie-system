@@ -57,7 +57,7 @@ export type SearchNotice =
       readonly omittedPassages: number;
     }>;
 
-type SuccessfulSearchOutcome =
+export type SuccessfulSearchOutcome =
   | Readonly<{
       readonly context: SearchContext;
       readonly kind: 'results';

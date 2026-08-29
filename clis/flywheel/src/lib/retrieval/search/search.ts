@@ -27,7 +27,7 @@ export async function searchAssessedRepository(
     return { kind: 'invalid-selection', message: requestProblem };
   }
   const query = input.query.trim();
-  const context = searchContext(query, input.scope);
+  const context = createSearchContext(query, input.scope);
   const assessment = retrievalAssessmentState(input.repository);
   if (assessment.kind !== 'valid') {
     return unavailableAssessment(assessment, context);
@@ -103,7 +103,10 @@ function isPositiveInteger(value: number): boolean {
   return Number.isInteger(value) && value > 0;
 }
 
-function searchContext(query: string, scope: RetrievalScope): SearchContext {
+export function createSearchContext(
+  query: string,
+  scope: RetrievalScope
+): SearchContext {
   return {
     contentTypes: scope.contentTypes,
     lifecycleSelection: scope.lifecycle,

@@ -9,25 +9,33 @@ import {
 afterEach(cleanupTemporaryDirectories);
 
 test('proves root, topic, and exact leaf command help', async () => {
-  const [root, content, skill, preset] = await Promise.all([
+  const [root, content, knowledge, skill, preset] = await Promise.all([
     runCli(['--help']),
     runCli(['content', '--help']),
+    runCli(['knowledge', '--help']),
     runCli(['skill', '--help']),
     runCli(['skill', 'preset', '--help']),
   ]);
 
-  for (const result of [root, content, skill, preset]) {
+  for (const result of [root, content, knowledge, skill, preset]) {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe('');
   }
 
   expect(root.stdout).toContain('$ flywheel [COMMAND]');
-  expect(helpEntries(root.stdout, 'TOPICS')).toEqual(['content', 'skill']);
+  expect(helpEntries(root.stdout, 'TOPICS')).toEqual([
+    'content',
+    'knowledge',
+    'skill',
+  ]);
   expect(helpEntries(content.stdout, 'COMMANDS')).toEqual([
     'content related',
     'content rg',
     'content show',
     'content validate',
+  ]);
+  expect(helpEntries(knowledge.stdout, 'COMMANDS')).toEqual([
+    'knowledge search',
   ]);
   expect(helpEntries(skill.stdout, 'TOPICS')).toEqual(['skill preset']);
   expect(helpEntries(preset.stdout, 'COMMANDS')).toEqual([
@@ -36,12 +44,14 @@ test('proves root, topic, and exact leaf command help', async () => {
   ]);
   expect([
     ...helpEntries(content.stdout, 'COMMANDS'),
+    ...helpEntries(knowledge.stdout, 'COMMANDS'),
     ...helpEntries(preset.stdout, 'COMMANDS'),
   ]).toEqual([
     'content related',
     'content rg',
     'content show',
     'content validate',
+    'knowledge search',
     'skill preset list',
     'skill preset show',
   ]);
