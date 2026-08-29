@@ -9,7 +9,7 @@ import type { TargetId } from '../../targets/contract.js';
 
 export type KnowledgeContentType = 'catalog' | 'document';
 
-type LifecycleSelection =
+export type LifecycleSelection =
   | Readonly<{ readonly kind: 'active-only' }>
   | Readonly<{ readonly kind: 'include-non-active' }>;
 
@@ -55,6 +55,11 @@ export type EligibleKnowledgeCorpus = Readonly<{
   readonly artifactIds: readonly TargetId[];
   readonly scope: RetrievalScope;
   readonly unitIds: readonly string[];
+}>;
+
+export type EligibleKnowledgeSource = Readonly<{
+  readonly artifacts: readonly KnowledgeArtifact[];
+  readonly units: readonly KnowledgeSourceUnit[];
 }>;
 
 export type RetrievalScopeOptions = Readonly<{

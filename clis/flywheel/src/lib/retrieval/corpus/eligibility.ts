@@ -6,6 +6,7 @@ import {
 import { targetId } from '../../targets/id.js';
 import type {
   EligibleKnowledgeCorpus,
+  EligibleKnowledgeSource,
   KnowledgeArtifact,
   KnowledgeContentType,
   KnowledgeSourceProjection,
@@ -56,6 +57,20 @@ export function selectEligibleKnowledge(
     unitIds: source.units.flatMap((unit) =>
       admittedArtifacts.has(unit.artifact) ? [unit.id] : []
     ),
+  };
+}
+
+export function materializeEligibleKnowledge(
+  source: KnowledgeSourceProjection,
+  corpus: EligibleKnowledgeCorpus
+): EligibleKnowledgeSource {
+  const artifactIds = new Set(corpus.artifactIds);
+  const unitIds = new Set(corpus.unitIds);
+  return {
+    artifacts: source.artifacts.filter((artifact) =>
+      artifactIds.has(targetId(artifact.target))
+    ),
+    units: source.units.filter((unit) => unitIds.has(unit.id)),
   };
 }
 
