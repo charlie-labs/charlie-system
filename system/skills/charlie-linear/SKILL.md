@@ -16,33 +16,31 @@ identity and OAuth access. When that integration is available to a Task, the
 harness injects its customer-scoped credential into the Devbox as
 `LINEAR_API_KEY` or `LINEAR_ACCESS_TOKEN`; `ch-linear` reads it automatically.
 The CLI acts as that connected customer's Charlie app user, not as a human's
-personal Linear account.
-
-Effective access is the intersection of:
-
-- the current Task's authority;
-- the dynamically supplied Linear capability; and
-- the integration's OAuth scopes and workspace permissions.
-
-The CLI and injected credential do not expand those boundaries. Read exact
-identity, capability, target, and authorization values from the current prompt
-and Task context rather than encoding them in this Skill.
+personal Linear account. Effective access is the intersection of Task
+authority, the dynamic Linear capability, and the integration's OAuth scopes
+and workspace permissions.
 
 ## Command discovery
 
-Use the installed CLI's help as the authority for commands, arguments, flags,
-defaults, accepted identifiers, and output shapes:
+The main topics and verbs are:
 
-```text
-ch-linear --help
-ch-linear <topic> --help
-ch-linear <topic> <verb> --help
-```
+- Issues and comments: `issue` (`create`, `edit`, `list`, `search`, `view`),
+  `comment` (`create`, `list`, `update`), and `comment reaction` (`add`,
+  `remove`).
+- Planning and content: `project` (`list`, `view`), `project-update` (`create`,
+  `edit`, `list`, `view`, `archive`), `initiative` (`create`, `edit`/`update`,
+  `list`, `view`), and `document` (`create`, `edit`, `search`, `view`).
+- Workspace lookup: `workspace` (`overview`) and `team`, `user`, `label`, and
+  `state` (`list`).
+- Customers: `customer` and `customer-need` (`create`, `list`).
+- Agent integration: `agent-session` (`create`, `view`, `update`, `set-plan`,
+  `set-external-url`) and `agent-activity` (`create`, `create-elicitation`,
+  `list`).
+- Low-level access: `api graphql` runs raw Linear GraphQL when no higher-level
+  topic exposes the needed operation.
 
-The CLI also provides `ch-linear api graphql` as a raw GraphQL escape hatch for
-Linear operations that are not exposed by a higher-level topic. Inspect that
-command's help before using it. It uses the same injected identity and access
-boundaries as the rest of `ch-linear`.
+Use `ch-linear <topic> <verb> --help` as the authority for exact arguments,
+flags, defaults, accepted identifiers, and output shapes.
 
 ## Linear mechanics
 
