@@ -49,7 +49,9 @@ function artifactTargets(
 }
 
 function indexedAliases(entry: IndexedArtifact): readonly string[] {
-  return entry.kind === 'unparsed'
-    ? [entry.entry.path]
-    : targetAliases(entry.target);
+  if (entry.kind === 'unparsed') return [entry.entry.path];
+  const aliases = targetAliases(entry.target);
+  return entry.target === entry.artifact.target
+    ? [...new Set([...aliases, entry.artifact.path])]
+    : aliases;
 }

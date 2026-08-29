@@ -17,7 +17,7 @@ test('proves representative commands are read-only', async () => {
   });
   const repositoryFiles = ['customer-wide/docs/guide.md'];
   const beforeRepository = await readFiles(repositoryPath, repositoryFiles);
-  const [rg, validate] = await Promise.all([
+  const [rg, artifactShow, validate] = await Promise.all([
     runCli([
       'content',
       'rg',
@@ -27,12 +27,23 @@ test('proves representative commands are read-only', async () => {
       '--fixed-strings',
       'PLACEHOLDER',
     ]),
+    runCli([
+      'content',
+      'show',
+      'customer-wide/docs/guide.md',
+      '--repository-path',
+      repositoryPath,
+    ]),
     runCli(['content', 'validate', '--repository-path', repositoryPath]),
   ]);
   const afterRepository = await readFiles(repositoryPath, repositoryFiles);
 
   expect(rg.exitCode).toBe(0);
   expect(rg.stdout).toContain('customer-wide/docs/guide.md:');
+  expect(artifactShow.exitCode).toBe(0);
+  expect(artifactShow.stdout).toContain(
+    'target document:customer-wide%2Fdocs%2Fguide.md'
+  );
   expect(validate.exitCode).toBe(0);
   expect(afterRepository).toEqual(beforeRepository);
 
@@ -41,10 +52,15 @@ test('proves representative commands are read-only', async () => {
     'presets/skills/placeholder-skill/payload/SKILL.md',
   ];
   const beforePreset = await readFiles(packageRoot, presetFiles);
-  const show = await runCli(['skill', 'preset', 'show', 'placeholder-skill']);
+  const presetShow = await runCli([
+    'skill',
+    'preset',
+    'show',
+    'placeholder-skill',
+  ]);
   const afterPreset = await readFiles(packageRoot, presetFiles);
 
-  expect(show.exitCode).toBe(0);
-  expect(show.stdout).toContain('PLACEHOLDER');
+  expect(presetShow.exitCode).toBe(0);
+  expect(presetShow.stdout).toContain('PLACEHOLDER');
   expect(afterPreset).toEqual(beforePreset);
 });

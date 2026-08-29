@@ -27,6 +27,10 @@ test('indexes targets, section targets, aliases, and visible unparsed entries', 
     kind: 'found',
     value: { artifact: { kind: 'catalog', name: 'api' } },
   });
+  expect(lookupArtifact(index, 'roles/release-manager.yaml')).toMatchObject({
+    kind: 'found',
+    value: { artifact: { kind: 'role', roleId: 'release-manager' } },
+  });
   expect(lookupArtifact(index, 'customer-wide/docs/broken.md')).toMatchObject({
     kind: 'found',
     value: { kind: 'unparsed' },

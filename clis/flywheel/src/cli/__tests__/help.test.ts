@@ -25,6 +25,7 @@ test('proves root, topic, and exact leaf command help', async () => {
   expect(helpEntries(root.stdout, 'TOPICS')).toEqual(['content', 'skill']);
   expect(helpEntries(content.stdout, 'COMMANDS')).toEqual([
     'content rg',
+    'content show',
     'content validate',
   ]);
   expect(helpEntries(skill.stdout, 'TOPICS')).toEqual(['skill preset']);
@@ -37,6 +38,7 @@ test('proves root, topic, and exact leaf command help', async () => {
     ...helpEntries(preset.stdout, 'COMMANDS'),
   ]).toEqual([
     'content rg',
+    'content show',
     'content validate',
     'skill preset list',
     'skill preset show',
