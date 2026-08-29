@@ -3,6 +3,14 @@
 See [`clis/flywheel/README.md`](./clis/flywheel/README.md) for Flywheel CLI
 documentation.
 
+The checkout-backed CLI surface lives in `bin/`. Consumers should prepend that
+directory to `PATH`, for example:
+
+```sh
+export PATH="/home/user/.charlie/charlie-system/bin:$PATH"
+flywheel --help
+```
+
 ## `charlie-system` checkout and context
 
 The Charlie harness always clones `charlie-system` at
