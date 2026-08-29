@@ -21,8 +21,10 @@ const dependencySections = [
   'peerDependencies',
 ] as const;
 const forbiddenTool = /eslint|prettier/iu;
-const forbiddenReleaseScript =
-  /\b(?:publish|release|pack)\b|\b(?:changeset|np|release-it|semantic-release)\b/iu;
+const forbiddenReleaseScriptName =
+  /^(?:(?:pre|post)?(?:publish(?:Only)?|pack|version)|release|changeset|np|release-it|semantic-release)(?::|$)/iu;
+const forbiddenReleaseCommand =
+  /(?:^|(?:&&|\|\||[;\n|])\s*)(?:(?:npm|pnpm|yarn|bun)\s+(?:publish|pack|version)\b|(?:npm|pnpm|yarn|bun)\s+(?:run|exec|dlx|x)\s+(?:--\s+)?(?:(?:pre|post)?(?:publish(?:Only)?|pack|version)|release|changeset|np|release-it|semantic-release)(?::[\w-]+)?(?=\s|$)|(?:npx|bunx)\s+(?:changeset|np|release-it|semantic-release)(?=\s|$)|changeset\s+(?:publish|version)(?=\s|$)|(?:np|release-it|semantic-release)(?=\s|$))/iu;
 
 const rootManifest = await readJson(path.join(checkoutRoot, 'package.json'));
 const workspacePaths = await discoverWorkspaces(rootManifest);
@@ -97,6 +99,30 @@ test('every root executable supports --help outside the checkout', async () => {
   }
 });
 
+test('release script checks distinguish names, invocations, and prose', () => {
+  for (const scriptName of 'prepublish prepublishOnly publish postpublish prepack pack postpack preversion version postversion release release:ci changeset np release-it semantic-release'.split(
+    ' '
+  )) {
+    expect(hasForbiddenReleaseScriptName(scriptName)).toBe(true);
+  }
+
+  for (const scriptName of 'build release-notes publish-docs'.split(' ')) {
+    expect(hasForbiddenReleaseScriptName(scriptName)).toBe(false);
+  }
+
+  for (const command of 'npm publish|pnpm publish --access public|yarn pack|bun version 1.2.3|npm run release:ci|npm run prepublishOnly|npm run postpack|pnpm exec release-it|npx semantic-release|changeset publish|np --help|release-it --ci|semantic-release'.split(
+    '|'
+  )) {
+    expect(hasForbiddenReleaseCommand(command)).toBe(true);
+  }
+
+  for (const command of 'echo release notes|echo "publish later"|node scripts/release-notes.js|npm run build|echo changeset|echo pack'.split(
+    '|'
+  )) {
+    expect(hasForbiddenReleaseCommand(command)).toBe(false);
+  }
+});
+
 test('workspace packages obey migration manifest contracts', () => {
   const localNames = new Set(
     workspaces.map(({ manifest }) => stringValue(manifest.name))
@@ -117,7 +143,8 @@ test('workspace packages obey migration manifest contracts', () => {
     for (const [scriptName, command] of Object.entries(
       stringRecord(manifest.scripts)
     )) {
-      expect(`${scriptName} ${command}`).not.toMatch(forbiddenReleaseScript);
+      expect(hasForbiddenReleaseScriptName(scriptName)).toBe(false);
+      expect(hasForbiddenReleaseCommand(command)).toBe(false);
       expect(command).not.toMatch(forbiddenTool);
     }
 
@@ -226,6 +253,14 @@ function isWithinCheckout(filePath: string): boolean {
       relativePath !== '..' &&
       !path.isAbsolute(relativePath))
   );
+}
+
+function hasForbiddenReleaseCommand(command: string): boolean {
+  return forbiddenReleaseCommand.test(command);
+}
+
+function hasForbiddenReleaseScriptName(scriptName: string): boolean {
+  return forbiddenReleaseScriptName.test(scriptName);
 }
 
 function isRecord(value: unknown): value is JsonRecord {
