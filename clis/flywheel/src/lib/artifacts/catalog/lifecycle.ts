@@ -3,6 +3,7 @@ import type { ArtifactProblem } from '../contract.js';
 import { stringField } from '../values.js';
 
 const CATALOG_LIFECYCLES = new Set([
+  'active',
   'deprecated',
   'experimental',
   'production',

@@ -73,10 +73,24 @@ test('distinguishes absent, malformed, and unsupported document status', () => {
     kind: 'parsed',
     problems: [],
   });
+  const authoredActive = parseDocumentArtifact(
+    artifactInput(
+      'document',
+      'customer-wide/docs/authored-active.md',
+      `---\npurpose: Explain status.\nreviewEvery: 30d\nstatus: active\n---\n# Active\n`
+    )
+  );
+  expect(authoredActive).toMatchObject({
+    artifacts: [
+      { metadata: { lifecycle: { active: true, status: 'active' } } },
+    ],
+    kind: 'parsed',
+    problems: [],
+  });
 
   for (const [status, code] of [
     ['[deprecated]', 'DOCUMENT_STATUS_INVALID'],
-    ['active', 'DOCUMENT_STATUS_UNSUPPORTED'],
+    ['unknown', 'DOCUMENT_STATUS_UNSUPPORTED'],
   ] as const) {
     const compilation = parseDocumentArtifact(
       artifactInput(

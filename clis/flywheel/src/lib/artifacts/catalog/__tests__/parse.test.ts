@@ -77,6 +77,18 @@ test('distinguishes absent, malformed, and unsupported Catalog lifecycle', () =>
     kind: 'parsed',
     problems: [],
   });
+  const authoredActive = parseCatalogArtifact(
+    artifactInput(
+      'catalog',
+      'customer-wide/catalog/authored-active.yaml',
+      `${base}\n  lifecycle: active\n`
+    )
+  );
+  expect(authoredActive).toMatchObject({
+    artifacts: [{ lifecycle: { active: true, status: 'active' } }],
+    kind: 'parsed',
+    problems: [],
+  });
 
   for (const [lifecycle, code] of [
     ['[production]', 'CATALOG_LIFECYCLE_INVALID'],

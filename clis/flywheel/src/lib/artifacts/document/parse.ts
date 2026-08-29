@@ -185,7 +185,7 @@ function documentStatus(
     });
     return undefined;
   }
-  if (status !== 'deprecated' && status !== 'superseded') {
+  if (!['active', 'deprecated', 'superseded'].includes(status)) {
     problems.push({
       code: 'DOCUMENT_STATUS_UNSUPPORTED',
       message: 'document status is unsupported',
