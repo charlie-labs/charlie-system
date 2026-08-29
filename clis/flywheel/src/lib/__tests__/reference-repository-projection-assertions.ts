@@ -7,12 +7,10 @@ import type {
   ReferenceResolution,
 } from '../references/contract.js';
 import type { RepositoryEntry } from '../repository/contract.js';
-import type { projectKnowledge } from '../retrieval/corpus/project.js';
 import { targetId } from '../targets/id.js';
-import type {
-  ReferenceRepositoryManifest,
-  SourceUnitExpectation,
-} from './fixtures/reference-repository-types.js';
+import type { ReferenceRepositoryManifest } from './fixtures/reference-repository-types.js';
+
+export { expectSourceUnits } from './reference-repository-source-assertions.js';
 
 function artifactAt(
   artifacts: readonly FlywheelArtifact[],
@@ -28,23 +26,37 @@ export function expectParsedArtifacts(
   artifacts: readonly FlywheelArtifact[],
   expectations: ReferenceRepositoryManifest['parsedArtifacts']
 ): void {
-  for (const expectation of expectations) {
-    const artifact = artifacts.find(
-      (candidate) =>
-        candidate.path === expectation.path &&
-        targetId(candidate.target) === expectation.targetId
-    );
-    expect(artifact).toMatchObject({ kind: expectation.kind });
-    if (artifact === undefined) continue;
-    expect(targetId(artifact.target)).toBe(expectation.targetId);
-    expect(artifact.source).toMatchObject({
-      path: expectation.source.path,
-      start: {
-        column: expectation.source.column,
-        line: expectation.source.line,
-      },
-    });
-  }
+  const actual = sortStrings(
+    artifacts.map((artifact) =>
+      JSON.stringify({
+        kind: artifact.kind,
+        path: artifact.path,
+        source: {
+          column: artifact.source.start.column,
+          line: artifact.source.start.line,
+          path: artifact.source.path,
+        },
+        targetId: targetId(artifact.target),
+      })
+    )
+  );
+  const expected = sortStrings(
+    expectations.map((expectation) =>
+      JSON.stringify({
+        kind: expectation.kind,
+        path: expectation.path,
+        source: {
+          column: expectation.source.column,
+          line: expectation.source.line,
+          path: expectation.source.path,
+        },
+        targetId: expectation.targetId,
+      })
+    )
+  );
+  expect(artifacts).toHaveLength(expectations.length);
+  expect(new Set(actual).size).toBe(actual.length);
+  expect(actual).toEqual(expected);
 }
 
 export function expectAuthoredReferences(
@@ -250,32 +262,6 @@ export function expectDocumentStructures(
   expect(guide.sections[1]?.fragments.map((fragment) => fragment.kind)).toEqual(
     ['list', 'code', 'table', 'blockquote']
   );
-}
-
-export function expectSourceUnits(
-  source: ReturnType<typeof projectKnowledge>,
-  expectations: readonly SourceUnitExpectation[]
-): void {
-  for (const expectation of expectations) {
-    const unit = source.units.find(
-      (candidate) =>
-        candidate.authoredText === expectation.authoredText &&
-        candidate.structuralKind === expectation.structuralKind &&
-        candidate.source.path === expectation.source.path
-    );
-    expect(unit).toMatchObject({
-      authoredText: expectation.authoredText,
-      headingPath: expectation.headingPath,
-      source: {
-        path: expectation.source.path,
-        start: {
-          column: expectation.source.column,
-          line: expectation.source.line,
-        },
-      },
-      structuralKind: expectation.structuralKind,
-    });
-  }
 }
 
 export function entryAt(

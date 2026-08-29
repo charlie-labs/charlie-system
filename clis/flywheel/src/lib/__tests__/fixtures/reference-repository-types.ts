@@ -20,6 +20,12 @@ type SourceStartExpectation = Readonly<{
   readonly path: string;
 }>;
 
+type SourceRangeExpectation = SourceStartExpectation &
+  Readonly<{
+    readonly endColumn: number;
+    readonly endLine: number;
+  }>;
+
 type RepositoryArtifactKind = Extract<
   RepositoryEntry,
   { readonly kind: 'artifact' | 'support-file' }
@@ -73,9 +79,9 @@ export type RelationshipExpectation = Readonly<{
 }>;
 
 export type SourceUnitExpectation = Readonly<{
-  readonly authoredText: string;
+  readonly citationKeys: readonly string[];
   readonly headingPath: readonly string[];
-  readonly source: SourceStartExpectation;
+  readonly source: SourceRangeExpectation;
   readonly structuralKind: KnowledgeStructuralKind;
 }>;
 
@@ -95,7 +101,8 @@ export type ReferenceRepositoryManifest = Readonly<{
     readonly includingNonActiveTitles: readonly string[];
     readonly repositoryArtifactTitles: readonly string[];
   }>;
-  readonly sourceUnits: readonly SourceUnitExpectation[];
+  readonly representativeSourceUnits: readonly SourceUnitExpectation[];
+  readonly sourceUnitCount: number;
   readonly validation: Readonly<{
     readonly diagnosticRuleIds: readonly string[];
     readonly status: ValidationReport['status'];

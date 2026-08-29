@@ -16,6 +16,7 @@ import {
   cleanupReferenceRepositories,
   referenceRepository,
 } from './fixtures/reference-repository.js';
+import { expectSourceUnits } from './reference-repository-source-assertions.js';
 
 afterEach(cleanupReferenceRepositories);
 
@@ -61,7 +62,9 @@ test('validates lifecycle and source-faithful retrieval eligibility', async () =
       unit.authoredText.includes('deprecated release')
     )
   ).toBe(false);
-  expectActiveDocumentUnit(eligible.units, fixture);
+  await expectSourceUnits(eligible.units, fixture.repositoryPath, [
+    fixture.manifest.retrieval.activeDocumentUnit,
+  ]);
 });
 
 test('keeps malformed and disappeared artifacts visible as incomplete', async () => {
@@ -209,28 +212,6 @@ function expectRetrievalTitles(
   expect(artifactTitles(source, selections.repositoryOnly.artifactIds)).toEqual(
     fixture.manifest.retrieval.repositoryArtifactTitles
   );
-}
-
-function expectActiveDocumentUnit(
-  units: ReturnType<typeof projectKnowledge>['units'],
-  fixture: Awaited<ReturnType<typeof referenceRepository>>
-): void {
-  const expectation = fixture.manifest.retrieval.activeDocumentUnit;
-  const unit = units.find(
-    (candidate) => candidate.authoredText === expectation.authoredText
-  );
-  expect(unit).toMatchObject({
-    authoredText: expectation.authoredText,
-    headingPath: expectation.headingPath,
-    source: {
-      path: expectation.source.path,
-      start: {
-        column: expectation.source.column,
-        line: expectation.source.line,
-      },
-    },
-    structuralKind: expectation.structuralKind,
-  });
 }
 
 function diagnosticRuleIds(

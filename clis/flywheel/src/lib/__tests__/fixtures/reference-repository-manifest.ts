@@ -11,7 +11,8 @@ import { referenceRepositoryRetrieval } from './reference-repository-retrieval.j
 import type { ReferenceRepositoryManifest } from './reference-repository-types.js';
 
 export function referenceRepositoryManifest(): ReferenceRepositoryManifest {
-  const { retrieval, sourceUnits } = referenceRepositoryRetrieval();
+  const { retrieval, representativeSourceUnits, sourceUnitCount } =
+    referenceRepositoryRetrieval();
   return {
     authoredReferences: referenceRepositoryAuthoredReferences(),
     classifications: referenceRepositoryClassifications(),
@@ -53,7 +54,8 @@ export function referenceRepositoryManifest(): ReferenceRepositoryManifest {
     repositories: ['acme/api', 'beta/empty'],
     resolvedReferences: referenceRepositoryResolvedReferences(),
     retrieval,
-    sourceUnits,
+    representativeSourceUnits,
+    sourceUnitCount,
     validation: {
       diagnosticRuleIds: ['FW-REPOSITORY-UNSUPPORTED'],
       status: 'valid',

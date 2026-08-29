@@ -1,6 +1,9 @@
 import { afterEach, expect, test } from 'bun:test';
+import { lstat, readdir, readlink } from 'node:fs/promises';
+import path from 'node:path';
 
 import { compileRepository } from '../projection/compile.js';
+import { discoverRepository } from '../repository/discover.js';
 import { projectKnowledge } from '../retrieval/corpus/project.js';
 import { targetId } from '../targets/id.js';
 import { compileAndAssessRepository } from '../validation/assess.js';
@@ -67,6 +70,34 @@ test('discovers every governed region and compiles the reference repository once
   expect(new Set(artifactKeys).size).toBe(artifactKeys.length);
 });
 
+test('materializes empty directories and preserves real symlink entries', async () => {
+  const fixture = await referenceRepository();
+  const emptyDirectory = path.join(
+    fixture.repositoryPath,
+    'repo-specific/beta/empty'
+  );
+  const emptyDirectoryStats = await lstat(emptyDirectory);
+  expect(emptyDirectoryStats.isDirectory()).toBe(true);
+  expect(await readdir(emptyDirectory)).toEqual([]);
+
+  const symlinkFixture = await referenceRepository({ overlay: 'symlink' });
+  const symlinkPath = path.join(
+    symlinkFixture.repositoryPath,
+    'customer-wide/docs/linked'
+  );
+  const symlinkStats = await lstat(symlinkPath);
+  expect(symlinkStats.isSymbolicLink()).toBe(true);
+  expect(await readlink(symlinkPath)).toBe('../../outside/target.txt');
+
+  const inventory = await discoverRepository(symlinkFixture.source);
+  expect(entryAt(inventory.entries, 'customer-wide/docs/linked')).toMatchObject(
+    {
+      kind: 'unsupported',
+      reason: 'symbolic-link',
+    }
+  );
+});
+
 test('asserts typed parsed artifacts, locations, authored references, and source structures', async () => {
   const fixture = await referenceRepository();
   const projection = await compileRepository(fixture.source);
@@ -81,7 +112,12 @@ test('asserts typed parsed artifacts, locations, authored references, and source
   const source = projectKnowledge(
     await compileAndAssessRepository(fixture.source)
   );
-  expectSourceUnits(source, fixture.manifest.sourceUnits);
+  await expectSourceUnits(
+    source.units,
+    fixture.repositoryPath,
+    fixture.manifest.representativeSourceUnits,
+    fixture.manifest.sourceUnitCount
+  );
 });
 
 test('resolves the connected graph without hiding external or structural provenance', async () => {

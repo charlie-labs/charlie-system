@@ -5,53 +5,53 @@ import type {
 
 export function referenceRepositoryRetrieval(): Readonly<{
   readonly retrieval: ReferenceRepositoryManifest['retrieval'];
-  readonly sourceUnits: readonly SourceUnitExpectation[];
+  readonly representativeSourceUnits: readonly SourceUnitExpectation[];
+  readonly sourceUnitCount: number;
 }> {
-  return { retrieval, sourceUnits };
+  return { retrieval, representativeSourceUnits, sourceUnitCount: 38 };
 }
-
-const releaseProse =
-  'Release operations use the platform API. See the [runbook](./assets/release-runbook.txt) and [diagram](./assets/release-diagram.png).[^release]';
 
 const releaseSource = {
   column: 1,
-  line: 10,
   path: 'customer-wide/docs/release-guide.md',
 };
 
-const sourceUnits: readonly SourceUnitExpectation[] = [
+// These representative units cover every Markdown fragment kind. Their body
+// text is deliberately read from the copied canonical file by the assertions.
+const representativeSourceUnits: readonly SourceUnitExpectation[] = [
   {
-    authoredText: releaseProse,
+    citationKeys: ['release'],
     headingPath: ['Release guide'],
-    source: sourceStart(10),
+    source: sourceRange(10, 10, 144),
     structuralKind: 'prose',
   },
   {
-    authoredText: '1. Prepare the release.\n2. Deploy the release.',
+    citationKeys: [],
     headingPath: ['Release guide', 'Procedure'],
-    source: sourceStart(14),
+    source: sourceRange(14, 15, 23),
     structuralKind: 'list',
   },
   {
-    authoredText: '```sh\nbun run release:check\n```',
+    citationKeys: [],
     headingPath: ['Release guide', 'Procedure'],
-    source: sourceStart(17),
+    source: sourceRange(17, 19, 4),
     structuralKind: 'code',
   },
   {
-    authoredText:
-      '| Stage | Owner |\n| --- | --- |\n| Prepare | Platform |\n| Deploy | Operator |',
+    citationKeys: [],
     headingPath: ['Release guide', 'Procedure'],
-    source: sourceStart(21),
+    source: sourceRange(21, 24, 23),
     structuralKind: 'table',
   },
   {
-    authoredText: '> Stop if release evidence is missing.',
+    citationKeys: [],
     headingPath: ['Release guide', 'Procedure'],
-    source: sourceStart(26),
+    source: sourceRange(26, 26, 39),
     structuralKind: 'blockquote',
   },
 ];
+
+const activeDocumentUnit = requireSourceUnit(representativeSourceUnits[0]);
 
 const retrieval: ReferenceRepositoryManifest['retrieval'] = {
   activeArtifactTitles: [
@@ -62,12 +62,7 @@ const retrieval: ReferenceRepositoryManifest['retrieval'] = {
     'Repository API',
     'Service guide',
   ],
-  activeDocumentUnit: {
-    authoredText: releaseProse,
-    headingPath: ['Release guide'],
-    source: sourceStart(10),
-    structuralKind: 'prose',
-  },
+  activeDocumentUnit,
   customerWideArtifactTitles: [
     'Platform',
     'Customer API',
@@ -94,6 +89,19 @@ const retrieval: ReferenceRepositoryManifest['retrieval'] = {
   ],
 };
 
-function sourceStart(line: number): SourceUnitExpectation['source'] {
-  return { ...releaseSource, line };
+function sourceRange(
+  line: number,
+  endLine: number,
+  endColumn: number
+): SourceUnitExpectation['source'] {
+  return { ...releaseSource, endColumn, endLine, line };
+}
+
+function requireSourceUnit(
+  unit: SourceUnitExpectation | undefined
+): SourceUnitExpectation {
+  if (unit === undefined) {
+    throw new Error('reference fixture source unit is missing');
+  }
+  return unit;
 }
