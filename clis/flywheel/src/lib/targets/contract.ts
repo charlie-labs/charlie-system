@@ -81,6 +81,7 @@ export type ExternalIdentityTarget =
       readonly path: string;
       readonly repository: RepositoryId;
       readonly revision?: string;
+      readonly selector?: string;
     }>
   | Readonly<{
       readonly kind: 'web';

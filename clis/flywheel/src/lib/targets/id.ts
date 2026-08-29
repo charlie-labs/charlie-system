@@ -7,6 +7,7 @@ import type {
   InspectableTarget,
   RoleTarget,
   SkillTarget,
+  SupportResourceTarget,
   TargetId,
 } from './contract.js';
 
@@ -141,6 +142,13 @@ export function skillTarget(path: string, name: string): SkillTarget {
   return { kind: 'skill', name, path };
 }
 
+export function supportResourceTarget(
+  path: string,
+  owner: TargetId
+): SupportResourceTarget {
+  return { kind: 'support-resource', owner, path };
+}
+
 function sectionTargetId(target: DocumentSectionTarget): TargetId {
   return `document-section:${encode(target.document.path)}#${encode(target.anchor)}`;
 }
@@ -158,7 +166,9 @@ function sourceRepositoryFileTargetId(
 ): TargetId {
   const revision =
     target.revision === undefined ? '' : `:${encode(target.revision)}`;
-  return `source-repository-file:${encode(target.repository)}${revision}:${encode(target.path)}`;
+  const selector =
+    target.selector === undefined ? '' : `#${encode(target.selector)}`;
+  return `source-repository-file:${encode(target.repository)}${revision}:${encode(target.path)}${selector}`;
 }
 
 function encode(value: string): string {
