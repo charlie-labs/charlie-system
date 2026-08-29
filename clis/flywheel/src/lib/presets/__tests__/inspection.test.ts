@@ -59,6 +59,10 @@ test('reads the selected payload and specialization without writes', async () =>
       calls.push(`readFile:${filePath}`);
       return baseFilesystem.readFile(filePath);
     },
+    readFileBytes: async (filePath) => {
+      calls.push(`readFileBytes:${filePath}`);
+      return baseFilesystem.readFileBytes(filePath);
+    },
     readdir: async (directoryPath) => {
       calls.push(`readdir:${directoryPath}`);
       return baseFilesystem.readdir(directoryPath);
