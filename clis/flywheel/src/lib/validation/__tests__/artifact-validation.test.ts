@@ -26,6 +26,22 @@ test('preserves parser incompleteness as sourced diagnostics', async () => {
   });
 });
 
+test('does not assess malformed authored fields as valid defaults', async () => {
+  const compilations = await compile(malformedArtifactFiles());
+  const report = validationReport(validateArtifacts(compilations));
+  const rules = report.diagnostics.map((diagnostic) => diagnostic.ruleId);
+
+  expect(report.status).toBe('incomplete');
+  for (const rule of [
+    'FW-CATALOG-METADATA-INVALID',
+    'FW-CATALOG-REFERENCE-INVALID',
+    'FW-DOCUMENT-FIELD-INVALID',
+    'FW-DAEMON-FIELD-INVALID',
+  ]) {
+    expect(rules).toContain(rule);
+  }
+});
+
 test('requires the normalized first fragment after the H1 to be a paragraph', async () => {
   const compilations = await compile({
     'customer-wide/docs/missing-lead.md': `---
@@ -185,6 +201,50 @@ Start with the root evidence.[^root]
 [^duplicate]: [First](https://example.com/first)
 [^duplicate]: [Second](https://example.com/second)
 `;
+}
+
+function malformedArtifactFiles(): Readonly<Record<string, string>> {
+  return {
+    'customer-wide/.agents/daemons/review/DAEMON.md': `---
+schemaVersion: [daemon.v0]
+id: review
+purpose: Review changes.
+role: reviewer
+routines: Review the change.
+schedule: daily
+---
+Review each change.
+`,
+    'customer-wide/catalog/namespace.yaml': `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api
+  namespace: [product]
+  annotations:
+    charlie.ai/review-every: 90d
+spec: {}
+`,
+    'customer-wide/catalog/references.yaml': `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: worker
+  annotations:
+    charlie.ai/review-every: 90d
+spec:
+  dependsOn:
+    - component:default/api
+    - 42
+`,
+    'customer-wide/docs/replaced.md': `---
+purpose: Explain replacement.
+reviewEvery: 90d
+replacedBy: [./new.md]
+---
+# Replacement
+
+Keep the authored state visible.
+`,
+  };
 }
 
 function ruleCount(rules: readonly string[], ruleId: string): number {
