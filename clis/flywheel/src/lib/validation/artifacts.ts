@@ -79,8 +79,37 @@ function documentDiagnostics(
   artifact: DocumentArtifact
 ): readonly ValidationDiagnostic[] {
   return [
+    ...documentLeadParagraphDiagnostics(artifact),
     ...documentCadenceDiagnostics(artifact),
     ...citationDiagnostics(artifact),
+  ];
+}
+
+function documentLeadParagraphDiagnostics(
+  artifact: DocumentArtifact
+): readonly ValidationDiagnostic[] {
+  const titleIndex = artifact.sections.findIndex(
+    (section) => section.depth === 1
+  );
+  const titleSection = artifact.sections[titleIndex];
+  if (titleSection === undefined) return [];
+  const firstFragment = titleSection.fragments[0];
+  if (firstFragment?.kind === 'prose' && firstFragment.text.trim().length > 0) {
+    return [];
+  }
+  return [
+    validationError({
+      impact: 'invalid',
+      message:
+        'document requires a paragraph directly after its level-one heading',
+      path: artifact.path,
+      ruleId: 'FW-DOCUMENT-LEAD-PARAGRAPH-REQUIRED',
+      source:
+        firstFragment?.source ??
+        artifact.sections[titleIndex + 1]?.source ??
+        titleSection.source,
+      target: targetId(artifact.target),
+    }),
   ];
 }
 
@@ -139,6 +168,7 @@ function citationUsages(artifact: DocumentArtifact): CitationUsages {
   const fragments = [
     ...artifact.preamble,
     ...artifact.sections.flatMap((section) => section.fragments),
+    ...artifact.citations.flatMap((citation) => citation.fragments),
   ];
   for (const fragment of fragments) collectCitationUsages(fragment, usages);
   return usages;

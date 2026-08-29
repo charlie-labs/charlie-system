@@ -20,6 +20,36 @@ test('assesses a conforming compiled repository as valid', async () => {
   expect(report).toEqual({ diagnostics: [], status: 'valid' });
 });
 
+test('keeps unknown Document metadata visible in the repository assessment', async () => {
+  const files = validRepositoryFiles();
+  const guide = files['customer-wide/docs/guide.md'];
+  if (guide === undefined) throw new Error('document fixture is missing');
+  const { source } = validationSource({
+    ...files,
+    'customer-wide/docs/guide.md': guide.replace(
+      'reviewEvery: 90d',
+      'reviewEvery: 90d\nreviewEvey: 7d'
+    ),
+  });
+  const projection = await compileRepository(source);
+  const report = validateRepository(
+    projection,
+    buildRepositoryIndexes(projection)
+  );
+
+  expect(report.status).toBe('incomplete');
+  expect(
+    report.diagnostics.find(
+      (diagnostic) => diagnostic.ruleId === 'FW-DOCUMENT-FIELD-UNKNOWN'
+    )
+  ).toMatchObject({
+    impact: 'incomplete',
+    path: 'customer-wide/docs/guide.md',
+    ruleId: 'FW-DOCUMENT-FIELD-UNKNOWN',
+    source: { start: { column: 1, line: 4 } },
+  });
+});
+
 test('keeps prohibited, unsupported, and orphaned bundle material visible', async () => {
   const files = {
     ...validRepositoryFiles(),

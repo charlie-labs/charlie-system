@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test';
 import { compileRepository } from '../../projection/compile.js';
 import { buildRepositoryIndexes } from '../../projection/indexes.js';
 import { validateRelationships } from '../relationships.js';
+import { validateRepository } from '../validate.js';
 import {
   validCatalog,
   validDocument,
@@ -123,6 +124,76 @@ Legacy details.
   ]);
 });
 
+test('allows replacedBy only on superseded source documents', async () => {
+  await Promise.all(
+    ([undefined, 'active', 'deprecated'] as const).map(async (status) => {
+      const { source } = validationSource({
+        'customer-wide/docs/source.md': replacementDocument({
+          replacedBy: './replacement.md',
+          ...(status === undefined ? {} : { status }),
+        }),
+        'customer-wide/docs/replacement.md': replacementDocument({}),
+      });
+      const projection = await compileRepository(source);
+      const diagnostics = validateRelationships(
+        projection,
+        buildRepositoryIndexes(projection)
+      );
+
+      expect(diagnostics).toEqual([
+        expect.objectContaining({
+          field: 'replacedBy',
+          path: 'customer-wide/docs/source.md',
+          ruleId: 'FW-DOCUMENT-REPLACEMENT-SOURCE-LIFECYCLE',
+          target: 'document:customer-wide%2Fdocs%2Fsource.md',
+        }),
+      ]);
+    })
+  );
+});
+
+test('keeps non-Document replacement targets unresolved and out of the graph', async () => {
+  await Promise.all(
+    [
+      'https://example.test/replacement',
+      '/tasks/task_123',
+      '../catalog/entities.yaml',
+    ].map(async (replacedBy) => {
+      const { source } = validationSource({
+        'customer-wide/catalog/entities.yaml': validCatalog(),
+        'customer-wide/docs/source.md': replacementDocument({
+          replacedBy,
+          status: 'superseded',
+        }),
+      });
+      const projection = await compileRepository(source);
+      const report = validateRepository(
+        projection,
+        buildRepositoryIndexes(projection)
+      );
+
+      expect(report.status).toBe('invalid');
+      expect(
+        projection.resolutions.find(
+          (resolution) => resolution.authored.origin === 'document.replacedBy'
+        )
+      ).toMatchObject({ kind: 'unresolved' });
+      expect(
+        report.diagnostics.find(
+          (diagnostic) =>
+            diagnostic.path === 'customer-wide/docs/source.md' &&
+            diagnostic.ruleId.startsWith('FW-REFERENCE-')
+        )
+      ).toBeDefined();
+      expect(
+        projection.graph.relationships.filter(
+          (relationship) => relationship.kind === 'supersedes'
+        )
+      ).toEqual([]);
+    })
+  );
+});
+
 function validSkill(): string {
   return `---
 name: shared
@@ -145,5 +216,23 @@ routines: Review the release.
 # Release review
 
 Read the [missing policy](./missing.md).
+`;
+}
+
+function replacementDocument(input: {
+  readonly replacedBy?: string;
+  readonly status?: 'active' | 'deprecated' | 'superseded';
+}): string {
+  return `---
+purpose: Explain replacement behavior.
+reviewEvery: 90d
+${input.status === undefined ? '' : `status: ${input.status}\n`}${
+    input.replacedBy === undefined
+      ? ''
+      : `replacedBy: ${JSON.stringify(input.replacedBy)}\n`
+  }---
+# Replacement guide
+
+Use the current guidance.
 `;
 }

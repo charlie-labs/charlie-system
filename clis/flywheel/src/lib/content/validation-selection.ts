@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import type {
+  RepositoryEntry,
   RepositoryInventory,
   RepositoryPath,
 } from '../repository/contract.js';
@@ -25,7 +26,8 @@ export function resolveValidationSelection({
   repositoryPath,
   requestedPaths,
 }: ValidationSelectionInput): readonly RepositoryPath[] {
-  const availablePaths = new Set([
+  const validationEntries = inventory.entries.filter(isValidationEntry);
+  const existingPaths = new Set([
     ...inventory.directories,
     ...inventory.entries.map((entry) => entry.path),
   ]);
@@ -34,12 +36,16 @@ export function resolveValidationSelection({
       repositoryPath,
       requestedPath
     );
-    assertAdmittedPath(repositoryRelativePath, requestedPath, inventory);
-    if (!availablePaths.has(repositoryRelativePath)) {
+    if (!existingPaths.has(repositoryRelativePath)) {
       throw new ContentInvocationError(
         `selected repository path does not exist: ${requestedPath}`
       );
     }
+    assertValidationContent(
+      repositoryRelativePath,
+      requestedPath,
+      validationEntries
+    );
     return repositoryRelativePath;
   });
   return sortedCopy([...new Set(selected)], comparePaths);
@@ -63,8 +69,9 @@ export function selectedFileCount(
   inventory: RepositoryInventory,
   selection: readonly RepositoryPath[]
 ): number {
-  if (selection.length === 0) return inventory.entries.length;
-  return inventory.entries.filter((entry) =>
+  const entries = inventory.entries.filter(isValidationEntry);
+  if (selection.length === 0) return entries.length;
+  return entries.filter((entry) =>
     selection.some((selectedPath) => containsPath(selectedPath, entry.path))
   ).length;
 }
@@ -89,32 +96,20 @@ function normalizeRequestedPath(
   }
 }
 
-function assertAdmittedPath(
+function assertValidationContent(
   repositoryPath: RepositoryPath,
   requestedPath: string,
-  inventory: RepositoryInventory
+  entries: readonly RepositoryEntry[]
 ): void {
-  const segments = repositoryPath.split('/');
-  const root = segments[0];
-  const admitted =
-    root === 'core' ||
-    root === 'customer-wide' ||
-    root === 'roles' ||
-    root === '.flywheel' ||
-    isRegisteredRepositoryPath(segments, inventory);
-  if (!admitted) {
+  if (!entries.some((entry) => containsPath(repositoryPath, entry.path))) {
     throw new ContentInvocationError(
-      `path is outside admitted Flywheel content roots: ${requestedPath}`
+      `path is not classified as validation content: ${requestedPath}`
     );
   }
 }
 
-function isRegisteredRepositoryPath(
-  segments: readonly string[],
-  inventory: RepositoryInventory
-): boolean {
-  if (segments[0] !== 'repo-specific' || segments.length < 3) return false;
-  return inventory.repositories.includes(`${segments[1]}/${segments[2]}`);
+function isValidationEntry(entry: RepositoryEntry): boolean {
+  return entry.kind !== 'tooling-state';
 }
 
 function containsPath(

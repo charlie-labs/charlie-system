@@ -75,7 +75,25 @@ function replacementDiagnostics(
   resolution: Extract<ReferenceResolution, { readonly kind: 'resolved' }>,
   indexes: RepositoryIndexes
 ): readonly ValidationDiagnostic[] {
-  if (resolution.authored.label !== 'replacedBy') return [];
+  if (resolution.authored.origin !== 'document.replacedBy') return [];
+  const sourceId = targetId(resolution.sourceTarget);
+  const source = indexes.artifactByTarget.get(sourceId);
+  if (
+    source?.kind === 'document' &&
+    source.metadata.lifecycle.status !== 'superseded'
+  ) {
+    return [
+      validationError({
+        field: 'replacedBy',
+        impact: 'invalid',
+        message: 'replacedBy is only allowed on superseded documents',
+        path: resolution.authored.source.path,
+        ruleId: 'FW-DOCUMENT-REPLACEMENT-SOURCE-LIFECYCLE',
+        source: resolution.authored.source,
+        target: sourceId,
+      }),
+    ];
+  }
   const replacementId = targetId(resolution.target);
   const replacement = indexes.artifactByTarget.get(replacementId);
   if (replacement?.kind !== 'document' || replacement.metadata.lifecycle.active)

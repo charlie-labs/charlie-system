@@ -26,6 +26,32 @@ test('preserves parser incompleteness as sourced diagnostics', async () => {
   });
 });
 
+test('requires the normalized first fragment after the H1 to be a paragraph', async () => {
+  const compilations = await compile({
+    'customer-wide/docs/missing-lead.md': `---
+purpose: Demonstrate the lead paragraph invariant.
+reviewEvery: 90d
+---
+# Missing lead
+
+## Later section
+
+Content under a child heading does not satisfy the invariant.
+`,
+  });
+  const report = validationReport(validateArtifacts(compilations));
+
+  expect(report.status).toBe('invalid');
+  expect(report.diagnostics).toHaveLength(1);
+  expect(report.diagnostics[0]).toMatchObject({
+    impact: 'invalid',
+    path: 'customer-wide/docs/missing-lead.md',
+    ruleId: 'FW-DOCUMENT-LEAD-PARAGRAPH-REQUIRED',
+    source: { start: { column: 1, line: 7 } },
+    target: 'document:customer-wide%2Fdocs%2Fmissing-lead.md',
+  });
+});
+
 test('validates normalized review cadences and citation integrity', async () => {
   const compilations = await compile({
     'customer-wide/catalog/entities.yaml': catalog('later'),
@@ -45,6 +71,28 @@ test('validates normalized review cadences and citation integrity', async () => 
   )) {
     expect(diagnostic).toMatchObject({ impact: 'none', severity: 'warning' });
   }
+});
+
+test('validates citation usages nested inside citation definitions', async () => {
+  const compilations = await compile({
+    'customer-wide/docs/nested-citations.md': nestedCitations(),
+  });
+  const report = validationReport(validateArtifacts(compilations));
+  const rules = report.diagnostics.map((diagnostic) => diagnostic.ruleId);
+
+  expect(report.status).toBe('invalid');
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-MISSING')).toBe(1);
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-DUPLICATE')).toBe(2);
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-UNUSED')).toBe(0);
+  expect(
+    report.diagnostics.find(
+      (diagnostic) => diagnostic.ruleId === 'FW-DOCUMENT-CITATION-MISSING'
+    )
+  ).toMatchObject({
+    field: 'citation.missing',
+    ruleId: 'FW-DOCUMENT-CITATION-MISSING',
+    source: { start: { line: 12 } },
+  });
 });
 
 test('reports duplicate canonical artifact targets deterministically', async () => {
@@ -116,6 +164,26 @@ Missing evidence.[^missing]
 [^duplicate]: [First](https://example.com/first)
 [^duplicate]: [Second](https://example.com/second)
 [^unused]: [Unused](https://example.com/unused)
+`;
+}
+
+function nestedCitations(): string {
+  return `---
+purpose: Demonstrate nested citation validation.
+reviewEvery: 90d
+---
+# Citations
+
+Start with the root evidence.[^root]
+
+[^root]:
+    > Consult the nested evidence.[^nested]
+    >
+    > - Detect the missing evidence.[^missing]
+    > - Consult the duplicated evidence.[^duplicate]
+[^nested]: [Nested](https://example.com/nested)
+[^duplicate]: [First](https://example.com/first)
+[^duplicate]: [Second](https://example.com/second)
 `;
 }
 

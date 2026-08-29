@@ -243,12 +243,16 @@ function unresolvedCitationKeys(
   contents: string
 ): readonly string[] {
   const source = nodeSourceText(node, contents);
-  return [...source.matchAll(/(?<!\\)\[\^(?<key>[^\]\s]+)\]/gu)].flatMap(
-    (match) => {
-      const key = match.groups?.key;
-      return key === undefined ? [] : [key];
+  return [...source.matchAll(/\[\^(?<key>[^\]\s]+)\]/gu)].flatMap((match) => {
+    const key = match.groups?.key;
+    const index = match.index;
+    if (key === undefined) return [];
+    let backslashCount = 0;
+    for (let cursor = index - 1; source[cursor] === '\\'; cursor -= 1) {
+      backslashCount += 1;
     }
-  );
+    return backslashCount % 2 === 0 ? [key] : [];
+  });
 }
 
 function visit(node: Nodes, callback: (node: Nodes) => void): void {

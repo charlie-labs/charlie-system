@@ -135,3 +135,25 @@ test('retains unresolved citation usage without exposing Markdown syntax', () =>
     kind: 'prose',
   });
 });
+
+test('uses the full preceding backslash-run parity for unresolved citations', () => {
+  const parsed = parseMarkdown(
+    String.raw`# Citation
+
+An odd run escapes the citation: \[^odd].
+
+An even run leaves a citation: \\[^even].
+
+Three backslashes escape the citation: \\\[^three].
+
+Four backslashes leave a citation: \\\\[^four].
+`,
+    'customer-wide/docs/escape-parity.md'
+  );
+
+  expect(
+    parsed.sections[0]?.fragments.map((fragment) =>
+      fragment.kind === 'prose' ? fragment.citationKeys : []
+    )
+  ).toEqual([[], ['even'], [], ['four']]);
+});

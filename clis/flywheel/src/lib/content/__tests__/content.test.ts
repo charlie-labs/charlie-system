@@ -82,6 +82,8 @@ describe('content rg validates invocation', () => {
 describe('content validate is deterministic', () => {
   test('returns deterministic diagnostics without rewriting content', async () => {
     const files = {
+      '.flywheel/index.sqlite': 'derived state\n',
+      '.flywheel/reviews.yaml': 'reviews: []\n',
       'README.md': 'Repository infrastructure.\n',
       'customer-wide/AGENTS.md': 'Rules are not Flywheel content.\n',
       'customer-wide/docs/bad.md': invalidCadenceDocument,
@@ -153,6 +155,33 @@ describe('content validate path selection', () => {
       filesChecked: 1,
       status: 'valid',
     });
+  });
+
+  test('selects and counts validation files from inventory classifications', async () => {
+    const repositoryPath = await makeRepository({
+      '.flywheel/index.sqlite': 'derived state\n',
+      '.flywheel/reviews.yaml': 'reviews: []\n',
+      'customer-wide/docs/good.md': validDocument,
+    });
+    const validatePath = (selectedPath: string) =>
+      runContentValidation({
+        filesystem: createFlywheelDeps().filesystem,
+        paths: [selectedPath],
+        repositoryPath,
+      });
+
+    const repository = await runContentValidation({
+      filesystem: createFlywheelDeps().filesystem,
+      paths: [],
+      repositoryPath,
+    });
+    expect(repository).toEqual({
+      diagnostics: [],
+      filesChecked: 1,
+      status: 'valid',
+    });
+    await expectExitCode(validatePath('.flywheel/index.sqlite'), 2);
+    await expectExitCode(validatePath('.flywheel'), 2);
   });
 
   test('rejects escapes, outside paths, and missing paths', async () => {
