@@ -92,6 +92,19 @@
         "zod": "^4.4.3",
       },
     },
+    "packages/oclif-plugin-helpers-zod3": {
+      "name": "@charlie-labs/oclif-plugin-helpers-zod3",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@oclif/core": "^4.10.6",
+        "@types/node": "^26.3.0",
+        "zod3": "npm:zod@^3.25.76",
+      },
+      "peerDependencies": {
+        "@oclif/core": "^4.5.2",
+        "zod3": "^3.25.76",
+      },
+    },
   },
   "packages": {
     "@charlie-labs/ch-apply-patch": ["@charlie-labs/ch-apply-patch@workspace:clis/apply-patch"],
@@ -103,6 +116,8 @@
     "@charlie-labs/format-for": ["@charlie-labs/format-for@workspace:packages/format-for"],
 
     "@charlie-labs/oclif-plugin-helpers": ["@charlie-labs/oclif-plugin-helpers@workspace:packages/oclif-plugin-helpers"],
+
+    "@charlie-labs/oclif-plugin-helpers-zod3": ["@charlie-labs/oclif-plugin-helpers-zod3@workspace:packages/oclif-plugin-helpers-zod3"],
 
     "@emnapi/core": ["@emnapi/core@1.11.2", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" } }, "sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA=="],
 

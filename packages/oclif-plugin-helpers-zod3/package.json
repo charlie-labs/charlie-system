@@ -1,0 +1,23 @@
+{
+  "name": "@charlie-labs/oclif-plugin-helpers-zod3",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "check:package-types": "tsc --project type-tests/package-consumer/tsconfig.json"
+  },
+  "devDependencies": {
+    "@oclif/core": "^4.10.6",
+    "@types/node": "^26.3.0",
+    "zod3": "npm:zod@^3.25.76"
+  },
+  "peerDependencies": {
+    "@oclif/core": "^4.5.2",
+    "zod3": "^3.25.76"
+  }
+}
