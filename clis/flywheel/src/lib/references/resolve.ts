@@ -31,7 +31,7 @@ function resolveReference(input: {
 }): ReferenceResolution {
   const external = parseExternalReference(input.authored.raw);
   if (external.kind === 'target') {
-    return { ...input, kind: 'resolved', target: external.target };
+    return resolved(input, external.target);
   }
   if (external.kind === 'invalid' || external.kind === 'unsupported') {
     return unresolved(
@@ -42,7 +42,7 @@ function resolveReference(input: {
   const local = lookupLocalReference(input);
   switch (local.kind) {
     case 'found':
-      return { ...input, kind: 'resolved', target: local.target };
+      return resolved(input, local.target);
     case 'ambiguous':
       return unresolved(input, 'ambiguous-target', local.candidates);
     case 'invalid':
@@ -51,6 +51,21 @@ function resolveReference(input: {
       return unresolved(input, 'unknown-target');
   }
   return unreachable(local);
+}
+
+function resolved(
+  input: {
+    readonly authored: AuthoredReference;
+    readonly sourceTarget: FlywheelArtifact['target'];
+  },
+  target: GraphTarget
+): ReferenceResolution {
+  return {
+    authored: input.authored,
+    kind: 'resolved',
+    sourceTarget: input.sourceTarget,
+    target,
+  };
 }
 
 function unresolved(

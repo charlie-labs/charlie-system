@@ -63,7 +63,9 @@ function externalTargetId(
   return unreachable(target);
 }
 
-function isInspectableTarget(target: GraphTarget): target is InspectableTarget {
+export function isInspectableTarget(
+  target: GraphTarget
+): target is InspectableTarget {
   return (
     target.kind === 'catalog' ||
     target.kind === 'daemon' ||
