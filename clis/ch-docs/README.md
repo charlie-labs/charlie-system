@@ -37,3 +37,12 @@ are also available.
 
 The retrieval commands are read-only. `feedback` is write-capable,
 non-idempotent, and is never retried after an ambiguous request failure.
+
+## Qualification
+
+The opt-in, read-only MCP smoke is documented with the Flywheel qualification
+suites in
+[`../flywheel/qualification/README.md`](../flywheel/qualification/README.md).
+Run `RUN_LIVE_QUALIFICATION=true bun run --cwd clis/ch-docs qualification:mcp-smoke`
+only when a live service check is intended. Without the opt-in variable it
+skips successfully.

@@ -7,6 +7,7 @@
   },
   "type": "module",
   "scripts": {
+    "qualification:mcp-smoke": "bun run ./qualification/mcp-smoke.ts",
     "start": "bun run ./bin/run.ts",
     "test": "bun test"
   },
