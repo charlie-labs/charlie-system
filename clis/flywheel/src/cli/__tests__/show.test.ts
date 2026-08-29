@@ -13,7 +13,7 @@ test('registers content show as a typed artifact inspection command', () => {
   expect(Show.summary).toBe('Show one compiled Flywheel artifact');
 });
 
-test('renders only the selected document section in human mode', async () => {
+test('renders the selected authored subtree and scoped references in human mode', async () => {
   const repositoryPath = await makeShowRepository();
   const result = await runCli([
     'content',
@@ -29,8 +29,71 @@ test('renders only the selected document section in human mode', async () => {
     'target document-section:customer-wide%2Fdocs%2Fguide.md#operate'
   );
   expect(result.stdout).toContain('## Operate');
-  expect(result.stdout).toContain('Operate safely.');
+  expect(result.stdout).toContain(
+    'Operate safely [operate](./operate.md) [^selected].'
+  );
+  expect(result.stdout).toContain('### Nested');
+  expect(result.stdout).toContain(
+    'Nested operation details [nested](./nested.md).'
+  );
+  expect(result.stdout).toContain(
+    '[^selected]: Selected citation [selected citation](./selected-citation.md)'
+  );
+  const references = result.stdout.slice(result.stdout.indexOf('references:'));
+  expect(references).toContain('- links-to ./operate.md');
+  expect(references).toContain('- links-to ./nested.md');
+  expect(references).toContain('- cites ./selected-citation.md');
+  expect(references).not.toContain('component:default/api');
+  expect(references).not.toContain('./replacement.md');
+  expect(references).not.toContain('./overview.md');
+  expect(references).not.toContain('./later.md');
+  expect(references).not.toContain('./overview-citation.md');
+  expect(references).not.toContain('./later-citation.md');
+  expect(references).not.toContain('./orphan-citation.md');
   expect(result.stdout).not.toContain('Overview only.');
+  expect(result.stdout).not.toContain('Preamble only.');
+  expect(result.stdout).not.toContain('Later only.');
+  expect(result.stdout).not.toContain('[^overview]:');
+  expect(result.stdout).not.toContain('[^later]:');
+  expect(result.stdout).not.toContain('[^orphan]:');
+});
+
+test('keeps the full canonical artifact unchanged in section JSON mode', async () => {
+  const repositoryPath = await makeShowRepository();
+  const [documentResult, sectionResult] = await Promise.all([
+    runCli([
+      'content',
+      'show',
+      'customer-wide/docs/guide.md',
+      '--repository-path',
+      repositoryPath,
+      '--json',
+    ]),
+    runCli([
+      'content',
+      'show',
+      'customer-wide/docs/guide.md#operate',
+      '--repository-path',
+      repositoryPath,
+      '--json',
+    ]),
+  ]);
+
+  expect(documentResult.exitCode).toBe(0);
+  expect(sectionResult.exitCode).toBe(0);
+  expect(documentResult.stderr).toBe('');
+  expect(sectionResult.stderr).toBe('');
+  expect(artifactFromJson(sectionResult.stdout)).toEqual(
+    artifactFromJson(documentResult.stdout)
+  );
+  expect(JSON.parse(sectionResult.stdout)).toMatchObject({
+    kind: 'artifact',
+    target: {
+      anchor: 'operate',
+      document: { path: 'customer-wide/docs/guide.md' },
+      kind: 'document-section',
+    },
+  });
 });
 
 test('returns the normalized artifact boundary in JSON mode', async () => {
@@ -172,20 +235,53 @@ async function makeShowRepository(): Promise<string> {
   });
 }
 
+function artifactFromJson(output: string): unknown {
+  const value: unknown = JSON.parse(output);
+  if (typeof value !== 'object' || value === null || !('artifact' in value)) {
+    throw new Error('show JSON result did not contain an artifact');
+  }
+  return value.artifact;
+}
+
 function document(): string {
   return `---
 purpose: Explain operations.
 reviewEvery: 90d
+about:
+  - component:default/api
+replacedBy: ./replacement.md
 ---
+Preamble only.
+
 # Guide
+
+Guide intro only.
 
 ## Overview
 
-Overview only.
+Overview only [overview](./overview.md) [^overview].
+
+### Overview details
+
+Overview descendants only.
 
 ## Operate
 
-Operate safely.
+Operate safely [operate](./operate.md) [^selected].
+
+### Nested
+
+Nested operation details [nested](./nested.md).
+
+[^orphan]: Orphan citation [orphan citation](./orphan-citation.md)
+
+## Later
+
+Later only [later](./later.md) [^later].
+
+[^overview]: Overview citation [overview citation](./overview-citation.md)
+[^selected]: Selected citation [selected citation](./selected-citation.md)
+[^later]: Later citation [later citation](./later-citation.md)
 `;
 }
 
