@@ -1,0 +1,24 @@
+import type { CatalogTarget } from '../../targets/contract.js';
+import type { ArtifactBase, KnowledgeLifecycle } from '../base.js';
+
+export type CatalogValue =
+  | boolean
+  | null
+  | number
+  | string
+  | readonly CatalogValue[]
+  | Readonly<{ readonly [key: string]: CatalogValue }>;
+
+export type CatalogArtifact = ArtifactBase<'catalog', CatalogTarget> &
+  Readonly<{
+    readonly annotations: Readonly<Record<string, string>>;
+    readonly apiVersion: string;
+    readonly description?: string;
+    readonly entityKind: string;
+    readonly labels: Readonly<Record<string, string>>;
+    readonly lifecycle: KnowledgeLifecycle;
+    readonly name: string;
+    readonly namespace: string;
+    readonly spec: Readonly<Record<string, CatalogValue>>;
+    readonly title?: string;
+  }>;
