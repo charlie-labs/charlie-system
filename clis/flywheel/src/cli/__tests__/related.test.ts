@@ -93,6 +93,43 @@ test('never echoes a secret-bearing related target in human or JSON output', asy
   }
 });
 
+test('returns retained unparsed problems in JSON and human diagnostics', async () => {
+  const repositoryPath = await makeRelatedRepository();
+  const unparsed = await runCli([
+    'content',
+    'related',
+    'customer-wide/docs/broken.md',
+    '--repository-path',
+    repositoryPath,
+    '--json',
+  ]);
+
+  expect(unparsed.exitCode).toBe(1);
+  expect(unparsed.stderr).toBe('');
+  expect(JSON.parse(unparsed.stdout)).toMatchObject({
+    error: {
+      result: {
+        kind: 'unparsed',
+        problems: [{ code: 'ARTIFACT_FRONTMATTER_REQUIRED' }],
+      },
+      type: 'ContentRelatedError',
+    },
+  });
+  expect(unparsed.stdout).not.toContain('problems:\n');
+
+  const humanUnparsed = await runCli([
+    'content',
+    'related',
+    'customer-wide/docs/broken.md',
+    '--repository-path',
+    repositoryPath,
+  ]);
+  expect(humanUnparsed.exitCode).toBe(2);
+  expect(humanUnparsed.stdout).toBe('');
+  expect(humanUnparsed.stderr).toContain('problems:\n');
+  expect(humanUnparsed.stderr).toContain('ARTIFACT_FRONTMATTER_REQUIRED');
+});
+
 test('returns explicit JSON failures for missing, ambiguous, and open inputs', async () => {
   const repositoryPath = await makeRelatedRepository();
   const [missing, ambiguous, external] = await Promise.all([
@@ -145,6 +182,7 @@ test('returns explicit JSON failures for missing, ambiguous, and open inputs', a
 async function makeRelatedRepository(): Promise<string> {
   return makeRepository({
     'customer-wide/catalog/entities.yaml': catalog(),
+    'customer-wide/docs/broken.md': '# Missing metadata\n',
     'customer-wide/docs/guide.md': guide(),
   });
 }

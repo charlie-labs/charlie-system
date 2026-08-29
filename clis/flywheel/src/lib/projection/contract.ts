@@ -30,4 +30,8 @@ export type RepositoryIndexes = Readonly<{
     readonly FlywheelArtifact[]
   >;
   readonly graph: RepositoryGraphIndex;
+  readonly unparsedByPath: ReadonlyMap<
+    RepositoryPath,
+    Extract<ArtifactCompilation, { readonly kind: 'unparsed' }>
+  >;
 }>;

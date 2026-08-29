@@ -1,9 +1,18 @@
-import type { FlywheelArtifact } from '../artifacts/contract.js';
+import type {
+  ArtifactCompilation,
+  FlywheelArtifact,
+} from '../artifacts/contract.js';
 import { buildRepositoryGraphIndex } from '../graph/indexes.js';
+import type { RepositoryPath } from '../repository/contract.js';
 import { sortedCopy } from '../repository/ordering.js';
 import type { GraphTarget, TargetId } from '../targets/contract.js';
 import { isInspectableTarget, targetAliases, targetId } from '../targets/id.js';
 import type { RepositoryIndexes, RepositoryProjection } from './contract.js';
+
+type UnparsedCompilation = Extract<
+  ArtifactCompilation,
+  { readonly kind: 'unparsed' }
+>;
 
 export function buildRepositoryIndexes(
   projection: RepositoryProjection
@@ -16,7 +25,20 @@ export function buildRepositoryIndexes(
     artifactByTarget: artifactsByTarget(artifacts),
     artifactsByPath: groupArtifactsByPath(artifacts),
     graph: buildRepositoryGraphIndex(projection.graph),
+    unparsedByPath: unparsedCompilationsByPath(projection),
   };
+}
+
+function unparsedCompilationsByPath(
+  projection: RepositoryProjection
+): ReadonlyMap<RepositoryPath, UnparsedCompilation> {
+  const result = new Map<RepositoryPath, UnparsedCompilation>();
+  for (const compilation of projection.compilations) {
+    if (compilation.kind === 'unparsed') {
+      result.set(compilation.entry.path, compilation);
+    }
+  }
+  return result;
 }
 
 function buildAliases(

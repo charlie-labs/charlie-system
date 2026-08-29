@@ -9,6 +9,7 @@ test('derives replaceable artifact, alias, target, and adjacency indexes', async
   const indexes = buildRepositoryIndexes(projection);
   const guide = 'document:customer-wide%2Fdocs%2Fguide.md';
   const guideSection = 'document-section:customer-wide%2Fdocs%2Fguide.md#guide';
+  const brokenPath = 'customer-wide/docs/broken.md';
 
   expect(indexes.aliases.get('customer-wide/docs/guide.md')).toEqual([guide]);
   expect(indexes.aliases.get('customer-wide/catalog/entities.yaml')).toEqual([
@@ -31,4 +32,23 @@ test('derives replaceable artifact, alias, target, and adjacency indexes', async
   });
   expect(indexes.graph.outgoingByTarget.get(guide)?.length).toBeGreaterThan(0);
   expect(indexes.graph.incomingByTarget.get('linear:BOT-42')).toHaveLength(1);
+  expect(indexes.unparsedByPath.get(brokenPath)).toMatchObject({
+    entry: { path: brokenPath },
+    kind: 'unparsed',
+    problems: [{ code: 'ARTIFACT_FRONTMATTER_REQUIRED' }],
+  });
+  expect(indexes.aliases.get(brokenPath)).toBeUndefined();
+  expect(
+    [...indexes.graph.targetById.values()].some(
+      (target) => 'path' in target && target.path === brokenPath
+    )
+  ).toBe(false);
+  expect(
+    projection.graph.relationships.some((relationship) => {
+      const source = relationship.provenance;
+      return source.kind === 'authored'
+        ? source.reference.source.path === brokenPath
+        : source.source.path === brokenPath;
+    })
+  ).toBe(false);
 });

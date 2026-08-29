@@ -12,7 +12,8 @@ export class ContentRelatedError extends Error {
   readonly result: ContentRelatedFailure;
 
   constructor(result: ContentRelatedFailure) {
-    const exitCode = result.kind === 'missing' ? 1 : 2;
+    const exitCode =
+      result.kind === 'missing' || result.kind === 'unparsed' ? 1 : 2;
     super(failureMessage(result));
     this.name = 'ContentRelatedError';
     this.exitCode = exitCode;
@@ -25,6 +26,8 @@ function failureMessage(result: ContentRelatedFailure): string {
   switch (result.kind) {
     case 'missing':
       return `content target not found: ${result.input}`;
+    case 'unparsed':
+      return `content target is unparsed: ${result.entry.path}`;
     case 'ambiguous':
       return `content target is ambiguous: ${result.input}`;
     case 'unsupported-target':

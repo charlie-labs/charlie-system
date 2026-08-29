@@ -1,4 +1,8 @@
 import type {
+  ArtifactEntry,
+  ArtifactProblem,
+} from '../../artifacts/contract.js';
+import type {
   GraphRelationship,
   GraphTargetRecord,
   RelationshipProvenance,
@@ -26,6 +30,12 @@ export type RelatedResult =
   | Readonly<{
       readonly input: string;
       readonly kind: 'missing';
+    }>
+  | Readonly<{
+      readonly entry: ArtifactEntry;
+      readonly input: string;
+      readonly kind: 'unparsed';
+      readonly problems: readonly ArtifactProblem[];
     }>
   | Readonly<{
       readonly input: string;
