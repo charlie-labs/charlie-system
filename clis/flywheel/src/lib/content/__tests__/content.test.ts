@@ -5,8 +5,6 @@ import Rg from '../../../cli/commands/content/rg.js';
 import Validate from '../../../cli/commands/content/validate.js';
 import { createFlywheelDeps, type ProcessResult } from '../../runtime/deps.js';
 import type { ContentDiagnostic } from '../errors.js';
-import { runContentRg } from '../rg.js';
-import { createContentSelection } from '../roots.js';
 import { validateContent } from '../validate.js';
 import {
   cleanupTemporaryDirectories,
@@ -18,100 +16,6 @@ const commandConfig = path.resolve(import.meta.dir, '../../../../bin/run.ts');
 afterEach(async () => {
   process.exitCode = 0;
   await cleanupTemporaryDirectories();
-});
-
-describe('content rg forwards safe arguments', () => {
-  test('forwards safe arguments and repository-relative roots', async () => {
-    const repositoryPath = await makeRepository({
-      'customer-wide/docs/guide.md': 'incident\n',
-      'core/secret.md': 'must not be searched\n',
-      'repo-specific/acme/api/docs/guide.md': 'incident\n',
-      'roles/analyst.yaml': 'name: analyst\n',
-    });
-    const calls: Array<{
-      readonly args: readonly string[];
-      readonly command: string;
-      readonly cwd: string | undefined;
-    }> = [];
-    const result = await runContentRg({
-      filesystem: createFlywheelDeps().filesystem,
-      process: {
-        run: (command, args, options) => {
-          calls.push({ args, command, cwd: options?.cwd });
-          return Promise.resolve({ exitCode: 0, stderr: '', stdout: '' });
-        },
-      },
-      rgArgs: ['-g', '*.md', 'incident'],
-      selection: selectionFor(repositoryPath),
-    });
-
-    expect(result.exitCode).toBe(0);
-    expect(calls).toEqual([
-      {
-        args: [
-          '-g',
-          '*.md',
-          'incident',
-          'customer-wide/docs',
-          'repo-specific/acme/api/docs',
-          'roles',
-        ],
-        command: 'rg',
-        cwd: repositoryPath,
-      },
-    ]);
-  });
-});
-
-describe('content rg preserves admitted paths', () => {
-  test('preserves an admitted repository-relative path operand', async () => {
-    const repositoryPath = await makeRepository({
-      'customer-wide/docs/guide.md': 'incident\n',
-    });
-    const calls: string[][] = [];
-
-    await runContentRg({
-      filesystem: createFlywheelDeps().filesystem,
-      process: {
-        run: (
-          _command: string,
-          args: readonly string[]
-        ): Promise<ProcessResult> => {
-          calls.push([...args]);
-          return Promise.resolve({ exitCode: 0, stderr: '', stdout: '' });
-        },
-      },
-      rgArgs: ['incident', 'customer-wide/docs'],
-      selection: selectionFor(repositoryPath),
-    });
-
-    expect(calls).toEqual([['incident', 'customer-wide/docs']]);
-  });
-});
-
-describe('content rg rejects path escapes', () => {
-  test('rejects path escapes before starting ripgrep', async () => {
-    const repositoryPath = await makeRepository({
-      'customer-wide/docs/guide.md': 'incident\n',
-    });
-    let started = false;
-
-    await expectExitCode(
-      runContentRg({
-        filesystem: createFlywheelDeps().filesystem,
-        process: {
-          run: () => {
-            started = true;
-            return Promise.resolve({ exitCode: 0, stderr: '', stdout: '' });
-          },
-        },
-        rgArgs: ['incident', '../outside'],
-        selection: selectionFor(repositoryPath),
-      }),
-      2
-    );
-    expect(started).toBe(false);
-  });
 });
 
 describe('content rg maps process statuses', () => {
@@ -244,15 +148,6 @@ const validDocument = [
   'This is the guide body.',
   '',
 ].join('\n');
-
-function selectionFor(repositoryPath: string) {
-  return createContentSelection({
-    customerWideOnly: false,
-    cwd: repositoryPath,
-    repoIds: [],
-    repositoryPath,
-  });
-}
 
 async function commandExitCode(
   argv: readonly string[],

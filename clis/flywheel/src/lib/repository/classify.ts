@@ -78,17 +78,28 @@ function classifyRegionFile(
     case 'roles':
       return classifyRole(repositoryPath, segments, region);
     case 'flywheel-state':
-      return {
-        kind: 'tooling-state',
-        path: repositoryPath,
-        region,
-        toolingKind:
-          repositoryPath === '.flywheel/reviews.yaml'
-            ? 'review-manifest'
-            : 'derived',
-      };
+      return classifyFlywheelState(repositoryPath, segments, region);
   }
   return region;
+}
+
+function classifyFlywheelState(
+  repositoryPath: RepositoryPath,
+  segments: readonly string[],
+  region: Readonly<{ readonly kind: 'flywheel-state' }>
+): RepositoryEntry {
+  if (segments.length < 2) {
+    return unsupported(repositoryPath, region, 'unsupported-location');
+  }
+  return {
+    kind: 'tooling-state',
+    path: repositoryPath,
+    region,
+    toolingKind:
+      repositoryPath === '.flywheel/reviews.yaml'
+        ? 'review-manifest'
+        : 'derived',
+  };
 }
 
 function classifyScopedFile(

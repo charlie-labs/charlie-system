@@ -63,7 +63,7 @@ function invalidInvocationCases(repositoryPath: string) {
         '../outside',
       ],
       exitCode: 2,
-      stderr: 'escapes admitted Flywheel roots',
+      stderr: 'repository-relative admitted path',
     },
     {
       args: [

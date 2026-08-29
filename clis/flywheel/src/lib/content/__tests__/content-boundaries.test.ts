@@ -5,7 +5,6 @@ import path from 'node:path';
 import Rg from '../../../cli/commands/content/rg.js';
 import { createFlywheelDeps } from '../../runtime/deps.js';
 import { runContentRg } from '../rg.js';
-import { createContentSelection } from '../roots.js';
 import {
   cleanupTemporaryDirectories,
   makeRepository,
@@ -86,24 +85,17 @@ async function expectRejectedPath(
   let error: unknown;
   try {
     await runContentRg({
+      customerWideOnly: false,
       filesystem: createFlywheelDeps().filesystem,
       process,
+      repositoryIds: [],
+      repositoryPath,
       rgArgs: [...prefix, '../outside'],
-      selection: selectionFor(repositoryPath),
     });
   } catch (caught) {
     error = caught;
   }
   expect(error).toMatchObject({ exitCode: 2 });
-}
-
-function selectionFor(repositoryPath: string) {
-  return createContentSelection({
-    customerWideOnly: false,
-    cwd: repositoryPath,
-    repoIds: [],
-    repositoryPath,
-  });
 }
 
 function getCommandExitCode(error: unknown): number | undefined {

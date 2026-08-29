@@ -50,7 +50,7 @@ async function listWorkingTreeEntries(
     true
   );
   return sortedCopy(entries, (left, right) =>
-    left.path.localeCompare(right.path)
+    comparePaths(left.path, right.path)
   );
 }
 
@@ -193,4 +193,11 @@ function isMissing(error: unknown): boolean {
     'code' in error &&
     error.code === 'ENOENT'
   );
+}
+
+function comparePaths(left: RepositoryPath, right: RepositoryPath): number {
+  if (left === right) {
+    return 0;
+  }
+  return left < right ? -1 : 1;
 }

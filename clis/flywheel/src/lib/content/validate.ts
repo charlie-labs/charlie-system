@@ -18,7 +18,7 @@ import {
   discoverValidationRoots,
   resolveValidationPath,
   toRepositoryRelative,
-} from './roots.js';
+} from './validation-paths.js';
 
 export type ContentValidationInput = Readonly<{
   readonly filesystem: AsyncFileSystem;

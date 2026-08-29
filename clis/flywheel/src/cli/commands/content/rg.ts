@@ -11,13 +11,13 @@ import {
   ContentOperationalError,
 } from '../../../lib/content/errors.js';
 import { runContentRg } from '../../../lib/content/rg.js';
-import { createContentSelection } from '../../../lib/content/roots.js';
 import {
   createFlywheelDeps,
   type FlywheelDeps,
 } from '../../../lib/runtime/deps.js';
 import { ContentCommand } from '../../utils/content-command.js';
 import { contentRgFlags } from '../../utils/content-flags.js';
+import { buildFlywheelRuntime } from '../../utils/runtime.js';
 
 export default class Rg extends ContentCommand<
   CfgFlags<typeof contentRgFlags> | Deps<FlywheelDeps> | Result<void>
@@ -27,7 +27,7 @@ export default class Rg extends ContentCommand<
   static override flags = super.registerManifest(contentRgFlags);
   static override summary = 'Search admitted Flywheel content with ripgrep';
   static override description =
-    'Run ripgrep only over admitted Flywheel roots. The literal -- delimiter is required.';
+    'Run ripgrep only over admitted Flywheel roots. The literal -- delimiter is required. Rule paths, JSON output, symlink following, and ripgrep command execution are not supported.';
   static override examples = [
     '<%= config.bin %> <%= command.id %> -- --fixed-strings incident',
     '<%= config.bin %> <%= command.id %> --repo acme/api -- "incident"',
@@ -58,19 +58,20 @@ export default class Rg extends ContentCommand<
       );
     }
 
-    const selection = createContentSelection({
-      customerWideOnly: parsed['customer-wide-only'],
+    const runtime = buildFlywheelRuntime({
       cwd: process.cwd(),
-      repoIds: parsed.repo,
+      deps,
       ...(parsed['repository-path'] === undefined
         ? {}
         : { repositoryPath: parsed['repository-path'] }),
     });
     const result = await runContentRg({
-      filesystem: deps.filesystem,
-      process: deps.process,
+      customerWideOnly: parsed['customer-wide-only'],
+      filesystem: runtime.deps.filesystem,
+      process: runtime.deps.process,
+      repositoryIds: parsed.repo,
+      repositoryPath: runtime.repositoryPath,
       rgArgs: this.argv.slice(delimiterIndex + 1),
-      selection,
     });
     if (result.stderr !== '') {
       process.stderr.write(result.stderr);

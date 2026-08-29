@@ -27,7 +27,9 @@ export function resolveRepositoryPath({
   );
 }
 
-function normalizeRepositoryRelativePath(candidate: string): RepositoryPath {
+export function normalizeRepositoryRelativePath(
+  candidate: string
+): RepositoryPath {
   if (
     candidate.trim() === '' ||
     candidate.includes('\\') ||

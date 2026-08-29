@@ -1,207 +1,75 @@
-import path from 'node:path';
-
+import { discoverRepository } from '../repository/discover.js';
+import {
+  RepositoryIdentityError,
+  RepositoryPathError,
+  RepositorySelectionError,
+  RepositorySourceError,
+} from '../repository/errors.js';
+import { createRepositorySelection } from '../repository/selection.js';
+import { createWorkingTreeSource } from '../repository/source/working-tree.js';
+import {
+  ExactSearchInvocationError,
+  ExactSearchOperationalError,
+} from '../retrieval/exact/errors.js';
+import { runExactSearch } from '../retrieval/exact/execute.js';
 import type {
   AsyncFileSystem,
   ProcessResult,
   ProcessRunner,
 } from '../runtime/deps.js';
 import { ContentInvocationError, ContentOperationalError } from './errors.js';
-import {
-  discoverContentSearchRoots,
-  toRepositoryRelative,
-  type ContentSelection,
-} from './roots.js';
-
-const RIPGREP_VALUE_OPTIONS = new Set([
-  '--after-context',
-  '--before-context',
-  '--color',
-  '--colors',
-  '--context',
-  '--encoding',
-  '--glob',
-  '--iglob',
-  '--max-columns',
-  '--max-count',
-  '--path-separator',
-  '--pre',
-  '--pre-glob',
-  '--regexp',
-  '--sort',
-  '--sortr',
-  '--threads',
-  '--type',
-  '--type-add',
-  '--type-clear',
-  '--type-not',
-  '-A',
-  '-B',
-  '-C',
-  '-e',
-  '-f',
-  '-g',
-  '-j',
-  '-m',
-  '-t',
-]);
 
 export type ContentRgInput = Readonly<{
+  readonly customerWideOnly: boolean;
   readonly filesystem: AsyncFileSystem;
   readonly process: ProcessRunner;
+  readonly repositoryIds: readonly string[];
+  readonly repositoryPath: string;
   readonly rgArgs: readonly string[];
-  readonly selection: ContentSelection;
 }>;
 
 export async function runContentRg(
   input: ContentRgInput
 ): Promise<ProcessResult> {
-  rejectJsonArguments(input.rgArgs);
-  const roots = await discoverContentSearchRoots(
-    input.filesystem,
-    input.selection
-  );
-  const pathOperands = findPathOperands(input.rgArgs);
-  validatePathOperands(input.selection.repositoryPath, roots, pathOperands);
-
-  if (roots.length === 0) {
-    return {
-      exitCode: 1,
-      stderr: '',
-      stdout: '',
-    };
-  }
-
-  const args =
-    pathOperands.length === 0
-      ? [
-          ...input.rgArgs,
-          ...roots.map((root) =>
-            toRepositoryRelative(input.selection.repositoryPath, root)
-          ),
-        ]
-      : [...input.rgArgs];
   try {
-    return await input.process.run('rg', args, {
-      cwd: input.selection.repositoryPath,
+    const source = createWorkingTreeSource({
+      filesystem: input.filesystem,
+      repositoryPath: input.repositoryPath,
+    });
+    const inventory = await discoverRepository(source);
+    const selection = createRepositorySelection({
+      customerWideOnly: input.customerWideOnly,
+      repositoryIds: input.repositoryIds,
+    });
+    return await runExactSearch({
+      inventory,
+      process: input.process,
+      rgArgs: input.rgArgs,
+      selection,
     });
   } catch (error) {
-    throw new ContentOperationalError('ripgrep could not be started', {
-      cause: error,
-    });
+    throw mapContentRgError(error);
   }
 }
 
-function findPathOperands(rgArgs: readonly string[]): readonly string[] {
-  const state: RgArgumentState = {
-    operands: [],
-    optionsDone: false,
-    patternSeen: false,
-  };
-
-  for (let index = 0; index < rgArgs.length; index += 1) {
-    const argument = rgArgs[index];
-    if (argument === undefined) {
-      continue;
-    }
-    index += consumeRgArgument(argument, state);
+function mapContentRgError(error: unknown): Error {
+  if (
+    error instanceof ExactSearchInvocationError ||
+    error instanceof RepositoryIdentityError ||
+    error instanceof RepositoryPathError ||
+    error instanceof RepositorySelectionError
+  ) {
+    return new ContentInvocationError(error.message);
   }
-
-  return state.operands;
-}
-
-function rejectJsonArguments(rgArgs: readonly string[]): void {
-  if (rgArgs.some((argument) => argument === '--json')) {
-    throw new ContentInvocationError(
-      'content rg does not support --json before or after the delimiter'
-    );
+  if (
+    error instanceof ExactSearchOperationalError ||
+    error instanceof RepositorySourceError
+  ) {
+    return new ContentOperationalError(error.message, { cause: error });
   }
-}
-
-function validatePathOperands(
-  repositoryPath: string,
-  roots: readonly string[],
-  pathOperands: readonly string[]
-): void {
-  for (const operand of pathOperands) {
-    if (operand === '-' || path.isAbsolute(operand) || operand.includes('\\')) {
-      throw new ContentInvocationError(
-        `ripgrep path is not a repository-relative admitted path: ${operand}`
-      );
-    }
-
-    const candidate = path.resolve(repositoryPath, operand);
-    if (
-      !roots.some((root) => {
-        const relative = path.relative(root, candidate);
-        return (
-          relative === '' ||
-          (!relative.startsWith(`..${path.sep}`) &&
-            relative !== '..' &&
-            !path.isAbsolute(relative))
-        );
-      })
-    ) {
-      throw new ContentInvocationError(
-        `ripgrep path escapes admitted Flywheel roots: ${operand}`
-      );
-    }
-  }
-}
-
-function hasInlineValue(argument: string): boolean {
-  if (!argument.startsWith('--')) {
-    return (
-      argument.length > 2 && RIPGREP_VALUE_OPTIONS.has(argument.slice(0, 2))
-    );
-  }
-
-  return argument.includes('=');
-}
-
-function isPatternOption(argument: string): boolean {
-  return (
-    argument === '-e' ||
-    argument === '-f' ||
-    argument === '--regexp' ||
-    argument.startsWith('-f') ||
-    argument.startsWith('--regexp=')
-  );
-}
-
-type RgArgumentState = {
-  readonly operands: string[];
-  optionsDone: boolean;
-  patternSeen: boolean;
-};
-
-function consumeRgArgument(argument: string, state: RgArgumentState): number {
-  if (argument === '--') {
-    state.optionsDone = true;
-    return 0;
-  }
-  if (state.optionsDone) {
-    addPatternOrOperand(argument, state);
-    return 0;
-  }
-  if (!argument.startsWith('-')) {
-    addPatternOrOperand(argument, state);
-    return 0;
-  }
-  if (hasInlineValue(argument)) {
-    state.patternSeen ||= isPatternOption(argument);
-    return 0;
-  }
-  if (RIPGREP_VALUE_OPTIONS.has(argument)) {
-    state.patternSeen ||= isPatternOption(argument);
-    return 1;
-  }
-  return 0;
-}
-
-function addPatternOrOperand(argument: string, state: RgArgumentState): void {
-  if (!state.patternSeen) {
-    state.patternSeen = true;
-    return;
-  }
-  state.operands.push(argument);
+  return error instanceof Error
+    ? error
+    : new ContentOperationalError('content rg failed unexpectedly', {
+        cause: error,
+      });
 }
