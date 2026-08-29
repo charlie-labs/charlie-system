@@ -1,0 +1,27 @@
+{
+  "name": "@charlie-labs/ch-docs",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "ch-docs": "./bin/run.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "bun run ./bin/run.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@charlie-labs/oclif-plugin-helpers": "^0.4.0",
+    "@oclif/core": "^4.10.6",
+    "@oclif/plugin-help": "^6.2.25"
+  },
+  "oclif": {
+    "bin": "ch-docs",
+    "commands": "./src/cli/commands",
+    "dirname": "ch-docs",
+    "plugins": [
+      "@oclif/plugin-help"
+    ],
+    "topicSeparator": " "
+  }
+}

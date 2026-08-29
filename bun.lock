@@ -15,6 +15,18 @@
         "typescript": "7.0.2",
       },
     },
+    "clis/ch-docs": {
+      "name": "@charlie-labs/ch-docs",
+      "version": "0.0.0",
+      "bin": {
+        "ch-docs": "./bin/run.ts",
+      },
+      "dependencies": {
+        "@charlie-labs/oclif-plugin-helpers": "^0.4.0",
+        "@oclif/core": "^4.10.6",
+        "@oclif/plugin-help": "^6.2.25",
+      },
+    },
     "clis/flywheel": {
       "name": "@charlie-labs/flywheel",
       "version": "0.0.0",
@@ -39,6 +51,8 @@
     },
   },
   "packages": {
+    "@charlie-labs/ch-docs": ["@charlie-labs/ch-docs@workspace:clis/ch-docs"],
+
     "@charlie-labs/flywheel": ["@charlie-labs/flywheel@workspace:clis/flywheel"],
 
     "@charlie-labs/oclif-plugin-helpers": ["@charlie-labs/oclif-plugin-helpers@0.4.0", "", { "peerDependencies": { "@oclif/core": "^4.5.2", "zod": "^4.4.3" } }, "sha512-XwMTTgRUDPJ+O911q8nQN1ddOIbaId2O1BwbOtwINLFk60pkxwiorryORHVpQLJPjXvPgKOpKmVIrRB9hyO96g=="],
