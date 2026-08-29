@@ -38,17 +38,25 @@ function compareDiagnostics(
   left: ValidationDiagnostic,
   right: ValidationDiagnostic
 ): number {
-  return diagnosticKey(left).localeCompare(diagnosticKey(right));
+  const leftPosition = diagnosticPosition(left);
+  const rightPosition = diagnosticPosition(right);
+  const comparisons = [
+    left.path.localeCompare(right.path),
+    leftPosition.line - rightPosition.line,
+    leftPosition.column - rightPosition.column,
+    left.ruleId.localeCompare(right.ruleId),
+    (left.target ?? '').localeCompare(right.target ?? ''),
+    (left.field ?? '').localeCompare(right.field ?? ''),
+    left.message.localeCompare(right.message),
+  ];
+  for (const comparison of comparisons) {
+    if (comparison !== 0) return comparison;
+  }
+  return 0;
 }
 
-function diagnosticKey(diagnostic: ValidationDiagnostic): string {
-  return [
-    diagnostic.path,
-    diagnostic.source?.start.line ?? 0,
-    diagnostic.source?.start.column ?? 0,
-    diagnostic.ruleId,
-    diagnostic.target ?? '',
-    diagnostic.field ?? '',
-    diagnostic.message,
-  ].join('\u0000');
+function diagnosticPosition(
+  diagnostic: ValidationDiagnostic
+): Readonly<{ readonly column: number; readonly line: number }> {
+  return diagnostic.source?.start ?? { column: 0, line: 0 };
 }
