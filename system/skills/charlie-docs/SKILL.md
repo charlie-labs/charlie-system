@@ -74,6 +74,9 @@ Feedback is a maintenance signal for the documentation team, not authority to
 edit public documentation without verification. State what you observed and
 avoid guessing about the remedy.
 
+Always end the feedback text with the current root task ID in the form
+`[rootTaskId=<current root task ID>]`.
+
 Submit feedback with:
 
 ```text
@@ -83,7 +86,7 @@ bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <f
 For example:
 
 ```text
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /integrations/slack "Under `Thread follow-ups`, the page says every reply in an existing thread is treated as a continuation. In a shared channel, a reply that mentions @Charlie starts a new request instead, so this guidance can cause a follow-up to be missed. I observed this with the current Slack behavior; the routing reference describes mentions as explicit requests."
+bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /integrations/slack "Under `Thread follow-ups`, the page says every reply in an existing thread is treated as a continuation. In a shared channel, a reply that mentions @Charlie starts a new request instead, so this guidance can cause a follow-up to be missed. I observed this with the current Slack behavior; the routing reference describes mentions as explicit requests. [rootTaskId=tsk_…]"
 ```
 
 The retrieval commands (`page`, `index`, `full`, `search`, and
