@@ -1,0 +1,252 @@
+import { expect, test } from 'bun:test';
+
+import { compileArtifacts } from '../../artifacts/compiler/compile.js';
+import type { RepositorySource } from '../../repository/contract.js';
+import { discoverRepository } from '../../repository/discover.js';
+import { validateArtifacts } from '../artifacts.js';
+import { validationReport } from '../diagnostics.js';
+
+const ENCODER = new TextEncoder();
+
+test('preserves parser incompleteness as sourced diagnostics', async () => {
+  const compilations = await compile({
+    'customer-wide/docs/broken.md': '# Missing metadata\n',
+  });
+  const report = validationReport(validateArtifacts(compilations));
+  const diagnostic = report.diagnostics.find(
+    (item) => item.ruleId === 'FW-ARTIFACT-FRONTMATTER-REQUIRED'
+  );
+
+  expect(report.status).toBe('incomplete');
+  expect(diagnostic).toMatchObject({
+    impact: 'incomplete',
+    path: 'customer-wide/docs/broken.md',
+    severity: 'error',
+    source: { start: { column: 1, line: 1 } },
+  });
+});
+
+test('does not assess malformed authored fields as valid defaults', async () => {
+  const compilations = await compile(malformedArtifactFiles());
+  const report = validationReport(validateArtifacts(compilations));
+  const rules = report.diagnostics.map((diagnostic) => diagnostic.ruleId);
+
+  expect(report.status).toBe('incomplete');
+  for (const rule of [
+    'FW-CATALOG-METADATA-INVALID',
+    'FW-CATALOG-REFERENCE-INVALID',
+    'FW-DOCUMENT-FIELD-INVALID',
+    'FW-DAEMON-FIELD-INVALID',
+  ]) {
+    expect(rules).toContain(rule);
+  }
+});
+
+test('requires the normalized first fragment after the H1 to be a paragraph', async () => {
+  const compilations = await compile({
+    'customer-wide/docs/missing-lead.md': `---
+purpose: Demonstrate the lead paragraph invariant.
+reviewEvery: 90d
+---
+# Missing lead
+
+## Later section
+
+Content under a child heading does not satisfy the invariant.
+`,
+  });
+  const report = validationReport(validateArtifacts(compilations));
+
+  expect(report.status).toBe('invalid');
+  expect(report.diagnostics).toHaveLength(1);
+  expect(report.diagnostics[0]).toMatchObject({
+    impact: 'invalid',
+    path: 'customer-wide/docs/missing-lead.md',
+    ruleId: 'FW-DOCUMENT-LEAD-PARAGRAPH-REQUIRED',
+    source: { start: { column: 1, line: 7 } },
+    target: 'document:customer-wide%2Fdocs%2Fmissing-lead.md',
+  });
+});
+
+test('validates normalized review cadences and citation integrity', async () => {
+  const compilations = await compile({
+    'customer-wide/catalog/entities.yaml': catalog('later'),
+    'customer-wide/docs/citations.md': invalidCitations(),
+  });
+  const report = validationReport(validateArtifacts(compilations));
+  const rules = report.diagnostics.map((diagnostic) => diagnostic.ruleId);
+
+  expect(report.status).toBe('invalid');
+  expect(ruleCount(rules, 'FW-CATALOG-REVIEW-CADENCE')).toBe(1);
+  expect(ruleCount(rules, 'FW-DOCUMENT-REVIEW-CADENCE')).toBe(1);
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-MISSING')).toBe(1);
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-DUPLICATE')).toBe(2);
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-UNUSED')).toBe(3);
+  for (const diagnostic of report.diagnostics.filter(
+    (item) => item.ruleId === 'FW-DOCUMENT-CITATION-UNUSED'
+  )) {
+    expect(diagnostic).toMatchObject({ impact: 'none', severity: 'warning' });
+  }
+});
+
+test('validates citation usages nested inside citation definitions', async () => {
+  const compilations = await compile({
+    'customer-wide/docs/nested-citations.md': nestedCitations(),
+  });
+  const report = validationReport(validateArtifacts(compilations));
+  const rules = report.diagnostics.map((diagnostic) => diagnostic.ruleId);
+
+  expect(report.status).toBe('invalid');
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-MISSING')).toBe(1);
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-DUPLICATE')).toBe(2);
+  expect(ruleCount(rules, 'FW-DOCUMENT-CITATION-UNUSED')).toBe(0);
+  expect(
+    report.diagnostics.find(
+      (diagnostic) => diagnostic.ruleId === 'FW-DOCUMENT-CITATION-MISSING'
+    )
+  ).toMatchObject({
+    field: 'citation.missing',
+    ruleId: 'FW-DOCUMENT-CITATION-MISSING',
+    source: { start: { line: 12 } },
+  });
+});
+
+test('reports duplicate canonical artifact targets deterministically', async () => {
+  const compilations = await compile({
+    'customer-wide/catalog/first.yaml': catalog('90d'),
+    'customer-wide/catalog/second.yaml': catalog('90d'),
+  });
+  const first = validationReport(validateArtifacts(compilations));
+  const second = validationReport(validateArtifacts(compilations));
+
+  expect(first).toEqual(second);
+  expect(
+    first.diagnostics.filter(
+      (diagnostic) => diagnostic.ruleId === 'FW-ARTIFACT-TARGET-DUPLICATE'
+    )
+  ).toHaveLength(2);
+  expect(first.status).toBe('invalid');
+});
+
+async function compile(
+  files: Readonly<Record<string, string>>
+): Promise<Awaited<ReturnType<typeof compileArtifacts>>['compilations']> {
+  const source = memorySource(files);
+  const inventory = await discoverRepository(source);
+  return (await compileArtifacts(source, inventory)).compilations;
+}
+
+function memorySource(
+  files: Readonly<Record<string, string>>
+): RepositorySource {
+  return {
+    listEntries: () =>
+      Promise.resolve(
+        Object.keys(files).map((path) => ({ kind: 'file' as const, path }))
+      ),
+    readFiles: (paths) =>
+      Promise.resolve(
+        paths.map((path) => {
+          const contents = files[path];
+          return contents === undefined
+            ? { kind: 'missing' as const, path }
+            : { bytes: ENCODER.encode(contents), kind: 'read' as const, path };
+        })
+      ),
+    state: { kind: 'working-tree', repositoryPath: '/knowledge' },
+  };
+}
+
+function catalog(reviewEvery: string): string {
+  return `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api
+  annotations:
+    charlie.ai/review-every: ${reviewEvery}
+spec: {}
+`;
+}
+
+function invalidCitations(): string {
+  return `---
+purpose: Demonstrate citation validation.
+reviewEvery: eventually
+---
+# Citations
+
+Missing evidence.[^missing]
+
+[^duplicate]: [First](https://example.com/first)
+[^duplicate]: [Second](https://example.com/second)
+[^unused]: [Unused](https://example.com/unused)
+`;
+}
+
+function nestedCitations(): string {
+  return `---
+purpose: Demonstrate nested citation validation.
+reviewEvery: 90d
+---
+# Citations
+
+Start with the root evidence.[^root]
+
+[^root]:
+    > Consult the nested evidence.[^nested]
+    >
+    > - Detect the missing evidence.[^missing]
+    > - Consult the duplicated evidence.[^duplicate]
+[^nested]: [Nested](https://example.com/nested)
+[^duplicate]: [First](https://example.com/first)
+[^duplicate]: [Second](https://example.com/second)
+`;
+}
+
+function malformedArtifactFiles(): Readonly<Record<string, string>> {
+  return {
+    'customer-wide/.agents/daemons/review/DAEMON.md': `---
+schemaVersion: [daemon.v0]
+id: review
+purpose: Review changes.
+role: reviewer
+routines: Review the change.
+schedule: daily
+---
+Review each change.
+`,
+    'customer-wide/catalog/namespace.yaml': `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api
+  namespace: [product]
+  annotations:
+    charlie.ai/review-every: 90d
+spec: {}
+`,
+    'customer-wide/catalog/references.yaml': `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: worker
+  annotations:
+    charlie.ai/review-every: 90d
+spec:
+  dependsOn:
+    - component:default/api
+    - 42
+`,
+    'customer-wide/docs/replaced.md': `---
+purpose: Explain replacement.
+reviewEvery: 90d
+replacedBy: [./new.md]
+---
+# Replacement
+
+Keep the authored state visible.
+`,
+  };
+}
+
+function ruleCount(rules: readonly string[], ruleId: string): number {
+  return rules.filter((candidate) => candidate === ruleId).length;
+}

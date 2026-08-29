@@ -26,10 +26,11 @@ test('proves content JSON shape and stdout/stderr separation', async () => {
   expect(JSON.parse(valid.stdout)).toEqual({
     diagnostics: [],
     filesChecked: 1,
+    status: 'valid',
   });
 
   const invalidRepository = await makeRepository({
-    'customer-wide/docs/bad.md': 'not valid markdown\n',
+    'customer-wide/docs/bad.md': '# Bad\n',
   });
   const [invalidJson, invalidHuman] = await Promise.all([
     runCli([
@@ -46,14 +47,105 @@ test('proves content JSON shape and stdout/stderr separation', async () => {
   expect(invalidJson.stderr).toBe('');
   expect(JSON.parse(invalidJson.stdout)).toMatchObject({
     error: {
-      diagnostics: [{ ruleId: 'FW-DOC-001' }],
+      diagnostics: [{ ruleId: 'FW-ARTIFACT-FRONTMATTER-REQUIRED' }],
       exitCode: 1,
+      filesChecked: 1,
+      status: 'incomplete',
       type: 'ContentValidationError',
     },
   });
   expect(invalidHuman.exitCode).toBe(1);
   expect(invalidHuman.stdout).toBe('');
-  expect(invalidHuman.stderr).toContain('error FW-DOC-001');
+  expect(invalidHuman.stderr).toContain(
+    'error FW-ARTIFACT-FRONTMATTER-REQUIRED'
+  );
+});
+
+test('proves Document invariant and parser diagnostics through the CLI', async () => {
+  const leadRepository = await makeRepository({
+    'customer-wide/docs/lead.md': validDocument.replace(
+      'This is a PLACEHOLDER guide body.',
+      '## Later section\n\nContent under the child heading.'
+    ),
+  });
+  const metadataRepository = await makeRepository({
+    'customer-wide/docs/metadata.md': validDocument.replace(
+      'reviewEvery: 90d',
+      'reviewEvery: 90d\nreviewEvey: 7d'
+    ),
+  });
+  const [lead, metadata] = await Promise.all([
+    runCli([
+      'content',
+      'validate',
+      '--repository-path',
+      leadRepository,
+      '--json',
+    ]),
+    runCli([
+      'content',
+      'validate',
+      '--repository-path',
+      metadataRepository,
+      '--json',
+    ]),
+  ]);
+
+  expect(lead.exitCode).toBe(1);
+  expect(JSON.parse(lead.stdout)).toMatchObject({
+    error: {
+      diagnostics: [
+        expect.objectContaining({
+          ruleId: 'FW-DOCUMENT-LEAD-PARAGRAPH-REQUIRED',
+        }),
+      ],
+      status: 'invalid',
+    },
+  });
+  expect(metadata.exitCode).toBe(1);
+  expect(JSON.parse(metadata.stdout)).toMatchObject({
+    error: {
+      diagnostics: [
+        expect.objectContaining({ ruleId: 'FW-DOCUMENT-FIELD-UNKNOWN' }),
+      ],
+      status: 'incomplete',
+    },
+  });
+});
+
+test('excludes tooling state from CLI validation selection and counts', async () => {
+  const repositoryPath = await makeRepository({
+    '.flywheel/index.sqlite': 'derived state\n',
+    'customer-wide/docs/guide.md': validDocument,
+  });
+  const [repository, toolingState] = await Promise.all([
+    runCli([
+      'content',
+      'validate',
+      '--repository-path',
+      repositoryPath,
+      '--json',
+    ]),
+    runCli([
+      'content',
+      'validate',
+      '.flywheel/index.sqlite',
+      '--repository-path',
+      repositoryPath,
+      '--json',
+    ]),
+  ]);
+
+  expect(repository.exitCode).toBe(0);
+  expect(JSON.parse(repository.stdout)).toEqual({
+    diagnostics: [],
+    filesChecked: 1,
+    status: 'valid',
+  });
+  expect(toolingState.exitCode).toBe(2);
+  expect(JSON.parse(toolingState.stdout)).toMatchObject({
+    error: { exitCode: 2, type: 'ContentInvocationError' },
+  });
 });
 
 test('proves Skill preset discovery and JSON output shapes', async () => {

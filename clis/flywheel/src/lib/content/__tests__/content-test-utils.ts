@@ -27,16 +27,11 @@ export async function makeRepository(
 }
 
 export async function readRepositoryFiles(
-  repositoryPath: string
+  repositoryPath: string,
+  relativePaths: readonly string[]
 ): Promise<Readonly<Record<string, string>>> {
-  const files = [
-    'customer-wide/.agents/skills/example.md',
-    'customer-wide/docs/bad.md',
-    'customer-wide/docs/good.md',
-    'customer-wide/unknown.txt',
-  ];
   const contents: Array<[string, string]> = await Promise.all(
-    files.map(
+    relativePaths.map(
       async (relativePath): Promise<[string, string]> => [
         relativePath,
         await readFile(path.join(repositoryPath, relativePath), 'utf8'),
