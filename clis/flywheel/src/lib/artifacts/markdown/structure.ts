@@ -39,7 +39,7 @@ type MutableSection = Readonly<{
 
 type SourceLocator = ReturnType<typeof createSourceLocator>;
 type SectionContext = Readonly<{
-  readonly anchors: Map<string, number>;
+  readonly anchors: Set<string>;
   readonly document: DocumentTarget;
   readonly headingPath: string[];
   readonly locator: SourceLocator;
@@ -52,7 +52,7 @@ export function createMarkdownStructure(input: {
   readonly root: Root;
 }): MarkdownStructure {
   const locator = createSourceLocator(input.path, input.contents);
-  const anchors = new Map<string, number>();
+  const anchors = new Set<string>();
   const headingPath: string[] = [];
   const preamble: SourceFragment[] = [];
   const sections: MutableSection[] = [];
@@ -272,14 +272,19 @@ function nodeSourceText(node: Nodes, contents: string): string {
     : contents.slice(start, end);
 }
 
-function uniqueAnchor(heading: string, counts: Map<string, number>): string {
+function uniqueAnchor(heading: string, anchors: Set<string>): string {
   const base =
     heading
       .trim()
       .toLowerCase()
       .replaceAll(/[^\p{L}\p{N}\s_-]/gu, '')
       .replaceAll(/[\s_]+/gu, '-') || 'section';
-  const count = counts.get(base) ?? 0;
-  counts.set(base, count + 1);
-  return count === 0 ? base : `${base}-${count}`;
+  let anchor = base;
+  let suffix = 1;
+  while (anchors.has(anchor)) {
+    anchor = `${base}-${suffix}`;
+    suffix += 1;
+  }
+  anchors.add(anchor);
+  return anchor;
 }

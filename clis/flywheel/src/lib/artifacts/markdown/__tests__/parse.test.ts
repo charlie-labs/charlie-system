@@ -81,3 +81,34 @@ test('normalizes source-faithful GFM structure and references once', () => {
     start: { line: 7 },
   });
 });
+
+test('makes section anchors globally unique across derived collisions', () => {
+  const parsed = parseMarkdown(
+    '# Foo\n\n## Foo 1\n\n## Foo\n',
+    'customer-wide/docs/collisions.md'
+  );
+
+  expect(parsed.sections.map((section) => section.target.anchor)).toEqual([
+    'foo',
+    'foo-1',
+    'foo-2',
+  ]);
+});
+
+test('collects nested authored Markdown reference definitions', () => {
+  const parsed = parseMarkdown(
+    `> [quote-ref]: https://example.test/quote\n> [quote][quote-ref]\n\n- item\n\n  [list-ref]: https://example.test/list\n\n  [list][list-ref]\n\n[^evidence]: Evidence.\n\n    [footnote-ref]: https://example.test/footnote\n\n    [footnote][footnote-ref]\n`,
+    'customer-wide/docs/nested-definitions.md'
+  );
+
+  expect(
+    parsed.authoredReferences.map((reference) => ({
+      citationKey: reference.citationKey,
+      raw: reference.raw,
+    }))
+  ).toEqual([
+    { citationKey: undefined, raw: 'https://example.test/quote' },
+    { citationKey: undefined, raw: 'https://example.test/list' },
+    { citationKey: 'evidence', raw: 'https://example.test/footnote' },
+  ]);
+});

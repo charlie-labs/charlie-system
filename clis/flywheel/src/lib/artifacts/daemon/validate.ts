@@ -43,6 +43,22 @@ export function addRequiredDaemonProblems(input: {
   addRoleProblem(input);
 }
 
+export function addDaemonBodyProblem(
+  body: string,
+  input: ArtifactParseInput,
+  problems: ArtifactProblem[]
+): void {
+  if (body.trim() === '') {
+    problems.push(
+      problem(
+        input,
+        'DAEMON_BODY_REQUIRED',
+        'Daemon requires Markdown instructions'
+      )
+    );
+  }
+}
+
 function addRoleProblem(input: {
   readonly input: ArtifactParseInput;
   readonly problems: ArtifactProblem[];

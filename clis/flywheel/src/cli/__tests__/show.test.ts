@@ -57,6 +57,61 @@ test('returns the normalized artifact boundary in JSON mode', async () => {
   });
 });
 
+test('accepts content show flags before the target', async () => {
+  const repositoryPath = await makeShowRepository();
+  const result = await runCli([
+    'content',
+    'show',
+    '--repository-path',
+    repositoryPath,
+    '--json',
+    'component:api',
+  ]);
+
+  expect(result.exitCode).toBe(0);
+  expect(result.stderr).toBe('');
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    artifact: { kind: 'catalog', name: 'api' },
+    kind: 'artifact',
+  });
+});
+
+test('never renders or returns secret-bearing authored URLs', async () => {
+  const secret = 'SHOW-SECRET-VALUE';
+  const repositoryPath = await makeRepository({
+    'customer-wide/docs/secret.md': `---\npurpose: Explain safety.\nreviewEvery: 30d\n---\n# Safety\n\n[private](https://example.test/run?access_token=${secret})\n`,
+  });
+  const results = await Promise.all(
+    [[], ['--json']].map((mode) =>
+      runCli([
+        'content',
+        'show',
+        'customer-wide/docs/secret.md',
+        '--repository-path',
+        repositoryPath,
+        ...mode,
+      ])
+    )
+  );
+
+  expect(results.map((result) => result.exitCode)).toEqual([2, 1]);
+  for (const result of results) {
+    expect(`${result.stdout}${result.stderr}`).not.toContain(secret);
+    expect(`${result.stdout}${result.stderr}`).not.toContain('access_token');
+    expect(`${result.stdout}${result.stderr}`).toContain(
+      'authored URL contains secret-bearing credentials'
+    );
+  }
+  expect(JSON.parse(results[1]?.stdout ?? '')).toMatchObject({
+    error: {
+      inspection: {
+        kind: 'unparsed',
+        problems: [{ code: 'ARTIFACT_REFERENCE_SECRET' }],
+      },
+    },
+  });
+});
+
 test('keeps unparsed, ambiguous, missing, and external outcomes explicit', async () => {
   const repositoryPath = await makeShowRepository();
   const inputs: readonly Readonly<{

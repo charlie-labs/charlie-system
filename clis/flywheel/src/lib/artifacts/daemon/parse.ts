@@ -1,4 +1,3 @@
-import type { AuthoredReference } from '../../references/contract.js';
 import { wholeFileLocation } from '../../repository/location.js';
 import { daemonTarget } from '../../targets/id.js';
 import type {
@@ -17,7 +16,9 @@ import {
 } from '../parser.js';
 import { stringField, stringListField } from '../values.js';
 import type { DaemonActivation, DaemonArtifact } from './contract.js';
+import { daemonReferences } from './references.js';
 import {
+  addDaemonBodyProblem,
   addLocalDaemonProblems,
   addRequiredDaemonProblems,
   daemonListField,
@@ -36,7 +37,7 @@ export function parseDaemonArtifact(
     decoded.contents,
     input.entry.path
   );
-  const problems = [...frontmatter.problems];
+  const problems = [...frontmatter.problems, ...markdown.referenceProblems];
   const artifact = daemonArtifact({
     contents: decoded.contents,
     input,
@@ -77,6 +78,14 @@ function daemonArtifact(context: {
     watch,
   });
   addLocalDaemonProblems({ daemonId, input, problems, schemaVersion, value });
+  addDaemonBodyProblem(context.markdown.body, input, problems);
+  const references = daemonReferences({
+    markdown: context.markdown.authoredReferences,
+    markdownValid: context.markdown.referenceProblems.length === 0,
+    role,
+    source: context.markdown.frontmatter?.source ?? context.markdown.bodySource,
+  });
+  problems.push(...references.problems);
   const activation = daemonActivation(watch, schedule);
   const fields = {
     activation,
@@ -84,9 +93,11 @@ function daemonArtifact(context: {
     daemonId,
     input,
     purpose,
+    references: references.references,
     role,
     routines,
     schemaVersion,
+    validReferences: references.valid,
   };
   if (!daemonIsComplete(fields)) return undefined;
   return createDaemonArtifact(context, fields, deny);
@@ -102,6 +113,7 @@ function createDaemonArtifact(
     readonly activation: DaemonActivation;
     readonly daemonId: string;
     readonly purpose: string;
+    readonly references: DaemonArtifact['authoredReferences'];
     readonly role: string | undefined;
     readonly routines: readonly string[];
     readonly schemaVersion: string;
@@ -111,11 +123,7 @@ function createDaemonArtifact(
   const { input, markdown } = context;
   return {
     activation: fields.activation,
-    authoredReferences: daemonReferences(
-      markdown.authoredReferences,
-      fields.role,
-      markdown.frontmatter?.source ?? markdown.bodySource
-    ),
+    authoredReferences: fields.references,
     body: markdown.body,
     daemonId: fields.daemonId,
     deny,
@@ -137,9 +145,11 @@ function daemonIsComplete(input: {
   readonly daemonId: string | undefined;
   readonly input: ArtifactParseInput;
   readonly purpose: string | undefined;
+  readonly references: DaemonArtifact['authoredReferences'];
   readonly role: string | undefined;
   readonly routines: readonly string[] | undefined;
   readonly schemaVersion: string;
+  readonly validReferences: boolean;
 }): input is typeof input & {
   readonly activation: DaemonActivation;
   readonly daemonId: string;
@@ -160,7 +170,8 @@ function daemonIsComplete(input: {
     input.routines !== undefined &&
     input.routines.length > 0 &&
     input.schemaVersion === 'daemon.v0' &&
-    input.body.trim() !== ''
+    input.body.trim() !== '' &&
+    input.validReferences
   );
 }
 
@@ -172,14 +183,4 @@ function daemonActivation(
     return { kind: 'hybrid', schedule, watch };
   if (watch.length > 0) return { kind: 'watch', watch };
   return schedule === undefined ? undefined : { kind: 'schedule', schedule };
-}
-
-function daemonReferences(
-  markdown: readonly AuthoredReference[],
-  role: string | undefined,
-  source: DaemonArtifact['source']
-): readonly AuthoredReference[] {
-  return role === undefined
-    ? markdown
-    : [{ raw: role, relationship: 'contributes-to', source }, ...markdown];
 }

@@ -1,3 +1,4 @@
+import type { SourceLocation } from '../../repository/location.js';
 import type { CatalogTarget } from '../../targets/contract.js';
 import type { ArtifactBase, KnowledgeLifecycle } from '../base.js';
 
@@ -19,6 +20,7 @@ export type CatalogArtifact = ArtifactBase<'catalog', CatalogTarget> &
     readonly lifecycle: KnowledgeLifecycle;
     readonly name: string;
     readonly namespace: string;
+    readonly namespaceSource?: SourceLocation;
     readonly spec: Readonly<Record<string, CatalogValue>>;
     readonly title?: string;
   }>;

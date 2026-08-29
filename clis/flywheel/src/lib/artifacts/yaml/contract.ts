@@ -1,6 +1,7 @@
 import type { SourceLocation } from '../../repository/location.js';
 
 export type ParsedYamlDocument = Readonly<{
+  readonly fieldSources: ReadonlyMap<string, SourceLocation>;
   readonly source: SourceLocation;
   readonly value: unknown;
 }>;

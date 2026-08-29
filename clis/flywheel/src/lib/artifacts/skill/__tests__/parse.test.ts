@@ -45,6 +45,31 @@ test('parses the Agent Skills contract without exposing Markdown syntax', () => 
   expect('type' in artifact).toBe(false);
 });
 
+test('reports each present malformed optional Skill field', () => {
+  const compilation = parseSkillArtifact(
+    artifactInput(
+      'skill',
+      'customer-wide/.agents/skills/release-review/SKILL.md',
+      skill
+        .replace('license: MIT', 'license: ""')
+        .replace(
+          'compatibility: Requires GitHub access.',
+          'compatibility: [GitHub]'
+        )
+        .replace('allowed-tools: Bash Read', 'allowed-tools:\n  Bash: true')
+    )
+  );
+
+  expect(compilation.kind).toBe('parsed');
+  expect(
+    compilation.problems.map((problem) => [problem.code, problem.message])
+  ).toEqual([
+    ['SKILL_FIELD_INVALID', 'Skill allowed-tools must be a non-empty string'],
+    ['SKILL_FIELD_INVALID', 'Skill compatibility must be a non-empty string'],
+    ['SKILL_FIELD_INVALID', 'Skill license must be a non-empty string'],
+  ]);
+});
+
 test('retains a Skill with missing required metadata as unparsed', () => {
   const compilation = parseSkillArtifact(
     artifactInput(

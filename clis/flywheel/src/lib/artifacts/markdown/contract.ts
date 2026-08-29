@@ -1,5 +1,6 @@
 import type { AuthoredReference } from '../../references/contract.js';
 import type { SourceLocation } from '../../repository/location.js';
+import type { ArtifactProblem } from '../contract.js';
 import type {
   CitationDefinition,
   DocumentSection,
@@ -19,5 +20,6 @@ export type ParsedMarkdown = Readonly<{
   readonly citations: readonly CitationDefinition[];
   readonly frontmatter?: MarkdownFrontmatter;
   readonly preamble: readonly SourceFragment[];
+  readonly referenceProblems: readonly ArtifactProblem[];
   readonly sections: readonly DocumentSection[];
 }>;

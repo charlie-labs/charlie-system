@@ -1,7 +1,3 @@
-import type {
-  AuthoredReference,
-  RelationshipKind,
-} from '../../references/contract.js';
 import {
   wholeFileLocation,
   type SourceLocation,
@@ -19,27 +15,12 @@ import {
   parsedArtifact,
   unparsedArtifact,
 } from '../parser.js';
-import {
-  asRecord,
-  stringField,
-  stringListField,
-  stringRecordField,
-} from '../values.js';
+import { asRecord, stringField, stringRecordField } from '../values.js';
 import type { ParsedYamlDocument } from '../yaml/contract.js';
 import { parseYaml } from '../yaml/parse.js';
 import type { CatalogArtifact, CatalogValue } from './contract.js';
-
-const REFERENCE_FIELDS: Readonly<Record<string, RelationshipKind>> = {
-  consumesApis: 'consumes-api',
-  dependsOn: 'depends-on',
-  domain: 'part-of',
-  memberOf: 'member-of',
-  owner: 'owned-by',
-  parent: 'part-of',
-  providesApis: 'provides-api',
-  subcomponentOf: 'part-of',
-  system: 'part-of',
-};
+import { catalogLifecycle } from './lifecycle.js';
+import { catalogReferences } from './references.js';
 
 type CatalogIdentity = Readonly<{
   readonly apiVersion: string;
@@ -92,6 +73,63 @@ function catalogArtifact(
   problems: ArtifactProblem[],
   index: number
 ): CatalogArtifact | undefined {
+  const value = catalogMapping(document, index, problems);
+  if (value === undefined) return undefined;
+  const identity = catalogIdentity(value, document.source, problems);
+  const spec = catalogSpec(value, document.source, problems);
+  if (identity === undefined || spec === undefined) return undefined;
+  const lifecycle = catalogLifecycle({
+    fieldSources: document.fieldSources,
+    problems,
+    source: document.source,
+    spec: spec.source,
+  });
+  if (lifecycle === undefined) return undefined;
+  const description = stringField(identity.metadata, 'description');
+  const title = stringField(identity.metadata, 'title');
+  const namespaceSource = document.fieldSources.get('metadata.namespace');
+  const authoredReferences = catalogReferences({
+    fieldSources: document.fieldSources,
+    metadata: identity.metadata,
+    problems,
+    source: document.source,
+    spec: spec.source,
+  });
+  if (authoredReferences === undefined) return undefined;
+  return {
+    annotations: stringMap(
+      identity.metadata,
+      'annotations',
+      problems,
+      document.source
+    ),
+    apiVersion: identity.apiVersion,
+    authoredReferences,
+    ...(description === undefined ? {} : { description }),
+    entityKind: identity.entityKind,
+    kind: 'catalog',
+    labels: stringMap(identity.metadata, 'labels', problems, document.source),
+    lifecycle: {
+      active: lifecycle !== 'deprecated' && lifecycle !== 'superseded',
+      status: lifecycle,
+    },
+    name: identity.name,
+    namespace: identity.namespace,
+    ...(namespaceSource === undefined ? {} : { namespaceSource }),
+    path: input.entry.path,
+    region: input.entry.region,
+    source: document.source,
+    spec: spec.normalized,
+    target: catalogTarget(identity),
+    ...(title === undefined ? {} : { title }),
+  };
+}
+
+function catalogMapping(
+  document: ParsedYamlDocument,
+  index: number,
+  problems: ArtifactProblem[]
+): Readonly<Record<string, unknown>> | undefined {
   const value = asRecord(document.value);
   if (value === undefined) {
     problems.push(
@@ -103,42 +141,7 @@ function catalogArtifact(
     );
     return undefined;
   }
-  const identity = catalogIdentity(value, document.source, problems);
-  const spec = catalogSpec(value, document.source, problems);
-  if (identity === undefined || spec === undefined) return undefined;
-  const lifecycle = stringField(spec.source, 'lifecycle') ?? 'active';
-  const description = stringField(identity.metadata, 'description');
-  const title = stringField(identity.metadata, 'title');
-  return {
-    annotations: stringMap(
-      identity.metadata,
-      'annotations',
-      problems,
-      document.source
-    ),
-    apiVersion: identity.apiVersion,
-    authoredReferences: catalogReferences(
-      identity.metadata,
-      spec.source,
-      document.source
-    ),
-    ...(description === undefined ? {} : { description }),
-    entityKind: identity.entityKind,
-    kind: 'catalog',
-    labels: stringMap(identity.metadata, 'labels', problems, document.source),
-    lifecycle: {
-      active: lifecycle !== 'deprecated' && lifecycle !== 'superseded',
-      status: lifecycle,
-    },
-    name: identity.name,
-    namespace: identity.namespace,
-    path: input.entry.path,
-    region: input.entry.region,
-    source: document.source,
-    spec: spec.normalized,
-    target: catalogTarget(identity),
-    ...(title === undefined ? {} : { title }),
-  };
+  return value;
 }
 
 function catalogIdentity(
@@ -238,46 +241,6 @@ function catalogValue(value: unknown): CatalogValue | undefined {
   }
   const record = asRecord(value);
   return record === undefined ? undefined : catalogRecord(record);
-}
-
-function catalogReferences(
-  metadata: Readonly<Record<string, unknown>>,
-  spec: Readonly<Record<string, unknown>>,
-  source: SourceLocation
-): readonly AuthoredReference[] {
-  const references = Object.entries(REFERENCE_FIELDS).flatMap(
-    ([field, relationship]) =>
-      (stringListField(spec, field) ?? []).map((raw) => ({
-        raw,
-        relationship,
-        source,
-      }))
-  );
-  return [...references, ...catalogLinks(metadata, source)];
-}
-
-function catalogLinks(
-  metadata: Readonly<Record<string, unknown>>,
-  source: SourceLocation
-): readonly AuthoredReference[] {
-  return Array.isArray(metadata.links)
-    ? metadata.links.flatMap((item) => {
-        const link = asRecord(item);
-        const raw = link === undefined ? undefined : stringField(link, 'url');
-        const label =
-          link === undefined ? undefined : stringField(link, 'title');
-        return raw === undefined
-          ? []
-          : [
-              {
-                ...(label === undefined ? {} : { label }),
-                raw,
-                relationship: 'links-to',
-                source,
-              },
-            ];
-      })
-    : [];
 }
 
 function stringMap(

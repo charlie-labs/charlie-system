@@ -24,6 +24,7 @@ export type RelationshipKind =
 export type AuthoredReference = Readonly<{
   readonly citationKey?: string;
   readonly label?: string;
+  readonly origin?: 'document.replacedBy';
   readonly raw: string;
   readonly relationship: RelationshipKind;
   readonly source: SourceLocation;

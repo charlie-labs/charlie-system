@@ -13,27 +13,37 @@ import {
   createSourceLocator,
   type SourceLocation,
 } from '../../repository/location.js';
+import { constructAuthoredReference } from '../authored-reference.js';
+import type { ArtifactProblem } from '../contract.js';
 
 type SourceLocator = ReturnType<typeof createSourceLocator>;
 type LinkNode = Image | ImageReference | Link | LinkReference;
 type ReferenceCollection = Readonly<{
   readonly definitions: ReadonlyMap<string, Definition>;
   readonly locator: SourceLocator;
+  readonly problems: ArtifactProblem[];
   readonly references: AuthoredReference[];
+}>;
+
+type MarkdownReferenceExtraction = Readonly<{
+  readonly problems: readonly ArtifactProblem[];
+  readonly references: readonly AuthoredReference[];
 }>;
 
 export function extractMarkdownReferences(input: {
   readonly contents: string;
   readonly path: string;
   readonly root: Root;
-}): readonly AuthoredReference[] {
+}): MarkdownReferenceExtraction {
+  const problems: ArtifactProblem[] = [];
   const references: AuthoredReference[] = [];
   collectReferences(input.root, {
     definitions: definitionMap(input.root),
     locator: createSourceLocator(input.path, input.contents),
+    problems,
     references,
   });
-  return references;
+  return { problems, references };
 }
 
 function collectReferences(
@@ -44,12 +54,7 @@ function collectReferences(
   const activeCitation =
     node.type === 'footnoteDefinition' ? node.identifier : citationKey;
   if (isLinkNode(node)) {
-    const reference = linkReference(
-      node,
-      collection.definitions,
-      collection.locator,
-      activeCitation
-    );
+    const reference = linkReference(node, collection, activeCitation);
     if (reference !== undefined) {
       collection.references.push(reference);
     }
@@ -63,22 +68,26 @@ function collectReferences(
 
 function linkReference(
   node: LinkNode,
-  definitions: ReadonlyMap<string, Definition>,
-  locator: SourceLocator,
+  collection: ReferenceCollection,
   citationKey?: string
 ): AuthoredReference | undefined {
-  const raw = targetUrl(node, definitions);
+  const raw = targetUrl(node, collection.definitions);
   if (raw === undefined) {
     return undefined;
   }
   const label = linkLabel(node);
-  return {
+  const construction = constructAuthoredReference({
     ...(citationKey === undefined ? {} : { citationKey }),
     ...(label === '' ? {} : { label }),
     raw,
     relationship: citationKey === undefined ? 'links-to' : 'cites',
-    source: nodeLocation(node, locator),
-  };
+    source: nodeLocation(node, collection.locator),
+  });
+  if (construction.kind === 'rejected') {
+    collection.problems.push(construction.problem);
+    return undefined;
+  }
+  return construction.reference;
 }
 
 function targetUrl(
@@ -120,11 +129,23 @@ function isLinkNode(node: Nodes): node is LinkNode {
 }
 
 function definitionMap(root: Root): ReadonlyMap<string, Definition> {
-  return new Map(
-    root.children.flatMap((node) =>
-      node.type === 'definition' ? [[node.identifier.toLowerCase(), node]] : []
-    )
-  );
+  const definitions = new Map<string, Definition>();
+  collectDefinitions(root, definitions);
+  return definitions;
+}
+
+function collectDefinitions(
+  node: Nodes,
+  definitions: Map<string, Definition>
+): void {
+  if (node.type === 'definition') {
+    definitions.set(node.identifier.toLowerCase(), node);
+  }
+  if ('children' in node) {
+    for (const child of node.children) {
+      collectDefinitions(child, definitions);
+    }
+  }
 }
 
 function nodeLocation(node: Nodes, locator: SourceLocator): SourceLocation {

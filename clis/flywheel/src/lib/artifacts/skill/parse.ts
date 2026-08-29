@@ -42,7 +42,7 @@ export function parseSkillArtifact(
     decoded.contents,
     input.entry.path
   );
-  const problems = [...frontmatter.problems];
+  const problems = [...frontmatter.problems, ...markdown.referenceProblems];
   const artifact = skillArtifact({
     contents: decoded.contents,
     input,
@@ -72,19 +72,13 @@ function skillArtifact(context: {
   const allowedTools = optionalValue(value, 'allowed-tools');
   requiredSkillProblems({ description, input, name, problems });
   localSkillProblems({ input, name, problems, value });
-  if (context.markdown.body.trim() === '') {
-    problems.push(
-      problem(
-        input,
-        'SKILL_BODY_REQUIRED',
-        'Skill requires Markdown instructions'
-      )
-    );
-  }
+  optionalSkillProblems(value, problems, input);
+  const validBody = addSkillBodyProblem(context.markdown.body, input, problems);
   if (
     name === undefined ||
     description === undefined ||
-    context.markdown.body.trim() === ''
+    !validBody ||
+    context.markdown.referenceProblems.length > 0
   )
     return undefined;
   return {
@@ -102,6 +96,42 @@ function skillArtifact(context: {
     source: wholeFileLocation(input.entry.path, context.contents),
     target: skillTarget(input.entry.path, name),
   };
+}
+
+function addSkillBodyProblem(
+  body: string,
+  input: ArtifactParseInput,
+  problems: ArtifactProblem[]
+): boolean {
+  if (body.trim() === '') {
+    problems.push(
+      problem(
+        input,
+        'SKILL_BODY_REQUIRED',
+        'Skill requires Markdown instructions'
+      )
+    );
+    return false;
+  }
+  return true;
+}
+
+function optionalSkillProblems(
+  value: Readonly<Record<string, unknown>>,
+  problems: ArtifactProblem[],
+  input: ArtifactParseInput
+): void {
+  for (const field of ['allowed-tools', 'compatibility', 'license']) {
+    if (field in value && optionalValue(value, field) === undefined) {
+      problems.push(
+        problem(
+          input,
+          'SKILL_FIELD_INVALID',
+          `Skill ${field} must be a non-empty string`
+        )
+      );
+    }
+  }
 }
 
 function requiredSkillProblems(input: {

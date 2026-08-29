@@ -24,8 +24,9 @@ export function parseMarkdown(contents: string, path: string): ParsedMarkdown {
     path,
     root,
   });
+  const references = extractMarkdownReferences({ contents, path, root });
   return {
-    authoredReferences: extractMarkdownReferences({ contents, path, root }),
+    authoredReferences: references.references,
     body: contents.slice(bodyStart),
     bodySource: locator.atOffsets(bodyStart, contents.length),
     citations: structure.citations,
@@ -33,6 +34,7 @@ export function parseMarkdown(contents: string, path: string): ParsedMarkdown {
       ? {}
       : { frontmatter: markdownFrontmatter(contents, yaml, locator) }),
     preamble: structure.preamble,
+    referenceProblems: references.problems,
     sections: structure.sections,
   };
 }

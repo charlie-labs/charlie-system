@@ -4,6 +4,7 @@ import { parseYaml } from '../yaml/parse.js';
 import type { MarkdownFrontmatter } from './contract.js';
 
 export type ParsedFrontmatter = Readonly<{
+  readonly fieldSources: ReadonlyMap<string, MarkdownFrontmatter['source']>;
   readonly problems: readonly ArtifactProblem[];
   readonly value?: Readonly<Record<string, unknown>>;
 }>;
@@ -15,6 +16,7 @@ export function parseFrontmatter(
 ): ParsedFrontmatter {
   if (frontmatter === undefined) {
     return {
+      fieldSources: new Map(),
       problems: [
         {
           code: 'ARTIFACT_FRONTMATTER_REQUIRED',
@@ -40,6 +42,7 @@ export function parseFrontmatter(
     source: problem.source,
   }));
   const value = asRecord(yaml.documents[0]?.value);
+  const fieldSources = yaml.documents[0]?.fieldSources ?? new Map();
   if (value === undefined && problems.length === 0) {
     problems.push({
       code: 'ARTIFACT_FRONTMATTER_INVALID',
@@ -47,5 +50,9 @@ export function parseFrontmatter(
       source: frontmatter.source,
     });
   }
-  return { problems, ...(value === undefined ? {} : { value }) };
+  return {
+    fieldSources,
+    problems,
+    ...(value === undefined ? {} : { value }),
+  };
 }

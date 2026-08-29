@@ -58,10 +58,8 @@ export default class Show extends ContentCommand<
         'content show dependencies were not provided'
       );
     }
-    const target = this.argv[0];
-    if (target === undefined) {
-      throw new ContentOperationalError('content show requires a target');
-    }
+    const { args } = await this.parse(Show);
+    const target = args.target;
     const runtime = buildFlywheelRuntime({
       cwd: process.cwd(),
       deps,

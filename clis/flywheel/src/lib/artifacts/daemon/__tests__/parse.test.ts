@@ -45,6 +45,26 @@ test('parses Daemon activation, policy, and authored Role reference', () => {
   ]);
 });
 
+test('reports an otherwise valid Daemon with an empty body', () => {
+  const compilation = parseDaemonArtifact(
+    artifactInput(
+      'daemon',
+      'customer-wide/.agents/daemons/release-review/DAEMON.md',
+      daemon.slice(0, daemon.indexOf('# Release review'))
+    )
+  );
+
+  expect(compilation.kind).toBe('unparsed');
+  expect(compilation.problems.map((problem) => problem.code)).toContain(
+    'DAEMON_BODY_REQUIRED'
+  );
+  expect(
+    compilation.problems.find(
+      (problem) => problem.code === 'DAEMON_BODY_REQUIRED'
+    )?.message
+  ).toBe('Daemon requires Markdown instructions');
+});
+
 test('keeps a customer Daemon without a Role visible as unparsed', () => {
   const compilation = parseDaemonArtifact(
     artifactInput(

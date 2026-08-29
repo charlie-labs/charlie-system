@@ -1,6 +1,6 @@
-import type { AuthoredReference } from '../../references/contract.js';
 import { wholeFileLocation } from '../../repository/location.js';
 import { documentTarget } from '../../targets/id.js';
+import { constructAuthoredReference } from '../authored-reference.js';
 import type {
   ArtifactCompilation,
   ArtifactParseInput,
@@ -18,6 +18,14 @@ import {
 import { stringField, stringListField } from '../values.js';
 import type { DocumentArtifact, DocumentMetadata } from './contract.js';
 
+const DOCUMENT_FIELDS = new Set([
+  'about',
+  'purpose',
+  'replacedBy',
+  'reviewEvery',
+  'status',
+]);
+
 export function parseDocumentArtifact(
   input: ArtifactParseInput
 ): ArtifactCompilation {
@@ -33,13 +41,46 @@ export function parseDocumentArtifact(
     decoded.contents,
     input.entry.path
   );
-  const problems = [...frontmatter.problems];
+  const problems = [...frontmatter.problems, ...markdown.referenceProblems];
+  addUnknownFieldProblems(
+    frontmatter.value,
+    frontmatter.fieldSources,
+    markdown.frontmatter?.source,
+    problems
+  );
   const metadata = documentMetadata(
     frontmatter.value,
+    frontmatter.fieldSources,
     problems,
     markdown.frontmatter?.source
   );
-  const headings = markdown.sections.filter((section) => section.depth === 1);
+  const title = documentTitle(markdown.sections, input, problems);
+  if (
+    metadata === undefined ||
+    title === undefined ||
+    markdown.referenceProblems.length > 0
+  ) {
+    return unparsedArtifact(input, problems);
+  }
+  const artifact = createDocumentArtifact({
+    contents: decoded.contents,
+    fieldSources: frontmatter.fieldSources,
+    markdown,
+    metadata,
+    parseInput: input,
+    problems,
+    title,
+  });
+  if (artifact === undefined) return unparsedArtifact(input, problems);
+  return parsedArtifact(input, [artifact], problems);
+}
+
+function documentTitle(
+  sections: DocumentArtifact['sections'],
+  input: ArtifactParseInput,
+  problems: ArtifactProblem[]
+): string | undefined {
+  const headings = sections.filter((section) => section.depth === 1);
   if (headings.length === 0) {
     problems.push(
       problem(
@@ -58,22 +99,12 @@ export function parseDocumentArtifact(
       )
     );
   }
-  const title = headings[0]?.heading;
-  if (metadata === undefined || title === undefined) {
-    return unparsedArtifact(input, problems);
-  }
-  const artifact = createDocumentArtifact({
-    contents: decoded.contents,
-    markdown,
-    metadata,
-    parseInput: input,
-    title,
-  });
-  return parsedArtifact(input, [artifact], problems);
+  return headings[0]?.heading;
 }
 
 function documentMetadata(
   value: Readonly<Record<string, unknown>> | undefined,
+  fieldSources: ReadonlyMap<string, DocumentArtifact['source']>,
   problems: ArtifactProblem[],
   source: DocumentArtifact['source'] | undefined
 ): DocumentMetadata | undefined {
@@ -83,7 +114,7 @@ function documentMetadata(
   const purpose = stringField(value, 'purpose');
   const reviewEvery = stringField(value, 'reviewEvery');
   const about = stringListField(value, 'about') ?? [];
-  const status = stringField(value, 'status') ?? 'active';
+  const status = documentStatus(value, fieldSources, source, problems);
   const replacedBy = stringField(value, 'replacedBy');
   addMetadataProblems({
     about,
@@ -92,10 +123,13 @@ function documentMetadata(
     replacedBy,
     reviewEvery,
     source,
-    status,
     value,
   });
-  if (purpose === undefined || reviewEvery === undefined) {
+  if (
+    purpose === undefined ||
+    reviewEvery === undefined ||
+    status === undefined
+  ) {
     return undefined;
   }
   return {
@@ -114,7 +148,6 @@ function addMetadataProblems(input: {
   readonly replacedBy: string | undefined;
   readonly reviewEvery: string | undefined;
   readonly source: DocumentArtifact['source'];
-  readonly status: string;
   readonly value: Readonly<Record<string, unknown>>;
 }): void {
   if (input.purpose === undefined)
@@ -127,47 +160,82 @@ function addMetadataProblems(input: {
   ) {
     input.problems.push(fieldProblem(input.source, 'about'));
   }
-  if (!['active', 'deprecated', 'superseded'].includes(input.status)) {
-    input.problems.push({
-      code: 'DOCUMENT_STATUS_INVALID',
-      message: `unsupported document status: ${input.status}`,
-      source: input.source,
-    });
-  }
-  if (input.status === 'superseded' && input.replacedBy === undefined) {
+  if (
+    stringField(input.value, 'status') === 'superseded' &&
+    input.replacedBy === undefined
+  ) {
     input.problems.push(fieldProblem(input.source, 'replacedBy'));
   }
 }
 
+function documentStatus(
+  value: Readonly<Record<string, unknown>>,
+  fieldSources: ReadonlyMap<string, DocumentArtifact['source']>,
+  source: DocumentArtifact['source'],
+  problems: ArtifactProblem[]
+): string | undefined {
+  if (!('status' in value)) return 'active';
+  const status = stringField(value, 'status');
+  const statusSource = fieldSources.get('status') ?? source;
+  if (status === undefined) {
+    problems.push({
+      code: 'DOCUMENT_STATUS_INVALID',
+      message: 'document status must be deprecated or superseded',
+      source: statusSource,
+    });
+    return undefined;
+  }
+  if (status !== 'deprecated' && status !== 'superseded') {
+    problems.push({
+      code: 'DOCUMENT_STATUS_UNSUPPORTED',
+      message: 'document status is unsupported',
+      source: statusSource,
+    });
+    return undefined;
+  }
+  return status;
+}
+
 function createDocumentArtifact(input: {
   readonly contents: string;
+  readonly fieldSources: ReadonlyMap<string, DocumentArtifact['source']>;
   readonly markdown: ReturnType<typeof parseMarkdown>;
   readonly metadata: DocumentMetadata;
   readonly parseInput: ArtifactParseInput;
+  readonly problems: ArtifactProblem[];
   readonly title: string;
-}): DocumentArtifact {
+}): DocumentArtifact | undefined {
   const { markdown, metadata, parseInput } = input;
-  const metadataReferences: AuthoredReference[] = [
-    ...metadata.about.map((raw) =>
-      metadataReference(
-        raw,
-        'about',
-        markdown.frontmatter?.source ?? markdown.bodySource
-      )
-    ),
-    ...(metadata.replacedBy === undefined
-      ? []
-      : [
-          metadataReference(
-            metadata.replacedBy,
-            'links-to',
-            markdown.frontmatter?.source ?? markdown.bodySource,
-            'replacedBy'
-          ),
-        ]),
-  ];
+  const frontmatterSource = markdown.frontmatter?.source ?? markdown.bodySource;
+  const metadataReferences = metadata.about.map((raw) =>
+    constructAuthoredReference({
+      raw,
+      relationship: 'about',
+      source: input.fieldSources.get('about') ?? frontmatterSource,
+    })
+  );
+  if (metadata.replacedBy !== undefined) {
+    metadataReferences.push(
+      constructAuthoredReference({
+        origin: 'document.replacedBy',
+        raw: metadata.replacedBy,
+        relationship: 'links-to',
+        source: input.fieldSources.get('replacedBy') ?? frontmatterSource,
+      })
+    );
+  }
+  const rejected = metadataReferences.filter(
+    (construction) => construction.kind === 'rejected'
+  );
+  input.problems.push(...rejected.map((construction) => construction.problem));
+  if (rejected.length > 0) return undefined;
   return {
-    authoredReferences: [...metadataReferences, ...markdown.authoredReferences],
+    authoredReferences: [
+      ...metadataReferences.flatMap((construction) =>
+        construction.kind === 'accepted' ? [construction.reference] : []
+      ),
+      ...markdown.authoredReferences,
+    ],
     citations: markdown.citations,
     kind: 'document',
     metadata,
@@ -181,18 +249,22 @@ function createDocumentArtifact(input: {
   };
 }
 
-function metadataReference(
-  raw: string,
-  relationship: AuthoredReference['relationship'],
-  source: AuthoredReference['source'],
-  label?: string
-): AuthoredReference {
-  return {
-    ...(label === undefined ? {} : { label }),
-    raw,
-    relationship,
-    source,
-  };
+function addUnknownFieldProblems(
+  value: Readonly<Record<string, unknown>> | undefined,
+  fieldSources: ReadonlyMap<string, DocumentArtifact['source']>,
+  source: DocumentArtifact['source'] | undefined,
+  problems: ArtifactProblem[]
+): void {
+  if (value === undefined || source === undefined) return;
+  for (const field of Object.keys(value).filter(
+    (candidate) => !DOCUMENT_FIELDS.has(candidate)
+  )) {
+    problems.push({
+      code: 'DOCUMENT_FIELD_UNKNOWN',
+      message: `document contains unknown field: ${field}`,
+      source: fieldSources.get(field) ?? source,
+    });
+  }
 }
 
 function fieldProblem(
