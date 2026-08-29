@@ -1,0 +1,32 @@
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: platform
+  title: Platform
+  description: Platform ownership group
+  annotations:
+    charlie.ai/review-every: 180d
+spec: {}
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api
+  title: Customer API
+  description: Customer-facing release API
+  annotations:
+    charlie.ai/review-every: 90d
+spec:
+  lifecycle: production
+  owner: group:default/platform
+  dependsOn: resource:default/database
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: database
+  description: Release database
+  annotations:
+    charlie.ai/review-every: 90d
+spec:
+  lifecycle: active

@@ -6,6 +6,7 @@ import {
   packageRoot,
   readFiles,
   runCli,
+  snapshotTree,
   validDocument,
 } from './test-utils.js';
 
@@ -16,10 +17,10 @@ test('proves representative commands are read-only', async () => {
     'customer-wide/docs/guide.md': validDocument,
   });
   const repositoryFiles = ['customer-wide/docs/guide.md'];
-  const beforeRepository = await readFiles(repositoryPath, repositoryFiles);
+  const beforeRepository = await snapshotTree(repositoryPath);
   const [rg, artifactShow, related, validate, search] =
     await runRepositoryCommands(repositoryPath);
-  const afterRepository = await readFiles(repositoryPath, repositoryFiles);
+  const afterRepository = await snapshotTree(repositoryPath);
 
   expect(rg.exitCode).toBe(0);
   expect(rg.stdout).toContain('customer-wide/docs/guide.md:');
@@ -30,6 +31,9 @@ test('proves representative commands are read-only', async () => {
   expect(related.exitCode).toBe(0);
   expect(validate.exitCode).toBe(0);
   expect(search.exitCode).toBe(0);
+  expect(beforeRepository.some(({ path }) => path === repositoryFiles[0])).toBe(
+    true
+  );
   expect(afterRepository).toEqual(beforeRepository);
 
   const presetFiles = [
