@@ -12,6 +12,7 @@ import type { CommandError } from '@oclif/core/interfaces';
 import {
   ContentInvocationError,
   ContentOperationalError,
+  ContentRelatedError,
   ContentShowError,
 } from '../../lib/content/errors.js';
 
@@ -74,6 +75,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isExpectedNegativeResult(error: CommandError): boolean {
   return (
     error instanceof ContentShowError ||
+    error instanceof ContentRelatedError ||
     error.message.startsWith('no matches') ||
     error.message.startsWith('content validation failed')
   );

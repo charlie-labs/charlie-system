@@ -24,6 +24,7 @@ test('proves root, topic, and exact leaf command help', async () => {
   expect(root.stdout).toContain('$ flywheel [COMMAND]');
   expect(helpEntries(root.stdout, 'TOPICS')).toEqual(['content', 'skill']);
   expect(helpEntries(content.stdout, 'COMMANDS')).toEqual([
+    'content related',
     'content rg',
     'content show',
     'content validate',
@@ -37,6 +38,7 @@ test('proves root, topic, and exact leaf command help', async () => {
     ...helpEntries(content.stdout, 'COMMANDS'),
     ...helpEntries(preset.stdout, 'COMMANDS'),
   ]).toEqual([
+    'content related',
     'content rg',
     'content show',
     'content validate',

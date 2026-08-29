@@ -51,7 +51,7 @@ export function constructAuthoredReference(
   };
 }
 
-function isSecretBearingUrl(raw: string): boolean {
+export function isSecretBearingUrl(raw: string): boolean {
   if (!isUrlLike(raw)) return false;
   try {
     const url = new URL(raw, 'https://flywheel.invalid');

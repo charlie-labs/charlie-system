@@ -47,7 +47,6 @@ export type InspectableTarget =
 
 export type SupportResourceTarget = Readonly<{
   readonly kind: 'support-resource';
-  readonly owner: TargetId;
   readonly path: RepositoryPath;
 }>;
 
@@ -81,6 +80,7 @@ export type ExternalIdentityTarget =
       readonly path: string;
       readonly repository: RepositoryId;
       readonly revision?: string;
+      readonly selector?: string;
     }>
   | Readonly<{
       readonly kind: 'web';
