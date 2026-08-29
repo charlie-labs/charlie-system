@@ -22,7 +22,7 @@ export function lookupLocalReference(input: {
   readonly index: ReferenceIndex;
   readonly sourceTarget: InspectableTarget;
 }): LocalReferenceLookup {
-  const accepts = targetFilter(input.authored);
+  const accepts = acceptsReferenceTarget(input.authored);
   const exact = lookupTarget(input.index.targets, input.authored.raw, accepts);
   if (exact.kind !== 'missing') return exact;
   const catalogAlias = canonicalCatalogAlias(input.authored.raw);
@@ -64,10 +64,7 @@ function lookupPathReference(
     : {
         input: input.authored.raw,
         kind: 'found',
-        target: supportResourceTarget(
-          support.path,
-          targetId(input.sourceTarget)
-        ),
+        target: supportResourceTarget(support.path),
       };
 }
 
@@ -108,7 +105,7 @@ function parsePathReference(
 }
 
 function isPathReference(reference: AuthoredReference): boolean {
-  if (reference.label === 'replacedBy') return true;
+  if (reference.origin === 'document.replacedBy') return true;
   if (
     reference.relationship !== 'cites' &&
     reference.relationship !== 'links-to'
@@ -139,13 +136,13 @@ function canonicalCatalogAlias(raw: string): string | undefined {
   );
 }
 
-function targetFilter(
+export function acceptsReferenceTarget(
   reference: AuthoredReference
 ): (target: GraphTarget) => boolean {
   if (reference.relationship === 'contributes-to') {
     return (target) => target.kind === 'role';
   }
-  if (reference.label === 'replacedBy') {
+  if (reference.origin === 'document.replacedBy') {
     return (target) => target.kind === 'document';
   }
   if (catalogRelationship(reference.relationship)) {

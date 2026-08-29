@@ -5,7 +5,7 @@ import type {
   ExternalIdentityTarget,
   SupportResourceTarget,
 } from '../../targets/contract.js';
-import { documentTarget, targetId } from '../../targets/id.js';
+import { targetId } from '../../targets/id.js';
 import type {
   ArtifactCompilation,
   ArtifactParseInput,
@@ -54,7 +54,6 @@ test('artifact boundary values are discriminated plain data', () => {
 function supportTarget(): SupportResourceTarget {
   return {
     kind: 'support-resource',
-    owner: targetId(documentTarget('customer-wide/docs/guide.md')),
     path: 'customer-wide/docs/assets/diagram.png',
   };
 }

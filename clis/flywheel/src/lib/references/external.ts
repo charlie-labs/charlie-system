@@ -1,3 +1,4 @@
+import { isSecretBearingUrl } from '../artifacts/authored-reference.js';
 import type { ExternalIdentityTarget } from '../targets/contract.js';
 
 export type ExternalReferenceParse =
@@ -13,6 +14,7 @@ const UNSUPPORTED_SCHEME = /^(?:data|file|ftp|git|javascript|mailto|ssh):/iu;
 const TASK_REFERENCE = /^\/tasks\/([A-Za-z0-9_-]+)(?:#seq-(\d+))?$/u;
 
 export function parseExternalReference(raw: string): ExternalReferenceParse {
+  if (isSecretBearingUrl(raw)) return { kind: 'invalid' };
   if (raw.startsWith('/tasks/')) return parseTaskReference(raw);
   if (/^https?:\/\//iu.test(raw)) return parseHttpReference(raw);
   if (/^https?:/iu.test(raw) || raw.startsWith('//')) {

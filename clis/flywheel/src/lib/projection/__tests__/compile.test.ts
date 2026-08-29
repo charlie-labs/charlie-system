@@ -21,7 +21,7 @@ test('composes one discovery and one artifact batch read into a plain projection
       (compilation) => compilation.entry.path === 'customer-wide/docs/broken.md'
     )?.kind
   ).toBe('unparsed');
-  expect(projection.resolutions).toHaveLength(8);
+  expect(projection.resolutions).toHaveLength(10);
   expect(
     projection.resolutions.every((resolution) => resolution.kind === 'resolved')
   ).toBe(true);

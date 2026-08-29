@@ -47,7 +47,6 @@ export type InspectableTarget =
 
 export type SupportResourceTarget = Readonly<{
   readonly kind: 'support-resource';
-  readonly owner: TargetId;
   readonly path: RepositoryPath;
 }>;
 

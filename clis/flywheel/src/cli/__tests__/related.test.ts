@@ -47,6 +47,52 @@ test('renders typed local and external relationships', async () => {
   });
 });
 
+test('accepts content related flags before the target', async () => {
+  const repositoryPath = await makeRelatedRepository();
+  const result = await runCli([
+    'content',
+    'related',
+    '--repository-path',
+    repositoryPath,
+    '--json',
+    'customer-wide/docs/guide.md',
+  ]);
+
+  expect(result.exitCode).toBe(0);
+  expect(result.stderr).toBe('');
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    kind: 'related',
+    target: { id: 'document:customer-wide%2Fdocs%2Fguide.md' },
+  });
+});
+
+test('never echoes a secret-bearing related target in human or JSON output', async () => {
+  const repositoryPath = await makeRelatedRepository();
+  const secret = 'RELATED-SECRET-VALUE';
+  const target = `https://example.test/run?access_token=${secret}`;
+  const results = await Promise.all(
+    [[], ['--json']].map((mode) =>
+      runCli([
+        'content',
+        'related',
+        target,
+        '--repository-path',
+        repositoryPath,
+        ...mode,
+      ])
+    )
+  );
+
+  for (const result of results) {
+    expect(result.exitCode).not.toBe(0);
+    expect(`${result.stdout}${result.stderr}`).toContain(
+      'content related target contains secret-bearing credentials'
+    );
+    expect(`${result.stdout}${result.stderr}`).not.toContain(secret);
+    expect(`${result.stdout}${result.stderr}`).not.toContain('access_token');
+  }
+});
+
 test('returns explicit JSON failures for missing, ambiguous, and open inputs', async () => {
   const repositoryPath = await makeRelatedRepository();
   const [missing, ambiguous, external] = await Promise.all([

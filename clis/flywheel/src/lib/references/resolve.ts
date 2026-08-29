@@ -1,3 +1,4 @@
+import { isSecretBearingUrl } from '../artifacts/authored-reference.js';
 import type { FlywheelArtifact } from '../artifacts/contract.js';
 import type { GraphTarget } from '../targets/contract.js';
 import type {
@@ -7,7 +8,9 @@ import type {
   ReferenceResolutionReason,
 } from './contract.js';
 import { parseExternalReference } from './external.js';
-import { lookupLocalReference } from './local.js';
+import { acceptsReferenceTarget, lookupLocalReference } from './local.js';
+
+const REDACTED_SECRET_REFERENCE = '[redacted secret-bearing URL]';
 
 export function resolveReferences(input: {
   readonly artifacts: readonly FlywheelArtifact[];
@@ -29,16 +32,8 @@ function resolveReference(input: {
   readonly index: ReferenceIndex;
   readonly sourceTarget: FlywheelArtifact['target'];
 }): ReferenceResolution {
-  const external = parseExternalReference(input.authored.raw);
-  if (external.kind === 'target') {
-    return resolved(input, external.target);
-  }
-  if (external.kind === 'invalid' || external.kind === 'unsupported') {
-    return unresolved(
-      input,
-      external.kind === 'invalid' ? 'invalid-syntax' : 'unsupported-target'
-    );
-  }
+  const external = resolveExternalReference(input);
+  if (external !== undefined) return external;
   const local = lookupLocalReference(input);
   switch (local.kind) {
     case 'found':
@@ -51,6 +46,37 @@ function resolveReference(input: {
       return unresolved(input, 'unknown-target');
   }
   return unreachable(local);
+}
+
+function resolveExternalReference(input: {
+  readonly authored: AuthoredReference;
+  readonly sourceTarget: FlywheelArtifact['target'];
+}): ReferenceResolution | undefined {
+  if (isSecretBearingUrl(input.authored.raw)) {
+    return unresolved(
+      {
+        ...input,
+        authored: {
+          ...input.authored,
+          raw: REDACTED_SECRET_REFERENCE,
+        },
+      },
+      'invalid-syntax'
+    );
+  }
+  const external = parseExternalReference(input.authored.raw);
+  if (external.kind === 'target') {
+    return acceptsReferenceTarget(input.authored)(external.target)
+      ? resolved(input, external.target)
+      : unresolved(input, 'unsupported-target');
+  }
+  if (external.kind === 'invalid' || external.kind === 'unsupported') {
+    return unresolved(
+      input,
+      external.kind === 'invalid' ? 'invalid-syntax' : 'unsupported-target'
+    );
+  }
+  return undefined;
 }
 
 function resolved(

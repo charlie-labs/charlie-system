@@ -54,10 +54,8 @@ export default class Related extends ContentCommand<
         'content related dependencies were not provided'
       );
     }
-    const target = this.argv[0];
-    if (target === undefined) {
-      throw new ContentOperationalError('content related requires a target');
-    }
+    const { args } = await this.parse(Related);
+    const target = args.target;
     const runtime = buildFlywheelRuntime({
       cwd: process.cwd(),
       deps,

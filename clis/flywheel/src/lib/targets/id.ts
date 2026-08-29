@@ -144,11 +144,8 @@ export function skillTarget(path: string, name: string): SkillTarget {
   return { kind: 'skill', name, path };
 }
 
-export function supportResourceTarget(
-  path: string,
-  owner: TargetId
-): SupportResourceTarget {
-  return { kind: 'support-resource', owner, path };
+export function supportResourceTarget(path: string): SupportResourceTarget {
+  return { kind: 'support-resource', path };
 }
 
 function sectionTargetId(target: DocumentSectionTarget): TargetId {

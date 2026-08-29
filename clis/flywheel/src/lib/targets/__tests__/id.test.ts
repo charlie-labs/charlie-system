@@ -74,12 +74,8 @@ describe('target IDs', () => {
 
 describe('non-inspectable target IDs', () => {
   test('constructs stable support and external identity IDs', () => {
-    const owner = targetId(documentTarget('customer-wide/docs/guide.md'));
-
     expect(
-      targetId(
-        supportResourceTarget('customer-wide/docs/assets/diagram.png', owner)
-      )
+      targetId(supportResourceTarget('customer-wide/docs/assets/diagram.png'))
     ).toBe('support-resource:customer-wide%2Fdocs%2Fassets%2Fdiagram.png');
     expect(
       targetId({

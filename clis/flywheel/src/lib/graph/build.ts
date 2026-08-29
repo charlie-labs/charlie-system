@@ -34,7 +34,6 @@ export function buildRepositoryGraph(input: {
         ? authoredRelationships(resolution, artifactsById)
         : []
     ),
-    ...resolvedSupportRelationships(input.resolutions),
   ];
   return {
     relationships: sortedCopy(
@@ -108,7 +107,7 @@ function structuralSupport(
     if (entry.kind !== 'support-file' || !('owner' in entry)) return [];
     const owner = artifactsByPath.get(entry.owner);
     if (owner === undefined) return [];
-    const target = supportResourceTarget(entry.path, targetId(owner.target));
+    const target = supportResourceTarget(entry.path);
     return [
       {
         relationship: structuralRelationship(
@@ -122,30 +121,13 @@ function structuralSupport(
   });
 }
 
-function resolvedSupportRelationships(
-  resolutions: readonly ReferenceResolution[]
-): readonly GraphRelationship[] {
-  return resolutions.flatMap((resolution) =>
-    resolution.kind === 'resolved' &&
-    resolution.target.kind === 'support-resource'
-      ? [
-          structuralRelationship(
-            resolution.target.owner,
-            targetId(resolution.target),
-            resolution.authored.source
-          ),
-        ]
-      : []
-  );
-}
-
 function authoredRelationships(
   resolution: Extract<ReferenceResolution, { readonly kind: 'resolved' }>,
   artifactsById: ReadonlyMap<TargetId, FlywheelArtifact>
 ): readonly GraphRelationship[] {
   const sourceId = targetId(resolution.sourceTarget);
   const artifact = artifactsById.get(sourceId);
-  if (resolution.authored.label === 'replacedBy') {
+  if (resolution.authored.origin === 'document.replacedBy') {
     return [
       authoredRelationship(
         targetId(resolution.target),

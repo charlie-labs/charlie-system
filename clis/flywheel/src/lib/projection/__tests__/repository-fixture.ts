@@ -70,7 +70,7 @@ about:
 ---
 # Guide
 
-Read the [details](./other.md#details) and [diagram](./assets/diagram.png). Evidence.[^proof]
+Read the [replacedBy](./other.md#details) and [diagram](./assets/diagram.png). Evidence.[^proof]
 
 ## Sources
 
@@ -90,6 +90,8 @@ reviewEvery: 90d
 ## Details
 
 Operate safely.
+
+Use the [shared diagram](./assets/diagram.png).
 `;
 }
 
@@ -141,5 +143,7 @@ routines: Review the release.
 # Release review
 
 Review each release.
+
+Follow the [checklist](./CHECKLIST.md).
 `;
 }

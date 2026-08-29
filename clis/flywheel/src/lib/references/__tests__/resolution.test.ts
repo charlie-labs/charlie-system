@@ -12,11 +12,7 @@ import type {
   RepositoryInventory,
 } from '../../repository/contract.js';
 import { sourceLocation } from '../../repository/location.js';
-import {
-  documentSectionTarget,
-  documentTarget,
-  targetId,
-} from '../../targets/id.js';
+import { documentSectionTarget, documentTarget } from '../../targets/id.js';
 import type { AuthoredReference, ReferenceResolution } from '../contract.js';
 import { buildReferenceIndex } from '../index.js';
 import { resolveReferences } from '../resolve.js';
@@ -44,7 +40,6 @@ test('resolves internal, support, and external references through a prebuilt ind
   });
   expect(resolved(resolutions, './assets/diagram.png').target).toEqual({
     kind: 'support-resource',
-    owner: targetId(documentTarget('customer-wide/docs/guide.md')),
     path: 'customer-wide/docs/assets/diagram.png',
   });
   expect(resolved(resolutions, 'release-manager').target.kind).toBe('role');

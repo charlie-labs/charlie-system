@@ -98,3 +98,18 @@ test('does not guess malformed or unsupported references into identities', () =>
     kind: 'not-external',
   });
 });
+
+test('rejects secret-bearing URLs before constructing external identities', () => {
+  const secret = 'EXTERNAL-SECRET-VALUE';
+  const inputs = [
+    `https://example.test/run?access_token=${secret}`,
+    `https://github.com/acme/api?api_key=${secret}`,
+    `https://user:${secret}@linear.app/acme/issue/BOT-42/x`,
+  ];
+
+  for (const input of inputs) {
+    const result = parseExternalReference(input);
+    expect(result).toEqual({ kind: 'invalid' });
+    expect(JSON.stringify(result)).not.toContain(secret);
+  }
+});

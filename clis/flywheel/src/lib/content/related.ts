@@ -1,3 +1,4 @@
+import { isSecretBearingUrl } from '../artifacts/authored-reference.js';
 import { RepositorySourceError } from '../repository/errors.js';
 import { createWorkingTreeSource } from '../repository/source/working-tree.js';
 import type { RelatedResult } from '../retrieval/related/contract.js';
@@ -10,6 +11,11 @@ export async function runContentRelated(input: {
   readonly repositoryPath: string;
   readonly target: string;
 }): Promise<RelatedResult> {
+  if (isSecretBearingUrl(input.target)) {
+    throw new ContentOperationalError(
+      'content related target contains secret-bearing credentials'
+    );
+  }
   try {
     const source = createWorkingTreeSource({
       filesystem: input.filesystem,
