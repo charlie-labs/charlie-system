@@ -1,0 +1,38 @@
+{
+  "version": "retrieval-corpus-v1",
+  "metricVersion": "artifact-recall-at-k-v1",
+  "k": [1, 3, 5],
+  "scope": {
+    "contentTypes": [],
+    "customerWideOnly": false,
+    "includeNonActive": false,
+    "repositoryIds": []
+  },
+  "queries": [
+    {
+      "query": "release operations",
+      "relevantArtifactIds": [
+        "document:customer-wide%2Fdocs%2Frelease-guide.md"
+      ]
+    },
+    {
+      "query": "repository deployment",
+      "relevantArtifactIds": [
+        "catalog:component%3Adefault%2Fworker",
+        "document:repo-specific%2Facme%2Fapi%2Fdocs%2Fservice-guide.md"
+      ]
+    },
+    {
+      "query": "customer api",
+      "relevantArtifactIds": ["catalog:component%3Adefault%2Fapi"]
+    },
+    {
+      "query": "release database",
+      "relevantArtifactIds": ["catalog:resource%3Adefault%2Fdatabase"]
+    },
+    {
+      "query": "platform ownership",
+      "relevantArtifactIds": ["catalog:group%3Adefault%2Fplatform"]
+    }
+  ]
+}

@@ -7,6 +7,8 @@
   },
   "type": "module",
   "scripts": {
+    "qualification:performance": "bun run ./qualification/performance.ts",
+    "qualification:retrieval": "bun run ./qualification/retrieval.ts",
     "start": "bun run ./bin/run.ts",
     "test": "bun test"
   },

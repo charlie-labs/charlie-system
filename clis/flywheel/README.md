@@ -51,3 +51,10 @@ results. Use `skill preset list` to inspect available local Skill identities
 and `skill preset show placeholder-skill` to print its payload and
 specialization guidance. The package does not read a general configuration
 file or ambient customer, source-repository, or Task context.
+
+## Qualification
+
+Offline relevance and performance qualification suites are documented in
+[`qualification/README.md`](./qualification/README.md). They are explicit,
+non-blocking commands and are not included in the ordinary check or CI
+workflow.
