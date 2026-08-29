@@ -17,7 +17,7 @@ test('proves representative commands are read-only', async () => {
   });
   const repositoryFiles = ['customer-wide/docs/guide.md'];
   const beforeRepository = await readFiles(repositoryPath, repositoryFiles);
-  const [rg, artifactShow, validate] = await Promise.all([
+  const [rg, artifactShow, related, validate] = await Promise.all([
     runCli([
       'content',
       'rg',
@@ -34,6 +34,13 @@ test('proves representative commands are read-only', async () => {
       '--repository-path',
       repositoryPath,
     ]),
+    runCli([
+      'content',
+      'related',
+      'customer-wide/docs/guide.md',
+      '--repository-path',
+      repositoryPath,
+    ]),
     runCli(['content', 'validate', '--repository-path', repositoryPath]),
   ]);
   const afterRepository = await readFiles(repositoryPath, repositoryFiles);
@@ -44,6 +51,7 @@ test('proves representative commands are read-only', async () => {
   expect(artifactShow.stdout).toContain(
     'target document:customer-wide%2Fdocs%2Fguide.md'
   );
+  expect(related.exitCode).toBe(0);
   expect(validate.exitCode).toBe(0);
   expect(afterRepository).toEqual(beforeRepository);
 
