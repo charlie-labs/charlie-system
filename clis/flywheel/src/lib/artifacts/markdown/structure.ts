@@ -133,7 +133,7 @@ function fragmentFromNode(
     return undefined;
   }
   return {
-    citationKeys: citationKeys(node),
+    citationKeys: citationKeys(node, contents),
     kind: 'prose',
     source: nodeLocation(node, locator),
     text: nodeSourceText(node, contents),
@@ -186,7 +186,7 @@ function tableFragment(
 ): SourceFragment {
   return {
     alignment: (node.align ?? []).map((alignment) => alignment ?? null),
-    citationKeys: citationKeys(node),
+    citationKeys: citationKeys(node, contents),
     kind: 'table',
     rows: node.children.map((row) =>
       row.children.map((cell) => nodeSourceText(cell, contents))
@@ -225,14 +225,30 @@ function citationFromNode(
   };
 }
 
-function citationKeys(node: Nodes): readonly string[] {
+function citationKeys(node: Nodes, contents: string): readonly string[] {
   const keys: string[] = [];
   visit(node, (candidate) => {
     if (candidate.type === 'footnoteReference') {
       keys.push(candidate.identifier);
     }
+    if (candidate.type === 'text') {
+      keys.push(...unresolvedCitationKeys(candidate, contents));
+    }
   });
   return [...new Set(keys)];
+}
+
+function unresolvedCitationKeys(
+  node: Extract<Nodes, { readonly type: 'text' }>,
+  contents: string
+): readonly string[] {
+  const source = nodeSourceText(node, contents);
+  return [...source.matchAll(/(?<!\\)\[\^(?<key>[^\]\s]+)\]/gu)].flatMap(
+    (match) => {
+      const key = match.groups?.key;
+      return key === undefined ? [] : [key];
+    }
+  );
 }
 
 function visit(node: Nodes, callback: (node: Nodes) => void): void {

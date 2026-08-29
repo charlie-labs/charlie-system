@@ -27,6 +27,13 @@ echo "[not a link](https://example.com/ignored)"
 [^evidence]: Confirm with the [change](https://github.com/acme/api/pull/7).
 `;
 
+const incompleteCitation = `# Citation
+
+This citation has no definition.[^missing]
+
+This is escaped and remains prose: \\[^literal].
+`;
+
 test('normalizes source-faithful GFM structure and references once', () => {
   const parsed = parseMarkdown(markdown, 'customer-wide/docs/releases.md');
 
@@ -111,4 +118,20 @@ test('collects nested authored Markdown reference definitions', () => {
     { citationKey: undefined, raw: 'https://example.test/list' },
     { citationKey: 'evidence', raw: 'https://example.test/footnote' },
   ]);
+});
+
+test('retains unresolved citation usage without exposing Markdown syntax', () => {
+  const parsed = parseMarkdown(
+    incompleteCitation,
+    'customer-wide/docs/citation.md'
+  );
+
+  expect(parsed.sections[0]?.fragments[0]).toMatchObject({
+    citationKeys: ['missing'],
+    kind: 'prose',
+  });
+  expect(parsed.sections[0]?.fragments[1]).toMatchObject({
+    citationKeys: [],
+    kind: 'prose',
+  });
 });
