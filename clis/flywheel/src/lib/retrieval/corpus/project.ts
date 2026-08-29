@@ -23,11 +23,11 @@ type DocumentUnitInput = Readonly<{
 }>;
 
 type CatalogUnitInput = Readonly<{
-  readonly artifact: Extract<KnowledgeArtifact, { readonly kind: 'catalog' }>;
   readonly artifactId: string;
   readonly authoredText: string;
   readonly headingPath: readonly string[];
   readonly sequence: number;
+  readonly source: KnowledgeSourceUnit['source'];
 }>;
 
 export function projectKnowledge(
@@ -137,39 +137,16 @@ function projectCatalogUnits(
   artifact: Extract<KnowledgeArtifact, { readonly kind: 'catalog' }>
 ): readonly KnowledgeSourceUnit[] {
   const artifactId = targetId(artifact.target);
-  const identity = [
-    `kind: ${artifact.entityKind}`,
-    ...(artifact.namespaceSource === undefined
-      ? []
-      : [`namespace: ${artifact.namespace}`]),
-    `name: ${artifact.name}`,
-    ...(artifact.title === undefined ? [] : [`title: ${artifact.title}`]),
-    ...(artifact.description === undefined
-      ? []
-      : [`description: ${artifact.description}`]),
-  ].join('\n');
-  const fields = Object.entries(artifact.spec).map(([field, value]) => ({
-    field,
-    text: `${field}: ${catalogValueText(value)}`,
-  }));
-  return [
-    catalogUnit({
-      artifact,
+  return artifact.fields.map((field, index) => {
+    const name = catalogFieldName(field.name);
+    return catalogUnit({
       artifactId,
-      authoredText: identity,
-      headingPath: ['identity'],
-      sequence: 0,
-    }),
-    ...fields.map(({ field, text }, index) =>
-      catalogUnit({
-        artifact,
-        artifactId,
-        authoredText: text,
-        headingPath: [field],
-        sequence: index + 1,
-      })
-    ),
-  ];
+      authoredText: `${name}: ${catalogValueText(field.value)}`,
+      headingPath: [name],
+      sequence: index,
+      source: field.source,
+    });
+  });
 }
 
 function catalogUnit(input: CatalogUnitInput): KnowledgeSourceUnit {
@@ -179,9 +156,19 @@ function catalogUnit(input: CatalogUnitInput): KnowledgeSourceUnit {
     citationKeys: [],
     headingPath: input.headingPath,
     id: knowledgeUnitId(input.artifactId, input.sequence),
-    source: input.artifact.source,
+    source: input.source,
     structuralKind: 'catalog-field',
   };
+}
+
+function catalogFieldName(name: string): string {
+  if (name.startsWith('metadata.')) {
+    return name.slice('metadata.'.length);
+  }
+  if (name.startsWith('spec.')) {
+    return name.slice('spec.'.length);
+  }
+  return name;
 }
 
 function catalogValueText(value: CatalogValue): string {

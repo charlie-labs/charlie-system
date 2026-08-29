@@ -30,12 +30,21 @@ test('projects source-faithful Doc and Catalog units from one assessed repositor
       unit.authoredText.includes('namespace: default')
     )
   ).toBe(false);
+  const owner = projection.units.find(
+    (unit) => unit.authoredText === 'owner: group:default/platform'
+  );
+  expect(owner).toMatchObject({
+    headingPath: ['owner'],
+    source: {
+      path: 'customer-wide/catalog/entities.yaml',
+      start: { column: 3, line: 16 },
+    },
+    structuralKind: 'catalog-field',
+  });
   expect(
     projection.units.some(
       (unit) =>
-        unit.authoredText === 'owner: group:default/platform' &&
-        unit.headingPath.join('/') === 'owner' &&
-        unit.structuralKind === 'catalog-field'
+        unit.authoredText === 'annotations: {"charlie.ai/review-every":"90d"}'
     )
   ).toBe(true);
   expect(projection.citations.map((item) => item.definition.key)).toEqual([

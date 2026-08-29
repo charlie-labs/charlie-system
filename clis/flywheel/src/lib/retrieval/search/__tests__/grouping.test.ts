@@ -112,7 +112,7 @@ test('applies artifact budgets after grouping and ignores ineligible candidates'
     {
       kind: 'response-shortened',
       omittedArtifacts: 2,
-      omittedPassages: 4,
+      omittedPassages: eligible.length - 2,
     },
   ]);
 });

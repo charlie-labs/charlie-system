@@ -49,12 +49,23 @@ function scoreUnit(
   const headingText = normalizedText(unit.headingPath.join(' '));
   const bodyText = normalizedText(unit.authoredText);
   const normalizedQuery = normalizedText(query);
-  const frequencyScore = terms.reduce(
+  const localFrequencyScore = terms.reduce(
     (score, term) =>
-      score +
-      tokenCount(artifactText, term) * 4 +
-      tokenCount(headingText, term) * 3 +
-      tokenCount(bodyText, term),
+      score + tokenCount(headingText, term) * 3 + tokenCount(bodyText, term),
+    0
+  );
+  const localPhraseMatches = [headingText, bodyText].some((text) =>
+    text.includes(normalizedQuery)
+  );
+  if (
+    artifact.kind === 'catalog' &&
+    localFrequencyScore === 0 &&
+    !localPhraseMatches
+  ) {
+    return 0;
+  }
+  const artifactFrequencyScore = terms.reduce(
+    (score, term) => score + tokenCount(artifactText, term) * 4,
     0
   );
   const phraseScore = [artifactText, headingText, bodyText].some((text) =>
@@ -62,7 +73,7 @@ function scoreUnit(
   )
     ? 8
     : 0;
-  return frequencyScore + phraseScore;
+  return artifactFrequencyScore + localFrequencyScore + phraseScore;
 }
 
 function artifactSearchText(artifact: KnowledgeArtifact): string {

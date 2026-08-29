@@ -61,7 +61,7 @@ test('returns source-faithful Catalog identity and relevant fields', async () =>
   );
 });
 
-test('does not rank a defaulted Catalog namespace as authored text', async () => {
+test('does not rank an absent Catalog namespace as authored text', async () => {
   const repository = await compileAndAssessRepository(corpusSource());
   const result = await searchAssessedRepository(
     searchInput(repository, {
@@ -71,6 +71,34 @@ test('does not rank a defaulted Catalog namespace as authored text', async () =>
   );
 
   expect(result.kind).toBe('no-useful-result');
+});
+
+test('does not reinterpret a malformed Catalog namespace as searchable text', async () => {
+  const repository = await compileAndAssessRepository(
+    validationSource({
+      'customer-wide/catalog/entities.yaml': `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: search-api
+  namespace: [product]
+  annotations:
+    charlie.ai/review-every: 90d
+spec: {}
+`,
+    }).source
+  );
+  const result = await searchAssessedRepository(
+    searchInput(repository, {
+      contentTypes: ['catalog'],
+      query: 'namespace default',
+    })
+  );
+
+  expect(result).toMatchObject({
+    kind: 'unavailable',
+    reason: 'projection-incomplete',
+  });
+  expect(JSON.stringify(result)).not.toContain('namespace: default');
 });
 
 test('searches explicitly authored Catalog identity and spec fields', async () => {
@@ -117,20 +145,14 @@ spec:
     }))
   ).toEqual([
     {
-      authoredText:
-        'kind: Component\nnamespace: product\nname: search-api\ntitle: Search API',
+      authoredText: 'namespace: product',
       path: 'customer-wide/catalog/entities.yaml',
-      start: { column: 1, line: 1 },
-    },
-    {
-      authoredText: 'lifecycle: production',
-      path: 'customer-wide/catalog/entities.yaml',
-      start: { column: 1, line: 1 },
+      start: { column: 3, line: 5 },
     },
     {
       authoredText: 'capability: repository-classification',
       path: 'customer-wide/catalog/entities.yaml',
-      start: { column: 1, line: 1 },
+      start: { column: 3, line: 11 },
     },
   ]);
 });
