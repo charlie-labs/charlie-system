@@ -16,6 +16,11 @@ workspace packages.
 - `bunfig.toml`: Bun installation policy.
 - `tsconfig.json`: shared TypeScript checking configuration.
 
+During migration, code in exactly `clis/apply-patch`, `clis/ch-linear`,
+`clis/ch-outline`, `clis/ch-sentry`, `clis/ch-slack`, `packages/format-for`,
+`packages/oclif-plugin-helpers`, and `packages/oclif-plugin-helpers-zod3` must
+follow [`docs/cli-migration.md`](docs/cli-migration.md).
+
 ## `charlie-system` checkout and context
 
 The Charlie harness always clones `charlie-system` at
