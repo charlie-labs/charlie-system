@@ -2,7 +2,7 @@ import type { ArtifactProblem } from '../../lib/artifacts/contract.js';
 import type { AuthoredReference } from '../../lib/references/contract.js';
 import type { ArtifactInspection } from '../../lib/retrieval/inspection/contract.js';
 import { renderArtifactDetails } from './artifact-details.js';
-import { documentAuthoredReferences } from './document.js';
+import { documentInspectionView } from './document.js';
 
 type SuccessfulInspection = Extract<
   ArtifactInspection,
@@ -13,10 +13,11 @@ export function renderArtifactInspection(
   inspection: SuccessfulInspection
 ): string {
   const { artifact } = inspection;
-  const references =
+  const documentView =
     artifact.kind === 'document'
-      ? documentAuthoredReferences(artifact, inspection.target)
-      : artifact.authoredReferences;
+      ? documentInspectionView(artifact, inspection.target)
+      : undefined;
+  const references = documentView?.references ?? artifact.authoredReferences;
   const header = [
     `target ${inspection.targetId}`,
     `kind: ${artifact.kind}`,
@@ -25,7 +26,7 @@ export function renderArtifactInspection(
   ].join('\n');
   return [
     header,
-    renderArtifactDetails(artifact, inspection.target),
+    renderArtifactDetails(artifact, inspection.target, documentView),
     renderReferences(references),
     renderProblems(inspection.problems),
   ]

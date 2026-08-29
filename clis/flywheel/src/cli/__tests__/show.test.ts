@@ -39,10 +39,23 @@ test('renders the selected authored subtree and scoped references in human mode'
   expect(result.stdout).toContain(
     '[^selected]: Selected citation [selected citation](./selected-citation.md)'
   );
+  expect(result.stdout).toContain(
+    '[^nested]: Nested citation [nested citation](./nested-citation.md)'
+  );
   const references = result.stdout.slice(result.stdout.indexOf('references:'));
-  expect(references).toContain('- links-to ./operate.md');
-  expect(references).toContain('- links-to ./nested.md');
-  expect(references).toContain('- cites ./selected-citation.md');
+  expect(
+    references
+      .split('\n')
+      .filter((line) => line.startsWith('- '))
+      .map((line) => line.replace(/\s+\([^)]*\)$/u, ''))
+  ).toEqual([
+    '- links-to ./operate.md',
+    '- links-to ./list.md',
+    '- links-to ./quote.md',
+    '- links-to ./nested.md',
+    '- cites ./selected-citation.md',
+    '- cites ./nested-citation.md',
+  ]);
   expect(references).not.toContain('component:default/api');
   expect(references).not.toContain('./replacement.md');
   expect(references).not.toContain('./overview.md');
@@ -269,6 +282,10 @@ Overview descendants only.
 
 Operate safely [operate](./operate.md) [^selected].
 
+- List operation [list](./list.md) [^selected].
+
+> Quoted operation [quote](./quote.md) [^selected].
+
 ### Nested
 
 Nested operation details [nested](./nested.md).
@@ -280,7 +297,8 @@ Nested operation details [nested](./nested.md).
 Later only [later](./later.md) [^later].
 
 [^overview]: Overview citation [overview citation](./overview-citation.md)
-[^selected]: Selected citation [selected citation](./selected-citation.md)
+[^selected]: Selected citation [selected citation](./selected-citation.md) [^nested]
+[^nested]: Nested citation [nested citation](./nested-citation.md)
 [^later]: Later citation [later citation](./later-citation.md)
 `;
 }

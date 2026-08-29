@@ -10,10 +10,11 @@ import type { InspectableTarget } from '../../lib/targets/contract.js';
 
 export function renderDocumentDetails(
   artifact: DocumentArtifact,
-  target: InspectableTarget
+  target: InspectableTarget,
+  view: DocumentInspectionView = documentInspectionView(artifact, target)
 ): string {
   const metadata = artifact.metadata;
-  const content = documentContent(artifact, target);
+  const content = documentContent(view);
   return [
     `title: ${artifact.title}`,
     `purpose: ${metadata.purpose}`,
@@ -30,48 +31,57 @@ export function renderDocumentDetails(
   ].join('\n');
 }
 
-function documentContent(
+export type DocumentInspectionView = Readonly<{
+  readonly citations: readonly CitationDefinition[];
+  readonly preamble: readonly SourceFragment[];
+  readonly references: readonly AuthoredReference[];
+  readonly sections: readonly DocumentSection[];
+}>;
+
+export function documentInspectionView(
   artifact: DocumentArtifact,
   target: InspectableTarget
-): string {
-  const scope =
-    target.kind === 'document-section'
-      ? documentSectionScope(artifact, target)
-      : undefined;
-  const sections = scope?.sections ?? artifact.sections;
-  const preamble =
-    scope === undefined ? renderFragments(artifact.preamble) : '';
-  const citations =
-    scope === undefined
-      ? artifact.citations
-      : artifact.citations.filter((citation) =>
-          scope.citationKeys.has(citation.key)
-        );
+): DocumentInspectionView {
+  if (target.kind !== 'document-section') {
+    return {
+      citations: artifact.citations,
+      preamble: artifact.preamble,
+      references: artifact.authoredReferences,
+      sections: artifact.sections,
+    };
+  }
+
+  const scope = documentSectionScope(artifact, target);
+  const citationKeys = closeCitationKeys(
+    scope.citationKeys,
+    artifact.citations
+  );
+  return {
+    citations: artifact.citations.filter((citation) =>
+      citationKeys.has(normalizeCitationKey(citation.key))
+    ),
+    preamble: [],
+    references: artifact.authoredReferences.filter(
+      (reference) =>
+        (reference.citationKey !== undefined &&
+          citationKeys.has(normalizeCitationKey(reference.citationKey))) ||
+        (reference.citationKey === undefined &&
+          reference.source.path === artifact.path &&
+          reference.source.start.line >= scope.startLine &&
+          reference.source.start.line < scope.endLine)
+    ),
+    sections: scope.sections,
+  };
+}
+
+function documentContent(view: DocumentInspectionView): string {
   return [
-    preamble,
-    ...sections.map((section) => renderSection(section)),
-    ...citations.map((citation) => renderCitation(citation)),
+    renderFragments(view.preamble),
+    ...view.sections.map((section) => renderSection(section)),
+    ...view.citations.map((citation) => renderCitation(citation)),
   ]
     .filter((block) => block !== '')
     .join('\n\n');
-}
-
-export function documentAuthoredReferences(
-  artifact: DocumentArtifact,
-  target: InspectableTarget
-): readonly AuthoredReference[] {
-  if (target.kind !== 'document-section') {
-    return artifact.authoredReferences;
-  }
-  const scope = documentSectionScope(artifact, target);
-  return artifact.authoredReferences.filter(
-    (reference) =>
-      scope.citationKeys.has(reference.citationKey ?? '') ||
-      (reference.citationKey === undefined &&
-        reference.source.path === artifact.path &&
-        reference.source.start.line >= scope.startLine &&
-        reference.source.start.line < scope.endLine)
-  );
 }
 
 type DocumentSectionScope = Readonly<{
@@ -123,6 +133,55 @@ function documentSectionScope(
   };
 }
 
+function closeCitationKeys(
+  initialKeys: ReadonlySet<string>,
+  citations: readonly CitationDefinition[]
+): ReadonlySet<string> {
+  const definitions = new Map<string, CitationDefinition[]>();
+  for (const citation of citations) {
+    const key = normalizeCitationKey(citation.key);
+    definitions.set(key, [...(definitions.get(key) ?? []), citation]);
+  }
+
+  const retained = new Set(initialKeys);
+  const pending = [...retained];
+  for (let index = 0; index < pending.length; index += 1) {
+    const key = pending[index];
+    if (key === undefined) continue;
+    retainCitationDependencies(key, definitions, retained, pending);
+  }
+  return retained;
+}
+
+function retainCitationDependencies(
+  key: string,
+  definitions: ReadonlyMap<string, readonly CitationDefinition[]>,
+  retained: Set<string>,
+  pending: string[]
+): void {
+  for (const citation of definitions.get(key) ?? []) {
+    const nestedKeys = new Set<string>();
+    addCitationKeys(citation.fragments, nestedKeys);
+    retainNewCitationKeys(nestedKeys, retained, pending);
+  }
+}
+
+function retainNewCitationKeys(
+  keys: ReadonlySet<string>,
+  retained: Set<string>,
+  pending: string[]
+): void {
+  for (const key of keys) {
+    if (retained.has(key)) continue;
+    retained.add(key);
+    pending.push(key);
+  }
+}
+
+function normalizeCitationKey(key: string): string {
+  return key.toLowerCase();
+}
+
 function addCitationKeys(
   fragments: readonly SourceFragment[],
   citationKeys: Set<string>
@@ -131,7 +190,9 @@ function addCitationKeys(
     switch (fragment.kind) {
       case 'prose':
       case 'table':
-        for (const key of fragment.citationKeys) citationKeys.add(key);
+        for (const key of fragment.citationKeys) {
+          citationKeys.add(normalizeCitationKey(key));
+        }
         break;
       case 'list':
         for (const item of fragment.items) {

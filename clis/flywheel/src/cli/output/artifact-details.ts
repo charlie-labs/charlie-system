@@ -1,15 +1,19 @@
 import type { FlywheelArtifact } from '../../lib/artifacts/contract.js';
 import type { DaemonActivation } from '../../lib/artifacts/daemon/contract.js';
 import type { InspectableTarget } from '../../lib/targets/contract.js';
-import { renderDocumentDetails } from './document.js';
+import {
+  renderDocumentDetails,
+  type DocumentInspectionView,
+} from './document.js';
 
 export function renderArtifactDetails(
   artifact: FlywheelArtifact,
-  target: InspectableTarget
+  target: InspectableTarget,
+  documentView?: DocumentInspectionView
 ): string {
   switch (artifact.kind) {
     case 'document':
-      return renderDocumentDetails(artifact, target);
+      return renderDocumentDetails(artifact, target, documentView);
     case 'catalog':
       return catalogDetails(artifact);
     case 'role':
