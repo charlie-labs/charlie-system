@@ -1,6 +1,15 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [],
+  "ignorePatterns": [
+    "clis/apply-patch/**",
+    "clis/ch-linear/**",
+    "clis/ch-outline/**",
+    "clis/ch-sentry/**",
+    "clis/ch-slack/**",
+    "packages/format-for/**",
+    "packages/oclif-plugin-helpers/**",
+    "packages/oclif-plugin-helpers-zod3/**"
+  ],
   "printWidth": 80,
   "semi": true,
   "singleQuote": true,

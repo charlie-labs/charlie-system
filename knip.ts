@@ -1,10 +1,45 @@
 import type { KnipConfig } from 'knip';
 
+const migratedKnipIssueTypes = [
+  'files',
+  'exports',
+  'nsExports',
+  'types',
+  'nsTypes',
+  'enumMembers',
+  'namespaceMembers',
+  'duplicates',
+  'cycles',
+] as const;
+
+type KnipIssueType =
+  | 'files'
+  | 'exports'
+  | 'nsExports'
+  | 'types'
+  | 'nsTypes'
+  | 'enumMembers'
+  | 'namespaceMembers'
+  | 'duplicates'
+  | 'cycles';
+
+const migratedPathIgnoreIssues: Record<string, KnipIssueType[]> = {
+  'clis/apply-patch/**': [...migratedKnipIssueTypes],
+  'clis/ch-linear/**': [...migratedKnipIssueTypes],
+  'clis/ch-outline/**': [...migratedKnipIssueTypes],
+  'clis/ch-sentry/**': [...migratedKnipIssueTypes],
+  'clis/ch-slack/**': [...migratedKnipIssueTypes],
+  'packages/format-for/**': [...migratedKnipIssueTypes],
+  'packages/oclif-plugin-helpers/**': [...migratedKnipIssueTypes],
+  'packages/oclif-plugin-helpers-zod3/**': [...migratedKnipIssueTypes],
+};
+
 const config = {
   ignoreFiles: ['.agents/**'],
+  ignoreIssues: migratedPathIgnoreIssues,
   workspaces: {
     '.': {
-      entry: [],
+      entry: ['tests/repository-contracts.test.ts'],
     },
   },
   rules: {

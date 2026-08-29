@@ -159,7 +159,18 @@ const flywheelArchitectureOverrides: OxlintOverride[] = [
 ];
 
 export default defineConfig({
-  ignorePatterns: ['coverage/**', 'dist/**'],
+  ignorePatterns: [
+    'clis/apply-patch/**',
+    'clis/ch-linear/**',
+    'clis/ch-outline/**',
+    'clis/ch-sentry/**',
+    'clis/ch-slack/**',
+    'coverage/**',
+    'dist/**',
+    'packages/format-for/**',
+    'packages/oclif-plugin-helpers/**',
+    'packages/oclif-plugin-helpers-zod3/**',
+  ],
   plugins: [...basePlugins],
   categories: {
     correctness: 'error',

@@ -14,6 +14,7 @@
   "include": [
     "clis/**/*.ts",
     "packages/**/*.ts",
+    "tests/**/*.ts",
     "system/skills/**/scripts/*.ts",
     "*.config.ts",
     "knip.ts"
