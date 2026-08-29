@@ -50,23 +50,6 @@ The main topics and verbs are:
   `--slurp` collects pages. `gh api --help` owns exact request, pagination, and
   output syntax.
 
-## GitHub mechanics
-
-- Pull requests participate in GitHub's issue model. An issue comment is a
-  conversation comment on an issue or pull request; an inline review comment
-  attaches to its diff; a formal review has an overall state and can group
-  review comments. These are distinct surfaces.
-- Pull request numbers, formal review IDs, review-comment IDs, REST database
-  IDs, and GraphQL node IDs are not interchangeable; preserve the identifiers
-  returned for the exact resource and operation.
-- Checks and workflow runs describe a commit or ref. Reactions are separate
-  resources attached to an exact subject or comment and commonly require
-  `gh api`.
-- GitHub conversations use GitHub-flavored Markdown and support
-  `<details>`/`<summary>`. Issue and pull request references such as `#123` and
-  `OWNER/REPO#123` autolink in conversations but not in repository files or
-  wikis.
-
 ## Debugging
 
 For Devbox, credential, capability, installation, repository-access, or GitHub
@@ -78,7 +61,3 @@ integration questions, consult:
 For `gh` behavior, inspect the installed version and relevant command help. For
 deeper CLI debugging, use the matching release or tag in the
 [`cli/cli`](https://github.com/cli/cli) source and tests.
-
-If the observed behavior establishes a Charlie GitHub integration defect
-rather than an upstream CLI, credential, permission, or usage problem, report
-it using the bug-reporting tool available in the current agent tool surface.
