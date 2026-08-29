@@ -105,6 +105,30 @@ test('keeps ambiguous and missing lookups explicit', async () => {
   });
 });
 
+test('returns retained parse problems for unparsed paths without graph targets', async () => {
+  const projection = await compileRepository(projectionSource().source);
+  const indexes = buildRepositoryIndexes(projection);
+
+  expect(
+    findRelatedTargets(indexes, 'customer-wide/docs/broken.md')
+  ).toMatchObject({
+    entry: { path: 'customer-wide/docs/broken.md' },
+    input: 'customer-wide/docs/broken.md',
+    kind: 'unparsed',
+    problems: [{ code: 'ARTIFACT_FRONTMATTER_REQUIRED' }],
+  });
+  expect(findRelatedTargets(indexes, 'customer-wide/docs/missing.md')).toEqual({
+    input: 'customer-wide/docs/missing.md',
+    kind: 'missing',
+  });
+  expect(
+    [...indexes.graph.targetById.values()].some(
+      (target) =>
+        'path' in target && target.path === 'customer-wide/docs/broken.md'
+    )
+  ).toBe(false);
+});
+
 test('composes one listing and one batch read without reparsing for traversal', async () => {
   const fixture = projectionSource();
 

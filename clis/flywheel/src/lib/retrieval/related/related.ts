@@ -8,7 +8,17 @@ export function findRelatedTargets(
   input: string
 ): RelatedResult {
   const ids = indexes.aliases.get(input) ?? [];
-  if (ids.length === 0) return { input, kind: 'missing' };
+  if (ids.length === 0) {
+    const unparsed = indexes.unparsedByPath.get(input);
+    return unparsed === undefined
+      ? { input, kind: 'missing' }
+      : {
+          entry: unparsed.entry,
+          input,
+          kind: 'unparsed',
+          problems: unparsed.problems,
+        };
+  }
   if (ids.length > 1) {
     return {
       candidates: ids.flatMap((id) => {

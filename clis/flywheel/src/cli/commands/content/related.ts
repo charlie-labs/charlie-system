@@ -68,7 +68,10 @@ export default class Related extends ContentCommand<
       repositoryPath: runtime.repositoryPath,
       target,
     });
-    if (result.kind !== 'related') throw new ContentRelatedError(result);
+    if (result.kind !== 'related') {
+      this.renderFailure(result);
+      throw new ContentRelatedError(result);
+    }
     if (!this.jsonEnabled()) {
       process.stdout.write(`${renderRelatedResult(result).trimEnd()}\n`);
     }
@@ -81,4 +84,25 @@ export default class Related extends ContentCommand<
       ? { ...result, error: { ...result.error, result: error.result } }
       : result;
   }
+
+  private renderFailure(
+    result: Exclude<RelatedResult, { readonly kind: 'related' }>
+  ): void {
+    if (this.jsonEnabled() || result.kind !== 'unparsed') return;
+    const output = renderProblems(result.problems);
+    if (output !== '') process.stderr.write(`${output}\n`);
+  }
+}
+
+function renderProblems(
+  problems: Extract<RelatedResult, { readonly kind: 'unparsed' }>['problems']
+): string {
+  if (problems.length === 0) return '';
+  return [
+    'problems:',
+    ...problems.map(
+      (problem) =>
+        `- ${problem.code} ${problem.source.path}:${problem.source.start.line}:${problem.source.start.column} ${problem.message}`
+    ),
+  ].join('\n');
 }
