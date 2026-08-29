@@ -1,0 +1,10 @@
+description: UPD-007 trailing and leading space canonicalisation
+expect: success
+before:
+  src/spaces.ts: "const sum = (a: number, b: number) => {\n  return a + b;\x20\x20\x20\n};"
+patch: "*** Begin Patch\n*** Update File: src/spaces.ts\n@@ const sum\n  const sum = (a: number, b: number) => {\n-  return a + b;\x20\x20\x20\n+  return a + b;\n};\n*** End Patch"
+after:
+  src/spaces.ts: |-
+    const sum = (a: number, b: number) => {
+      return a + b;
+    };

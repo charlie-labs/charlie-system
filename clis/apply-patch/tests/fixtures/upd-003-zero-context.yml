@@ -1,0 +1,22 @@
+description: UPD-003 zero-context single-line edit (spec §8.9)
+expect: success
+before:
+  package.json: |-
+    {
+      "name": "my-package",
+      "version": "1.0.0",
+      "main": "index.js"
+    }
+patch: |-
+  *** Begin Patch
+  *** Update File: package.json
+  -  "version": "1.0.0",
+  +  "version": "1.1.0",
+  *** End Patch
+after:
+  package.json: |-
+    {
+      "name": "my-package",
+      "version": "1.1.0",
+      "main": "index.js"
+    }

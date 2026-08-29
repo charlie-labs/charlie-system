@@ -1,0 +1,20 @@
+{
+  "name": "@charlie-labs/ch-apply-patch",
+  "version": "0.0.4",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "bin": {
+    "apply_patch": "./bin/apply_patch.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "bun run ./bin/apply_patch.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "yaml": "^2.9.0"
+  }
+}

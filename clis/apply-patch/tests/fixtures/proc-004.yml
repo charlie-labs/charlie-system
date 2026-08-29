@@ -1,0 +1,11 @@
+description: PROC-004 add new file
+expect: success
+before: {}
+patch: |-
+  *** Begin Patch
+  *** Add File: b.txt
+  +new content
+  *** End Patch
+after:
+  b.txt: |
+    new content

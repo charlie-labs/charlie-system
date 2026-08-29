@@ -1,0 +1,11 @@
+description: REN-005 duplicate Move to lines in one section
+expect: error
+before:
+  src/foo.txt: |-
+    foo
+patch: |-
+  *** Begin Patch
+  *** Update File: src/foo.txt
+  *** Move to: src/bar.txt
+  *** Move to: src/baz.txt
+  *** End Patch

@@ -1,0 +1,5 @@
+description: ENV-006 missing end sentinel
+expect: error
+patch: |-
+  *** Begin Patch
+  *** Delete File: stale.txt

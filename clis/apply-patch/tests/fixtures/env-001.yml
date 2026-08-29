@@ -1,0 +1,11 @@
+description: ENV-001 single-file add
+expect: success
+before: {}
+patch: |-
+  *** Begin Patch
+  *** Add File: src/utils/foo.ts
+  + export const foo = () => 'bar';
+  *** End Patch
+after:
+  src/utils/foo.ts: |
+    export const foo = () => 'bar';

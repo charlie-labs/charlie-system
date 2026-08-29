@@ -1,0 +1,27 @@
+description: ENV-002 multi-file add-delete-update
+expect: success
+before:
+  src/config/old_env.ts: |
+    export const OLD = true;
+  src/cli.ts: |
+    const [cmd] = process.argv.slice(2);
+    console.log(`Executing ${cmd}`);
+strict: true
+patch: |-
+  *** Begin Patch
+  *** Add File: src/utils/env.ts
+  + export const getEnv = (k: string) => process.env[k]!;
+
+  *** Delete File: src/config/old_env.ts
+
+  *** Update File: src/cli.ts
+   const [cmd] = process.argv.slice(2);
+  -console.log(`Executing ${cmd}`);
+  +console.info(`Executing ${cmd}`);
+  *** End Patch
+after:
+  src/utils/env.ts: |
+    export const getEnv = (k: string) => process.env[k]!;
+  src/cli.ts: |
+    const [cmd] = process.argv.slice(2);
+    console.info(`Executing ${cmd}`);

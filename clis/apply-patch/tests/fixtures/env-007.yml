@@ -1,0 +1,6 @@
+description: ENV-007 unknown directive
+expect: error
+patch: |-
+  *** Begin Patch
+  *** Foo Bar: baz
+  *** End Patch

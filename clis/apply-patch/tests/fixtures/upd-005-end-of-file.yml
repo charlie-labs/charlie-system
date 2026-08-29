@@ -1,0 +1,28 @@
+description: UPD-005 End of File pinning
+expect: success
+before:
+  src/logger.ts: |-
+    export const logger = {
+      info: console.log,
+      warn: console.warn,
+      error: console.error,
+    };
+patch: |-
+  *** Begin Patch
+  *** Update File: src/logger.ts
+  @@ export const logger
+    export const logger = {
+      info: console.log,
+      warn: console.warn,
+  -  error: console.error,
+  +  error: console.error.bind(console),
+    };
+  *** End of File
+  *** End Patch
+after:
+  src/logger.ts: |-
+    export const logger = {
+      info: console.log,
+      warn: console.warn,
+      error: console.error.bind(console),
+    };

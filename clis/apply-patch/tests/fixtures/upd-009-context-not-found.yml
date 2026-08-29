@@ -1,0 +1,12 @@
+description: UPD-009 context not found should error
+expect: error
+before:
+  src/notfound_context.ts: |-
+    const x = 1;
+patch: |-
+  *** Begin Patch
+  *** Update File: src/notfound_context.ts
+  @@ missing line
+  -const y = 2;
+  +const y = 3;
+  *** End Patch

@@ -1,0 +1,13 @@
+description: 'ADD-001: add new non-empty text file'
+expect: success
+before: {}
+patch: |-
+  *** Begin Patch
+  *** Add File: docs/hello.txt
+  + Hello
+  + World
+  *** End Patch
+after:
+  docs/hello.txt: |
+    Hello
+    World

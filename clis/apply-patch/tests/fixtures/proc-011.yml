@@ -1,0 +1,21 @@
+description: PROC-011 missing leading-space keep-line
+expect: success
+before:
+  foo.txt: |-
+    line1
+    line2
+    line3
+patch: |-
+  *** Begin Patch
+  *** Update File: foo.txt
+  @@
+   line1
+  -line2
+  +some new line2
+  line3
+  *** End Patch
+after:
+  foo.txt: |-
+    line1
+    some new line2
+    line3

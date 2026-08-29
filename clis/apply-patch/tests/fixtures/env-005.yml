@@ -1,0 +1,6 @@
+description: ENV-005 missing begin sentinel
+expect: error
+patch: |-
+  *** Add File: foo.txt
+  + foo
+  *** End Patch

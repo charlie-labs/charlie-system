@@ -1,0 +1,9 @@
+description: UPD-012 update on missing file should error
+expect: error
+patch: |-
+  *** Begin Patch
+  *** Update File: src/not_found.ts
+  @@ nothing
+  -old
+  +new
+  *** End Patch

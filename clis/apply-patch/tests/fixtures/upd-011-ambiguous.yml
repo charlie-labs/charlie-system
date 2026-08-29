@@ -1,0 +1,13 @@
+description: UPD-011 ambiguous context should error
+expect: error
+before:
+  src/ambiguous.ts: |-
+    console.log("duplicate");
+    console.log("duplicate");
+patch: |-
+  *** Begin Patch
+  *** Update File: src/ambiguous.ts
+  @@ change one
+  -console.log("duplicate");
+  +console.log("changed");
+  *** End Patch

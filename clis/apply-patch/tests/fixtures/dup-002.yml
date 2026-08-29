@@ -1,0 +1,19 @@
+id: DUP-002
+description: Section 1.6 – duplicate/ordering – duplicate *** Update File blocks
+expect: error
+before:
+  config.ini: |
+    host=localhost
+    port=3000
+patch: |
+  *** Begin Patch
+  *** Update File: config.ini
+  @@
+  -host=localhost
+  +host=example.com
+
+  *** Update File: config.ini
+  @@
+  -port=3000
+  +port=8080
+  *** End Patch

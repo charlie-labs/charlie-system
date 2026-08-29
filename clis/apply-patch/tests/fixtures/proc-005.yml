@@ -1,0 +1,10 @@
+description: PROC-005 delete existing file
+expect: success
+before:
+  c.txt: |
+    to be removed
+patch: |-
+  *** Begin Patch
+  *** Delete File: c.txt
+  *** End Patch
+after: {}

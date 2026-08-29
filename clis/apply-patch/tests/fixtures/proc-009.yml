@@ -1,0 +1,43 @@
+description: PROC-009 README code-block insertion
+expect: success
+before:
+  README.md: |-
+    #### Fix an issue
+
+    ```sh
+    # First, copy an error
+    # Then, start codex with interactive mode
+    codex
+
+    # Or you can pass in via command line argument
+    codex "Fix this issue: $(pbpaste)"
+
+    # Or even as a task (it should use your current repo and branch)
+    codex -t "Fix this issue: $(pbpaste)"
+    ```
+patch: |-
+  *** Begin Patch
+  *** Update File: README.md
+  @@
+    codex -t "Fix this issue: $(pbpaste)"
+    ```
+  +
+  +hello
+  *** End Patch
+after:
+  README.md: |-
+    #### Fix an issue
+
+    ```sh
+    # First, copy an error
+    # Then, start codex with interactive mode
+    codex
+
+    # Or you can pass in via command line argument
+    codex "Fix this issue: $(pbpaste)"
+
+    # Or even as a task (it should use your current repo and branch)
+    codex -t "Fix this issue: $(pbpaste)"
+    ```
+
+    hello
