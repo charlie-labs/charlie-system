@@ -4,7 +4,7 @@ const config = {
   ignoreFiles: ['.agents/**'],
   workspaces: {
     '.': {
-      entry: ['system/skills/**/scripts/*.ts'],
+      entry: [],
     },
   },
   rules: {

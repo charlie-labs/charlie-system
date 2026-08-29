@@ -9,9 +9,8 @@ This Skill gives Charlie—the agent built by Charlie Labs—authoritative, curr
 
 ## Retrieval workflow
 
-Use the bundled helper from the repository root. It owns the documentation
-retrieval details, so use its commands rather than reproducing requests
-directly.
+Use the shared `ch-docs` CLI. It owns the documentation retrieval details, so
+use its commands rather than reproducing requests directly.
 
 1. Start with `search <query>` for broad discovery when you know the topic but
    not the relevant page.
@@ -23,17 +22,17 @@ directly.
 4. If the index or search results are incomplete, follow relevant links from
    the returned page and continue reading until the answer is supported.
 
-## Bundled helper commands
+## `ch-docs` commands
 
 Run these commands with Bun:
 
 ```text
-bun system/skills/charlie-docs/scripts/charlie-docs.ts page <path-or-url>
-bun system/skills/charlie-docs/scripts/charlie-docs.ts index
-bun system/skills/charlie-docs/scripts/charlie-docs.ts full
-bun system/skills/charlie-docs/scripts/charlie-docs.ts search <query>
-bun system/skills/charlie-docs/scripts/charlie-docs.ts filesystem <read-only-command>
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <feedback...>
+ch-docs page <path-or-url>
+ch-docs index
+ch-docs full
+ch-docs search <query>
+ch-docs filesystem <read-only-command>
+ch-docs feedback <path-or-url> <feedback...>
 ```
 
 - `page <path-or-url>` reads one complete documentation page and returns its
@@ -80,13 +79,13 @@ Always end the feedback text with the current root task ID in the form
 Submit feedback with:
 
 ```text
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <feedback...>
+ch-docs feedback <path-or-url> <feedback...>
 ```
 
 For example:
 
 ```text
-bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback /integrations/slack "Under `Thread follow-ups`, the page says every reply in an existing thread is treated as a continuation. In a shared channel, a reply that mentions @Charlie starts a new request instead, so this guidance can cause a follow-up to be missed. I observed this with the current Slack behavior; the routing reference describes mentions as explicit requests. [rootTaskId=tsk_…]"
+ch-docs feedback /integrations/slack "Under `Thread follow-ups`, the page says every reply in an existing thread is treated as a continuation. In a shared channel, a reply that mentions @Charlie starts a new request instead, so this guidance can cause a follow-up to be missed. I observed this with the current Slack behavior; the routing reference describes mentions as explicit requests. [rootTaskId=tsk_…]"
 ```
 
 The retrieval commands (`page`, `index`, `full`, `search`, and

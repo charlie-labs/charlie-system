@@ -9,6 +9,7 @@ directory to `PATH`, for example:
 ```sh
 export PATH="/home/user/.charlie/charlie-system/bin:$PATH"
 flywheel --help
+ch-docs --help
 ```
 
 ## `charlie-system` checkout and context
