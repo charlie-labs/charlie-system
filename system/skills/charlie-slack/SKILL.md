@@ -16,25 +16,27 @@ scoped access. When that integration is available to a Task, the harness
 injects its customer-scoped credential into the Devbox as `SLACK_BOT_TOKEN`;
 `ch-slack` reads it automatically. Effective access is the intersection of
 Task authority, the dynamic Slack capability, integration scopes,
-workspace/channel access, and provider permissions. Exact workspace, channel,
-message, user, target, and authorization values are invocation-specific and
-remain in current context.
+workspace/channel access, and provider permissions.
 
 ## Command discovery
 
-Use installed `ch-slack --help` as the authority for commands, arguments,
-flags, accepted identifiers, output schemas, and exact behavior across channel,
-thread, message, reply, user, and reaction work.
+The main topics and verbs are:
+
+- Access and lookup: `auth whoami`, `channel` (`list`, `history`), and `thread`
+  (`view`).
+- Messaging: `message` (`post`, `update`, `delete`) and `dm` (`send`).
+- Reactions and files: `react` (`add`, `remove`) and `files` (`upload`).
+- Global and common flags: `--json` returns structured JSON, `--limit` bounds
+  results when supported, and `--help` is the authority for exact arguments,
+  flags, defaults, accepted identifiers, and output shapes.
 
 ## Slack mechanics
 
 - Write Slack content in Slack `mrkdwn`; do not substitute formatting rules from
   another provider.
-- A message `ts` identifies an exact message. A `thread_ts` identifies the
-  root of its reply chain; when there is no separate thread timestamp, the
-  message's own `ts` is the root.
-- Replies must target the thread root, not the latest nested reply. Preserve the
-  channel and root `thread_ts` supplied by context or returned by Slack.
+- A message `ts` identifies an exact message. A `thread_ts` identifies the root
+  of its reply chain; when there is no separate thread timestamp, the message's
+  own `ts` is the root. Target replies at that root, not the latest reply.
 - Preserve Slack-native user, channel, and message references instead of
   replacing them with display-name approximations. Use a canonical message
   permalink when a durable pointer is needed.
