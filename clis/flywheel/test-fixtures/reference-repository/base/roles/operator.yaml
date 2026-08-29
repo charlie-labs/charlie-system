@@ -1,0 +1,3 @@
+schemaVersion: role.v0
+id: operator
+objective: Operate repository deployments safely.

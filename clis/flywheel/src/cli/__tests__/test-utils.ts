@@ -1,4 +1,11 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import path from 'node:path';
 
 export const packageRoot = path.resolve(import.meta.dir, '../../..');
@@ -20,6 +27,12 @@ export type CliResult = Readonly<{
   readonly exitCode: number;
   readonly stderr: string;
   readonly stdout: string;
+}>;
+
+export type TreeSnapshotEntry = Readonly<{
+  readonly contents?: string;
+  readonly kind: 'directory' | 'file' | 'other' | 'symbolic-link';
+  readonly path: string;
 }>;
 
 export async function cleanupTemporaryDirectories(): Promise<void> {
@@ -93,6 +106,69 @@ export async function readFiles(
       readFile(path.join(root, relativePath), 'utf8')
     )
   );
+}
+
+export async function snapshotTree(
+  root: string
+): Promise<readonly TreeSnapshotEntry[]> {
+  const entries = await collectTreeEntries(root, root);
+  return sortTreeEntries(entries);
+}
+
+async function collectTreeEntries(
+  root: string,
+  directoryPath: string
+): Promise<TreeSnapshotEntry[]> {
+  const entries = await readdir(directoryPath, { withFileTypes: true });
+  const snapshots = await Promise.all(
+    entries.map(async (entry): Promise<readonly TreeSnapshotEntry[]> => {
+      const absolutePath = path.join(directoryPath, entry.name);
+      const relativePath = path
+        .relative(root, absolutePath)
+        .split(path.sep)
+        .join('/');
+      if (entry.isDirectory()) {
+        const snapshot: TreeSnapshotEntry = {
+          kind: 'directory',
+          path: relativePath,
+        };
+        return [snapshot].concat(await collectTreeEntries(root, absolutePath));
+      }
+      if (entry.isFile()) {
+        return [
+          {
+            contents: (await readFile(absolutePath)).toString('base64'),
+            kind: 'file',
+            path: relativePath,
+          },
+        ];
+      }
+      return [
+        {
+          kind: entry.isSymbolicLink() ? 'symbolic-link' : 'other',
+          path: relativePath,
+        },
+      ];
+    })
+  );
+  return snapshots.flat();
+}
+
+function sortTreeEntries(
+  entries: readonly TreeSnapshotEntry[]
+): TreeSnapshotEntry[] {
+  const sorted: TreeSnapshotEntry[] = [];
+  for (const entry of entries) {
+    const index = sorted.findIndex(
+      (candidate) => candidate.path.localeCompare(entry.path) > 0
+    );
+    if (index < 0) {
+      sorted.push(entry);
+    } else {
+      sorted.splice(index, 0, entry);
+    }
+  }
+  return sorted;
 }
 
 export async function gitTrackedFiles(): Promise<readonly string[]> {

@@ -21,6 +21,9 @@ test('proves the tracked checkout boundary and CLI inventory', async () => {
   expect(
     tracked
       .filter((file) => file.startsWith('clis/') && file !== 'clis/AGENTS.md')
-      .every((file) => file.startsWith('clis/flywheel/'))
+      .every(
+        (file) =>
+          file.startsWith('clis/ch-docs/') || file.startsWith('clis/flywheel/')
+      )
   ).toBe(true);
 });

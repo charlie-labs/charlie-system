@@ -1,0 +1,11 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: worker
+  title: Repository API
+  description: Repository deployment component
+  annotations:
+    charlie.ai/review-every: 90d
+spec:
+  lifecycle: active
+  owner: group:default/platform
