@@ -1,3 +1,5 @@
+These rules apply to Charlie system skills in `system/skills/`.
+
 - Treat system Skills as compact, universal operational context—not as storage for text removed from prompts.
 - Assume Charlie is a competent agent; omit generic advice he can reliably infer.
 - Include content only when it materially changes command selection, arguments, result interpretation, or authority routing.
