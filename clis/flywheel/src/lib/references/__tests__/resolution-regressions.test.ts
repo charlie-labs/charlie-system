@@ -50,28 +50,27 @@ test('applies relationship target constraints to external identities', () => {
 test('redacts secret-bearing resolver inputs while preserving source location', () => {
   const path = 'customer-wide/docs/guide.md';
   const secret = 'RESOLVER-SECRET-VALUE';
-  const document = documentArtifact(path, [
-    reference(
-      path,
-      `https://example.test/run?access_token=${secret}`,
-      'links-to'
-    ),
-  ]);
-  const [resolution] = resolveFixture([document]);
+  for (const raw of [
+    `https://example.test/run?access_token=${secret}`,
+    `https://example.test/callback#access_token=${secret}`,
+  ]) {
+    const document = documentArtifact(path, [reference(path, raw, 'links-to')]);
+    const [resolution] = resolveFixture([document]);
 
-  expect(resolution).toMatchObject({
-    authored: {
-      source: {
-        path,
-        start: { column: 1, line: 3 },
+    expect(resolution).toMatchObject({
+      authored: {
+        source: {
+          path,
+          start: { column: 1, line: 3 },
+        },
       },
-    },
-    kind: 'unresolved',
-    reason: 'invalid-syntax',
-  });
-  const serialized = JSON.stringify(resolution);
-  expect(serialized).not.toContain(secret);
-  expect(serialized).not.toContain('access_token');
+      kind: 'unresolved',
+      reason: 'invalid-syntax',
+    });
+    const serialized = JSON.stringify(resolution);
+    expect(serialized).not.toContain(secret);
+    expect(serialized).not.toContain('access_token');
+  }
 });
 
 test('keeps support identity path-stable for shared and failed-owner resources', () => {

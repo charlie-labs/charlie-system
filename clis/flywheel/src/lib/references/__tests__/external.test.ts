@@ -103,6 +103,7 @@ test('rejects secret-bearing URLs before constructing external identities', () =
   const secret = 'EXTERNAL-SECRET-VALUE';
   const inputs = [
     `https://example.test/run?access_token=${secret}`,
+    `https://example.test/callback#access_token=${secret}`,
     `https://github.com/acme/api?api_key=${secret}`,
     `https://user:${secret}@linear.app/acme/issue/BOT-42/x`,
   ];
