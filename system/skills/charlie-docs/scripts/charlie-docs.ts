@@ -1,5 +1,15 @@
 #!/usr/bin/env bun
 
+import { CliError } from './errors.js';
+import { toPagePath } from './feedback-path.js';
+import {
+  extractContentText,
+  formatHttpFailure,
+  isRecord,
+  parseJsonRpcMessage,
+  type JsonRecord,
+} from './mcp-response.js';
+
 const DOCS_ORIGIN = 'https://charlie-v3.mintlify.site';
 const MCP_URL = `${DOCS_ORIGIN}/mcp`;
 const MCP_PROTOCOL_VERSION = '2025-03-26';
@@ -11,7 +21,8 @@ const USAGE = `Usage:
   bun system/skills/charlie-docs/scripts/charlie-docs.ts index
   bun system/skills/charlie-docs/scripts/charlie-docs.ts full
   bun system/skills/charlie-docs/scripts/charlie-docs.ts search <query>
-  bun system/skills/charlie-docs/scripts/charlie-docs.ts filesystem <read-only-command>`;
+  bun system/skills/charlie-docs/scripts/charlie-docs.ts filesystem <read-only-command>
+  bun system/skills/charlie-docs/scripts/charlie-docs.ts feedback <path-or-url> <feedback...>`;
 
 type FetchLike = (
   input: RequestInfo | URL,
@@ -23,18 +34,20 @@ type CliIo = {
   readonly stderr: (text: string) => void;
 };
 
-type JsonRecord = { readonly [key: string]: unknown };
-type Command = 'page' | 'index' | 'full' | 'search' | 'filesystem' | 'help';
-type ParsedArguments = Readonly<{ command: Command; value: string }>;
-
-class CliError extends Error {
-  constructor(
-    message: string,
-    readonly exitCode: 1 | 2 = 1
-  ) {
-    super(message);
-  }
-}
+type Command =
+  | 'page'
+  | 'index'
+  | 'full'
+  | 'search'
+  | 'filesystem'
+  | 'feedback'
+  | 'help';
+type ParsedArguments =
+  | Readonly<{ command: 'feedback'; value: string; feedback: string }>
+  | Readonly<{
+      command: Exclude<Command, 'feedback'>;
+      value: string;
+    }>;
 
 export async function execute(
   argv: readonly string[],
@@ -62,6 +75,17 @@ export async function execute(
     case 'filesystem':
       return extractFilesystemStdout(
         await callMcp(FILESYSTEM_TOOL, { command: parsed.value }, fetchImpl)
+      );
+    case 'feedback':
+      return extractContentText(
+        await callMcp(
+          'submit_feedback',
+          {
+            path: toPagePath(parsed.value, DOCS_ORIGIN),
+            feedback: parsed.feedback,
+          },
+          fetchImpl
+        )
       );
     case 'help':
       return `${USAGE}\n`;
@@ -99,7 +123,7 @@ function parseArguments(argv: readonly string[]): ParsedArguments {
   if (command === undefined) {
     throw new CliError(USAGE, 2);
   }
-  if (argv.length === 1 && (command === '--help' || command === '-h')) {
+  if (argv.length === 1 && ['--help', '-h'].includes(command)) {
     return { command: 'help', value: '' };
   }
 
@@ -112,6 +136,8 @@ function parseArguments(argv: readonly string[]): ParsedArguments {
     case 'search':
     case 'filesystem':
       return parseTextCommand(command, argv);
+    case 'feedback':
+      return parseFeedbackCommand(argv);
     default:
       throw new CliError(`unknown command '${command}'.\n${USAGE}`, 2);
   }
@@ -144,6 +170,25 @@ function parseTextCommand(
     throw new CliError(`${command} requires an argument.\n${USAGE}`, 2);
   }
   return { command, value };
+}
+
+function parseFeedbackCommand(
+  argv: readonly string[]
+): Extract<ParsedArguments, { command: 'feedback' }> {
+  const value = argv[1];
+  const feedback = argv.slice(2).join(' ');
+  if (
+    argv.length < 3 ||
+    value === undefined ||
+    value.trim() === '' ||
+    feedback.trim() === ''
+  ) {
+    throw new CliError(
+      `feedback requires a page path and feedback text.\n${USAGE}`,
+      2
+    );
+  }
+  return { command: 'feedback', value, feedback };
 }
 
 function toPageUrl(rawValue: string): string {
@@ -188,7 +233,7 @@ async function fetchText(
 }
 
 async function callMcp(
-  toolName: typeof SEARCH_TOOL | typeof FILESYSTEM_TOOL,
+  toolName: typeof SEARCH_TOOL | typeof FILESYSTEM_TOOL | 'submit_feedback',
   arguments_: JsonRecord,
   fetchImpl: FetchLike
 ): Promise<JsonRecord> {
@@ -235,44 +280,6 @@ async function callMcp(
   return message.result;
 }
 
-function parseJsonRpcMessage(body: string): JsonRecord {
-  const candidates = extractSseData(body);
-  for (const candidate of candidates) {
-    try {
-      const parsed: unknown = JSON.parse(candidate);
-      if (isRecord(parsed)) return parsed;
-    } catch {
-      // Try the next SSE data event before reporting a malformed response.
-    }
-  }
-  throw new CliError('MCP response was not valid SSE or JSON-RPC JSON.');
-}
-
-function extractSseData(body: string): string[] {
-  const dataLines = body
-    .split(/\r?\n/u)
-    .filter((line) => line.startsWith('data:'))
-    .map((line) => line.slice('data:'.length).replace(/^ /u, ''))
-    .filter((line) => line.length > 0 && line !== '[DONE]');
-
-  return dataLines.length > 0 ? dataLines : [body.trim()];
-}
-
-function extractContentText(result: JsonRecord): string {
-  if (!Array.isArray(result.content)) {
-    throw new CliError('MCP result did not contain text content.');
-  }
-
-  const text = result.content
-    .filter(isTextContent)
-    .map((item) => item.text)
-    .join('\n');
-  if (!text) {
-    throw new CliError('MCP result did not contain text content.');
-  }
-  return text;
-}
-
 function extractFilesystemStdout(result: JsonRecord): string {
   const text = extractContentText(result);
   const exitMatch = /^exit:\s*(-?\d+)\r?\n/u.exec(text);
@@ -309,28 +316,6 @@ function extractFilesystemStdout(result: JsonRecord): string {
     );
   }
   return stdout;
-}
-
-function formatHttpFailure(
-  status: number,
-  statusText: string,
-  body: string
-): string {
-  const statusLabel = statusText ? `${status} ${statusText}` : String(status);
-  const detail = body.trim().slice(0, 1000);
-  return detail ? `HTTP ${statusLabel}: ${detail}` : `HTTP ${statusLabel}`;
-}
-
-function isRecord(value: unknown): value is JsonRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isTextContent(
-  value: unknown
-): value is { readonly type: 'text'; readonly text: string } {
-  return (
-    isRecord(value) && value.type === 'text' && typeof value.text === 'string'
-  );
 }
 
 if (import.meta.main) {
