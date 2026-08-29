@@ -1,0 +1,15 @@
+- Treat system Skills as compact, universal operational context—not as storage for text removed from prompts.
+- Assume Charlie is a competent agent; omit generic advice he can reliably infer.
+- Include content only when it materially changes command selection, arguments, result interpretation, or authority routing.
+- Prefer cross-command and cross-system mental models over instructions for individual operations.
+- Explain where a capability executes and where its version-matched implementation and tests can be inspected.
+- Describe how identity, injected credentials, Task authority, dynamic capabilities, and provider permissions interact.
+- Never hardcode customer-, Task-, or invocation-specific identities, capabilities, permissions, IDs, policy, or context.
+- Do not reproduce syntax, flags, defaults, or output schemas available through an obvious CLI `--help` command.
+- Point Charlie to installed CLI help and version-matched local source as the authority for exact command behavior.
+- Route detailed runtime, harness, product, and integration explanations to exact `ch-docs` pages instead of copying them.
+- Do not define Charlie’s personality, tone, verbosity, communication workflow, evidence policy, or handoff behavior.
+- Include provider-specific invariants only when they are non-obvious, broadly applicable, and materially important.
+- State each concept once; do not repeat a general rule for multiple commands, scenarios, or failure cases.
+- Troubleshooting guidance must provide specific diagnostic routes: `ch-docs`, local source/tests, or an available bug-reporting tool.
+- Keep descriptions, examples, and links concise, current, source-backed, and useful to every customer.
