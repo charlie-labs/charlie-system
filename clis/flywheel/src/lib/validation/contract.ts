@@ -1,3 +1,4 @@
+import type { RepositoryProjection } from '../projection/contract.js';
 import type { RepositoryPath } from '../repository/contract.js';
 import type { SourceLocation } from '../repository/location.js';
 import type { TargetId } from '../targets/contract.js';
@@ -28,4 +29,9 @@ export type ValidationDiagnostic = ValidationDiagnosticBase &
 export type ValidationReport = Readonly<{
   readonly diagnostics: readonly ValidationDiagnostic[];
   readonly status: ValidationStatus;
+}>;
+
+export type AssessedRepository = Readonly<{
+  readonly projection: RepositoryProjection;
+  readonly validation: ValidationReport;
 }>;
