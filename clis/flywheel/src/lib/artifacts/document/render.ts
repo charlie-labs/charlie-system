@@ -1,4 +1,4 @@
-import type { SourceFragment } from '../../lib/artifacts/document/contract.js';
+import type { SourceFragment } from './contract.js';
 
 export function renderFragments(fragments: readonly SourceFragment[]): string {
   return fragments
@@ -67,7 +67,7 @@ function renderTable(rows: readonly (readonly string[])[]): string {
   return [header, separator, ...rows.slice(1)]
     .map(
       (row) =>
-        `| ${row.map((cell) => cell.replaceAll('|', '\\|')).join(' | ')} |`
+        `| ${row.map((cell) => cell.replaceAll(/(?<!\\)\|/gu, '\\|')).join(' | ')} |`
     )
     .join('\n');
 }

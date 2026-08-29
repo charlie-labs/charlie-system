@@ -141,7 +141,7 @@ flowchart LR
     eligibility["Eligible corpus"]
     candidates["Backend candidates"]
     grouping["Artifact result bundles"]
-    rankedSearch["Content search"]
+    rankedSearch["Knowledge search"]
 
     inventory --> exactScope
     selection --> exactScope
@@ -749,7 +749,7 @@ export interface KnowledgeSourceUnit {
   readonly source: SourceLocation;
   readonly authoredText: string;
   readonly structuralKind:
-    'prose' | 'list' | 'code' | 'table' | 'catalog-field';
+    'blockquote' | 'prose' | 'list' | 'code' | 'table' | 'catalog-field';
   readonly headingPath: readonly string[];
   readonly citationKeys: readonly string[];
 }
@@ -764,6 +764,11 @@ export interface EligibleKnowledgeCorpus {
   readonly scope: RetrievalScope;
   readonly artifactIds: readonly TargetId[];
   readonly unitIds: readonly string[];
+}
+
+export interface EligibleKnowledgeSource {
+  readonly artifacts: readonly (DocumentArtifact | CatalogArtifact)[];
+  readonly units: readonly KnowledgeSourceUnit[];
 }
 ```
 
@@ -782,18 +787,25 @@ export interface PassageCandidate {
 
 export interface CandidateRequest {
   readonly query: string;
-  readonly source: KnowledgeSourceProjection;
-  readonly corpus: EligibleKnowledgeCorpus;
+  readonly corpus: EligibleKnowledgeSource;
 }
 
 export interface RetrievalCandidateSource {
-  findCandidates(
-    request: CandidateRequest
-  ): Promise<readonly PassageCandidate[]>;
+  findCandidates(request: CandidateRequest): Promise<
+    | {
+        readonly kind: 'candidates';
+        readonly candidates: readonly PassageCandidate[];
+      }
+    | { readonly kind: 'unavailable'; readonly message: string }
+    | { readonly kind: 'unsupported'; readonly operation: string }
+  >;
 }
 ```
 
-`PassageCandidate` is internal. Scores and backend mechanics do not cross into public Flywheel results.
+The candidate boundary receives a materialized eligible source, not the full
+projection plus filters. This makes eligibility-before-cutoff structural even
+for a replacement candidate source. `PassageCandidate` is internal. Scores and
+backend mechanics do not cross into public Flywheel results.
 
 ```ts
 export interface SearchPassage {
@@ -805,13 +817,14 @@ export interface SearchPassage {
 }
 
 export interface ArtifactSearchResult {
-  readonly artifact: InspectableTarget;
+  readonly artifact: DocumentTarget | CatalogTarget;
   readonly title: string;
   readonly passages: readonly SearchPassage[];
   readonly citations: readonly CitationDefinition[];
 }
 
 export interface SearchContext {
+  readonly query: string;
   readonly repositorySelection: RepositorySelection;
   readonly lifecycleSelection: LifecycleSelection;
   readonly contentTypes: readonly KnowledgeContentType[];
@@ -819,11 +832,7 @@ export interface SearchContext {
 
 export type SearchNotice =
   | { readonly kind: 'inactive-content-excluded' }
-  | { readonly kind: 'response-shortened' }
-  | {
-      readonly kind: 'projection-incomplete';
-      readonly diagnostics: readonly ValidationDiagnostic[];
-    };
+  | { readonly kind: 'response-shortened' };
 
 export type SearchOutcome =
   | {
@@ -835,10 +844,12 @@ export type SearchOutcome =
   | {
       readonly kind: 'no-eligible-content';
       readonly context: SearchContext;
+      readonly notices: readonly SearchNotice[];
     }
   | {
       readonly kind: 'no-useful-result';
       readonly context: SearchContext;
+      readonly notices: readonly SearchNotice[];
     }
   | {
       readonly kind: 'invalid-selection';
@@ -848,9 +859,12 @@ export type SearchOutcome =
       readonly kind: 'unavailable';
       readonly reason:
         | 'repository-unavailable'
+        | 'repository-invalid'
         | 'projection-incomplete'
-        | 'backend-unavailable';
+        | 'backend-unavailable'
+        | 'candidate-source-invalid';
       readonly diagnostics: readonly ValidationDiagnostic[];
+      readonly message: string;
     }
   | {
       readonly kind: 'unsupported';
@@ -858,7 +872,11 @@ export type SearchOutcome =
     };
 ```
 
-The exact fail-versus-partial policy is still open, but the result model must be capable of expressing the required distinctions.
+Initial ranked retrieval fails closed for invalid or incomplete repository
+assessments. It does not return partial passages from an assessment it cannot
+rely on. Empty eligible scope and no useful match remain successful, distinct
+outcomes; backend, projection, selection, and unsupported-operation failures
+remain explicit non-success outcomes.
 
 ### Top-level orchestration
 
@@ -964,8 +982,9 @@ clis/flywheel/
   src/
     cli/
       commands/
-        content/
+        knowledge/
           search.ts
+        content/
           rg.ts
           show.ts
           related.ts
@@ -1344,8 +1363,9 @@ The architecture leaves these open without blocking Phase 1:
 - Default result count
 - `show` depth and metadata controls
 - `related` depth, filtering, ordering, and external-target input
-- Machine-readable retrieval output
-- Partial-versus-failed retrieval policy for particular validation problems
+- Evolution of the implementation-owned machine-readable retrieval envelope
+- Whether future retrieval modes justify explicit partial results beyond the
+  initial fail-closed ranked-search policy
 - Memory artifacts and retrieval behavior
 - Automatic context assembly
 - When measured performance warrants caching or incremental rebuilding
