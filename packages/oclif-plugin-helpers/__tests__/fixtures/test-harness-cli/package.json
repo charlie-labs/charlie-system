@@ -1,0 +1,13 @@
+{
+  "name": "test-harness-cli",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "test-harness-cli": "./bin/run.ts"
+  },
+  "oclif": {
+    "bin": "test-harness-cli",
+    "commands": "./commands"
+  }
+}

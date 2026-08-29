@@ -13,7 +13,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@charlie-labs/oclif-plugin-helpers": "^0.4.0",
+    "@charlie-labs/oclif-plugin-helpers": "workspace:*",
     "@oclif/core": "^4.10.6",
     "@oclif/plugin-help": "^6.2.25",
     "mdast-util-from-markdown": "^2.0.3",
