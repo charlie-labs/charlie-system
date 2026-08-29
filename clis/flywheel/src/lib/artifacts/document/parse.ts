@@ -217,6 +217,7 @@ function createDocumentArtifact(input: {
   if (metadata.replacedBy !== undefined) {
     metadataReferences.push(
       constructAuthoredReference({
+        label: 'replacedBy',
         origin: 'document.replacedBy',
         raw: metadata.replacedBy,
         relationship: 'links-to',

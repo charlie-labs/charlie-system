@@ -128,6 +128,7 @@ test('marks replacedBy metadata without reinterpreting Markdown labels', () => {
   if (artifact?.kind !== 'document') return;
   expect(artifact.authoredReferences).toMatchObject([
     {
+      label: 'replacedBy',
       origin: 'document.replacedBy',
       raw: './new.md',
       relationship: 'links-to',
