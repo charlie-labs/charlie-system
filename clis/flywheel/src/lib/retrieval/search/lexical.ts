@@ -1,3 +1,4 @@
+import { sortedCopy } from '../../repository/ordering.js';
 import { targetId } from '../../targets/id.js';
 import type { KnowledgeArtifact } from '../corpus/contract.js';
 import type {
@@ -5,7 +6,6 @@ import type {
   PassageCandidate,
   RetrievalCandidateSource,
 } from './candidate-source.js';
-import { sortedBy } from './sort.js';
 
 export function createLexicalCandidateSource(): RetrievalCandidateSource {
   return {
@@ -36,7 +36,7 @@ function lexicalCandidates(
       ? []
       : [{ artifact: unit.artifact, score, unitId: unit.id }];
   });
-  return sortedBy(candidates, compareCandidates);
+  return sortedCopy(candidates, compareCandidates);
 }
 
 function scoreUnit(

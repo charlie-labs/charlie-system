@@ -1,5 +1,6 @@
 import type { KnowledgeLifecycle } from '../../artifacts/base.js';
 import type { CitationDefinition } from '../../artifacts/document/contract.js';
+import { sortedCopy } from '../../repository/ordering.js';
 import type { TargetId } from '../../targets/contract.js';
 import { targetId } from '../../targets/id.js';
 import type {
@@ -14,7 +15,6 @@ import type {
   SearchNotice,
   SearchPassage,
 } from './contract.js';
-import { sortedBy } from './sort.js';
 
 export type GroupingResult =
   | Readonly<{
@@ -105,7 +105,7 @@ function normalizeCandidates(input: GroupingInput): NormalizedCandidates {
     }
   }
   return {
-    candidates: sortedBy([...candidates.values()], compareCandidates),
+    candidates: sortedCopy([...candidates.values()], compareCandidates),
     kind: 'candidates',
   };
 }
@@ -139,10 +139,10 @@ function candidateGroups(
       candidate,
     ]);
   }
-  return sortedBy(
+  return sortedCopy(
     [...groups].map(([artifact, values]) => ({
       artifact,
-      candidates: sortedBy(values, compareCandidates),
+      candidates: sortedCopy(values, compareCandidates),
       score: Math.max(...values.map((candidate) => candidate.score)),
     })),
     compareGroups
