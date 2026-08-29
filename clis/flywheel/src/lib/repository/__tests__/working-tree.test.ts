@@ -137,6 +137,28 @@ test('rejects paths outside the repository and non-regular files', async () => {
   expect(linkError).toBeInstanceOf(RepositorySourceError);
 });
 
+test('rejects files reached through a symbolic-link directory', async () => {
+  const repositoryPath = await makeWorkingTree({
+    'customer-wide/docs/guide.md': 'guide\n',
+  });
+  const outsidePath = await makeWorkingTree({ 'secret.md': 'outside\n' });
+  await symlink(
+    outsidePath,
+    path.join(repositoryPath, 'customer-wide', 'docs', 'linked'),
+    'dir'
+  );
+  const source = createWorkingTreeSource({
+    filesystem: createFlywheelDeps().filesystem,
+    repositoryPath,
+  });
+
+  const error = await captureError(
+    source.readFiles(['customer-wide/docs/linked/secret.md'])
+  );
+
+  expect(error).toBeInstanceOf(RepositorySourceError);
+});
+
 test('reports an unreadable repository root through the source boundary', async () => {
   const missingPath = path.join(
     await makeTemporaryDirectory(),

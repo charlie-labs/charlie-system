@@ -143,6 +143,11 @@ async function readWorkingTreeFile(
     repositoryFilePath
   );
   try {
+    await assertDirectoryAncestors(
+      filesystem,
+      repositoryPath,
+      repositoryFilePath
+    );
     const stats = await filesystem.lstat(absolutePath);
     if (!stats.isFile()) {
       throw new RepositorySourceError(
@@ -164,6 +169,27 @@ async function readWorkingTreeFile(
     throw new RepositorySourceError(
       `cannot read repository file: ${repositoryFilePath}`,
       { cause: error }
+    );
+  }
+}
+
+async function assertDirectoryAncestors(
+  filesystem: AsyncFileSystem,
+  repositoryPath: string,
+  repositoryFilePath: RepositoryPath
+): Promise<void> {
+  const segments = repositoryFilePath.split('/');
+  const ancestors = segments
+    .slice(0, -1)
+    .map((_, index) =>
+      path.join(repositoryPath, ...segments.slice(0, index + 1))
+    );
+  const stats = await Promise.all(
+    ancestors.map((ancestor) => filesystem.lstat(ancestor))
+  );
+  if (stats.some((item) => !item.isDirectory())) {
+    throw new RepositorySourceError(
+      `repository path traverses a non-directory entry: ${repositoryFilePath}`
     );
   }
 }
