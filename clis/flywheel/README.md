@@ -3,6 +3,9 @@
 The internal Flywheel CLI is the command-line entrypoint for inspecting
 checkout-local Flywheel content.
 
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the durable component boundaries,
+invariants, and performance posture that guide implementation.
+
 The CLI provides exactly four read-only commands:
 
 - `content rg`

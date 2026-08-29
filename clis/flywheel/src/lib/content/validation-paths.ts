@@ -1,75 +1,9 @@
 import path from 'node:path';
 
-import { resolveRepositoryPath } from '../repository/path.js';
+import { isRepositoryId } from '../repository/identity.js';
 import type { AsyncFileSystem } from '../runtime/deps.js';
 import { ContentInvocationError, ContentOperationalError } from './errors.js';
 import { sortedCopy } from './ordering.js';
-import { assertSelectedRepositories } from './selection.js';
-
-const CUSTOMER_WIDE_SEARCH_ROOTS = [
-  'customer-wide/catalog',
-  'customer-wide/docs',
-  'customer-wide/.agents/daemons',
-  'customer-wide/.agents/skills',
-] as const;
-
-const REPO_SPECIFIC_SEARCH_SUFFIXES = [
-  'catalog',
-  'docs',
-  '.agents/daemons',
-  '.agents/skills',
-] as const;
-
-export type ContentSelection = Readonly<{
-  readonly customerWideOnly: boolean;
-  readonly repoIds: readonly string[];
-  readonly repositoryPath: string;
-}>;
-
-export function createContentSelection(options: {
-  readonly customerWideOnly: boolean;
-  readonly cwd: string;
-  readonly repoIds: readonly string[];
-  readonly repositoryPath?: string;
-}): ContentSelection {
-  if (options.customerWideOnly && options.repoIds.length > 0) {
-    throw new ContentInvocationError(
-      '--customer-wide-only cannot be combined with --repo'
-    );
-  }
-  return {
-    customerWideOnly: options.customerWideOnly,
-    repoIds: options.repoIds.map(normalizeRepositoryId),
-    repositoryPath: resolveRepositoryPath(
-      options.repositoryPath === undefined
-        ? { cwd: options.cwd }
-        : { cwd: options.cwd, explicitPath: options.repositoryPath }
-    ),
-  };
-}
-
-export async function discoverContentSearchRoots(
-  filesystem: AsyncFileSystem,
-  selection: ContentSelection
-): Promise<readonly string[]> {
-  await assertRepositoryDirectory(filesystem, selection.repositoryPath);
-  const repositoryIds = await searchRepositoryIds(filesystem, selection);
-  await assertSelectedRepositories(
-    filesystem,
-    selection.repositoryPath,
-    selection.repoIds
-  );
-  const relativeRoots = [
-    'roles',
-    ...CUSTOMER_WIDE_SEARCH_ROOTS,
-    ...repositoryIds.flatMap((repositoryId) =>
-      REPO_SPECIFIC_SEARCH_SUFFIXES.map(
-        (suffix) => `repo-specific/${repositoryId}/${suffix}`
-      )
-    ),
-  ];
-  return existingRoots(filesystem, selection.repositoryPath, relativeRoots);
-}
 
 export async function discoverValidationRoots(
   filesystem: AsyncFileSystem,
@@ -118,29 +52,6 @@ export function toRepositoryRelative(
   return path.relative(repositoryPath, filePath).split(path.sep).join('/');
 }
 
-function normalizeRepositoryId(repositoryId: string): string {
-  const segments = repositoryId.trim().split('/');
-  const valid =
-    segments.length === 2 &&
-    segments.every((segment) => /^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(segment));
-  if (!valid) {
-    throw new ContentInvocationError(
-      `invalid repository selection, expected owner/name: ${repositoryId}`
-    );
-  }
-  return segments.join('/');
-}
-
-async function searchRepositoryIds(
-  filesystem: AsyncFileSystem,
-  selection: ContentSelection
-): Promise<readonly string[]> {
-  if (selection.customerWideOnly || selection.repoIds.length > 0) {
-    return selection.repoIds;
-  }
-  return discoverRepositoryIds(filesystem, selection.repositoryPath);
-}
-
 async function discoverRepositoryIds(
   filesystem: AsyncFileSystem,
   repositoryPath: string
@@ -187,7 +98,7 @@ async function discoverOwnerRepositories(
   return names
     .filter((name) => name.isDirectory())
     .map((name) => `${ownerName}/${name.name}`)
-    .filter((repositoryId) => isValidRepositoryId(repositoryId));
+    .filter((repositoryId) => isRepositoryId(repositoryId));
 }
 
 async function existingRoots(
@@ -256,7 +167,7 @@ function isValidationPathInScope(relativePath: string): boolean {
   return (
     segments[0] === 'repo-specific' &&
     segments.length > 2 &&
-    isValidRepositoryId(`${segments[1]}/${segments[2]}`)
+    isRepositoryId(`${segments[1]}/${segments[2]}`)
   );
 }
 
@@ -268,15 +179,6 @@ function isWithin(root: string, candidate: string): boolean {
       relative !== '..' &&
       !path.isAbsolute(relative))
   );
-}
-
-function isValidRepositoryId(repositoryId: string): boolean {
-  try {
-    normalizeRepositoryId(repositoryId);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function isMissing(error: unknown): boolean {

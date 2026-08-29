@@ -3,6 +3,7 @@ import { lstat, readdir, readFile, stat } from 'node:fs/promises';
 
 export type AsyncFileSystem = Readonly<{
   readonly readFile: (filePath: string) => Promise<string>;
+  readonly readFileBytes: (filePath: string) => Promise<Uint8Array>;
   readonly readdir: (directoryPath: string) => Promise<Dirent[]>;
   readonly lstat: (filePath: string) => Promise<Stats>;
   readonly stat: (filePath: string) => Promise<Stats>;
@@ -31,6 +32,7 @@ export function createFlywheelDeps(): FlywheelDeps {
   return {
     filesystem: {
       readFile: (filePath) => readFile(filePath, 'utf8'),
+      readFileBytes: (filePath) => readFile(filePath),
       readdir: (directoryPath) =>
         readdir(directoryPath, { withFileTypes: true }),
       lstat: (filePath) => lstat(filePath),

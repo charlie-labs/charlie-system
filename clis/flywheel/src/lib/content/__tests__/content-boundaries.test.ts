@@ -5,7 +5,6 @@ import path from 'node:path';
 import Rg from '../../../cli/commands/content/rg.js';
 import { createFlywheelDeps } from '../../runtime/deps.js';
 import { runContentRg } from '../rg.js';
-import { createContentSelection } from '../roots.js';
 import {
   cleanupTemporaryDirectories,
   makeRepository,
@@ -18,7 +17,7 @@ afterEach(async () => {
   await cleanupTemporaryDirectories();
 });
 
-test('treats -f values as patterns before validating path operands', async () => {
+test('rejects file-backed ripgrep options before starting the process', async () => {
   const repositoryPath = await makeRepository({
     'customer-wide/docs/guide.md': 'incident\n',
   });
@@ -30,8 +29,14 @@ test('treats -f values as patterns before validating path operands', async () =>
     },
   };
 
-  await expectRejectedPath(repositoryPath, process, ['-f', 'patterns']);
-  await expectRejectedPath(repositoryPath, process, ['-fpatterns']);
+  await Promise.all(
+    [
+      ['-f', '../outside-patterns'],
+      ['-f../outside-patterns'],
+      ['--file=../outside-patterns'],
+      ['--ignore-file', '../outside-ignore'],
+    ].map((rgArgs) => expectRejectedInvocation(repositoryPath, process, rgArgs))
+  );
 
   expect(started).toBe(false);
 });
@@ -70,7 +75,7 @@ test('does not follow symlinked inspection roots', async () => {
   expect(started).toBe(false);
 });
 
-async function expectRejectedPath(
+async function expectRejectedInvocation(
   repositoryPath: string,
   process: {
     readonly run: () => Promise<
@@ -81,29 +86,22 @@ async function expectRejectedPath(
       }>
     >;
   },
-  prefix: readonly string[]
+  rgArgs: readonly string[]
 ): Promise<void> {
   let error: unknown;
   try {
     await runContentRg({
+      customerWideOnly: false,
       filesystem: createFlywheelDeps().filesystem,
       process,
-      rgArgs: [...prefix, '../outside'],
-      selection: selectionFor(repositoryPath),
+      repositoryIds: [],
+      repositoryPath,
+      rgArgs,
     });
   } catch (caught) {
     error = caught;
   }
   expect(error).toMatchObject({ exitCode: 2 });
-}
-
-function selectionFor(repositoryPath: string) {
-  return createContentSelection({
-    customerWideOnly: false,
-    cwd: repositoryPath,
-    repoIds: [],
-    repositoryPath,
-  });
 }
 
 function getCommandExitCode(error: unknown): number | undefined {
