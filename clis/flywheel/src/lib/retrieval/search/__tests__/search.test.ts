@@ -61,6 +61,80 @@ test('returns source-faithful Catalog identity and relevant fields', async () =>
   );
 });
 
+test('does not rank a defaulted Catalog namespace as authored text', async () => {
+  const repository = await compileAndAssessRepository(corpusSource());
+  const result = await searchAssessedRepository(
+    searchInput(repository, {
+      contentTypes: ['catalog'],
+      query: 'namespace default',
+    })
+  );
+
+  expect(result.kind).toBe('no-useful-result');
+});
+
+test('searches explicitly authored Catalog identity and spec fields', async () => {
+  const repository = await compileAndAssessRepository(
+    validationSource({
+      'customer-wide/catalog/entities.yaml': `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: search-api
+  namespace: product
+  title: Search API
+  annotations:
+    charlie.ai/review-every: 90d
+spec:
+  lifecycle: production
+  capability: repository-classification
+`,
+    }).source
+  );
+  const result = await searchAssessedRepository(
+    searchInput(repository, {
+      contentTypes: ['catalog'],
+      query: 'product repository-classification',
+    })
+  );
+
+  expect(result.kind).toBe('results');
+  if (result.kind !== 'results') return;
+  expect(result.results).toHaveLength(1);
+  expect(result.results[0]).toMatchObject({
+    artifact: {
+      entityKind: 'component',
+      kind: 'catalog',
+      name: 'search-api',
+      namespace: 'product',
+    },
+    path: 'customer-wide/catalog/entities.yaml',
+  });
+  expect(
+    result.results[0]?.passages.map((passage) => ({
+      authoredText: passage.authoredText,
+      path: passage.source.path,
+      start: passage.source.start,
+    }))
+  ).toEqual([
+    {
+      authoredText:
+        'kind: Component\nnamespace: product\nname: search-api\ntitle: Search API',
+      path: 'customer-wide/catalog/entities.yaml',
+      start: { column: 1, line: 1 },
+    },
+    {
+      authoredText: 'lifecycle: production',
+      path: 'customer-wide/catalog/entities.yaml',
+      start: { column: 1, line: 1 },
+    },
+    {
+      authoredText: 'capability: repository-classification',
+      path: 'customer-wide/catalog/entities.yaml',
+      start: { column: 1, line: 1 },
+    },
+  ]);
+});
+
 test('fails closed instead of turning invalid or incomplete assessments into empty success', async () => {
   const invalid = await compileAndAssessRepository(
     validationSource({ 'customer-wide/AGENTS.md': 'Rules.\n' }).source

@@ -12,7 +12,11 @@ import type {
 import { createRetrievalScope } from '../corpus/eligibility.js';
 import type { RetrievalCandidateSource } from './candidate-source.js';
 import type { SearchOutcome } from './contract.js';
-import { createSearchContext, searchAssessedRepository } from './search.js';
+import {
+  createSearchContext,
+  searchAssessedRepository,
+  validateSearchRequest,
+} from './search.js';
 
 export type KnowledgeSearchInput = Readonly<{
   readonly artifactLimit: number;
@@ -29,6 +33,10 @@ export type KnowledgeSearchInput = Readonly<{
 export async function retrieveKnowledge(
   input: KnowledgeSearchInput
 ): Promise<SearchOutcome> {
+  const requestProblem = validateSearchRequest(input);
+  if (requestProblem !== undefined) {
+    return { kind: 'invalid-selection', message: requestProblem };
+  }
   const scope = retrievalScope(input);
   if ('kind' in scope) return scope;
   try {

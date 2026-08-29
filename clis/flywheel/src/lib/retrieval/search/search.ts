@@ -22,7 +22,7 @@ import { groupCandidates, type GroupingResult } from './group.js';
 export async function searchAssessedRepository(
   input: AssessedSearchInput
 ): Promise<SearchOutcome> {
-  const requestProblem = validateRequest(input);
+  const requestProblem = validateSearchRequest(input);
   if (requestProblem !== undefined) {
     return { kind: 'invalid-selection', message: requestProblem };
   }
@@ -89,7 +89,12 @@ function groupedOutcome(
       };
 }
 
-function validateRequest(input: AssessedSearchInput): string | undefined {
+export function validateSearchRequest(
+  input: Pick<
+    AssessedSearchInput,
+    'artifactLimit' | 'passageLimitPerArtifact' | 'query'
+  >
+): string | undefined {
   if (input.query.trim() === '') return 'search query must not be empty';
   if (!isPositiveInteger(input.artifactLimit)) {
     return 'artifact result limit must be a positive integer';

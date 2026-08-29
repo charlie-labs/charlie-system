@@ -139,7 +139,9 @@ function projectCatalogUnits(
   const artifactId = targetId(artifact.target);
   const identity = [
     `kind: ${artifact.entityKind}`,
-    `namespace: ${artifact.namespace}`,
+    ...(artifact.namespaceSource === undefined
+      ? []
+      : [`namespace: ${artifact.namespace}`]),
     `name: ${artifact.name}`,
     ...(artifact.title === undefined ? [] : [`title: ${artifact.title}`]),
     ...(artifact.description === undefined

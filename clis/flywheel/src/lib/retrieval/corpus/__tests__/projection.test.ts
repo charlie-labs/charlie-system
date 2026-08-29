@@ -26,6 +26,11 @@ test('projects source-faithful Doc and Catalog units from one assessed repositor
     )
   ).toBe(true);
   expect(
+    projection.units.some((unit) =>
+      unit.authoredText.includes('namespace: default')
+    )
+  ).toBe(false);
+  expect(
     projection.units.some(
       (unit) =>
         unit.authoredText === 'owner: group:default/platform' &&

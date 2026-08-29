@@ -73,6 +73,69 @@ test('renders source-faithful results and a score-free JSON boundary', async () 
   expect(json.stdout).not.toContain('"score"');
 });
 
+test('uses the parsed query when flags precede it', async () => {
+  const repositoryPath = await makeSearchRepository();
+  const result = await runCli([
+    'knowledge',
+    'search',
+    '--repository-path',
+    repositoryPath,
+    '--repo',
+    'acme/api',
+    '--json',
+    'deployment',
+  ]);
+
+  expect(result.exitCode).toBe(0);
+  expect(result.stderr).toBe('');
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    context: {
+      query: 'deployment',
+      repositorySelection: {
+        kind: 'customer-wide-and-repositories',
+        repositories: ['acme/api'],
+      },
+    },
+    kind: 'results',
+  });
+  expect(result.stdout).not.toContain(
+    'repo-specific/acme/web/docs/deployment.md'
+  );
+});
+
+test('preserves human and JSON failures when flags precede the query', async () => {
+  const repositoryPath = await makeSearchRepository();
+  const missingPath = `${repositoryPath}/missing`;
+  const [humanFailure, jsonFailure] = await Promise.all([
+    runCli(['knowledge', 'search', '--repository-path', missingPath, '   ']),
+    runCli([
+      'knowledge',
+      'search',
+      '--repository-path',
+      missingPath,
+      '--json',
+      '   ',
+    ]),
+  ]);
+
+  expect(humanFailure.exitCode).toBe(2);
+  expect(humanFailure.stdout).toBe('');
+  expect(humanFailure.stderr).toContain('search query must not be empty');
+  expect(humanFailure.stderr).not.toContain('repository');
+
+  expect(jsonFailure.exitCode).toBe(2);
+  expect(jsonFailure.stderr).toBe('');
+  expect(JSON.parse(jsonFailure.stdout)).toMatchObject({
+    error: {
+      outcome: {
+        kind: 'invalid-selection',
+        message: 'search query must not be empty',
+      },
+      type: 'KnowledgeSearchError',
+    },
+  });
+});
+
 test('keeps empty retrieval outcomes successful and lifecycle expansion explicit', async () => {
   const repositoryPath = await makeSearchRepository();
   const [noEligible, noUseful, activeOnly, expanded] = await Promise.all([

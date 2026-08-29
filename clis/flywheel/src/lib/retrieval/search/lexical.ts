@@ -71,7 +71,7 @@ function artifactSearchText(artifact: KnowledgeArtifact): string {
   }
   return [
     artifact.entityKind,
-    artifact.namespace,
+    ...(artifact.namespaceSource === undefined ? [] : [artifact.namespace]),
     artifact.name,
     artifact.title ?? '',
     artifact.description ?? '',

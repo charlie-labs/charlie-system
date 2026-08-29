@@ -58,10 +58,8 @@ export default class Search extends KnowledgeCommand<
         'knowledge search dependencies were not provided'
       );
     }
-    const query = this.argv[0];
-    if (query === undefined) {
-      throw new KnowledgeOperationalError('knowledge search requires a query');
-    }
+    const { args } = await this.parse(Search);
+    const query = args.query;
     const outcome = await runKnowledgeSearch({
       artifactLimit: parsed.limit,
       contentTypes: parsed['content-type'],
