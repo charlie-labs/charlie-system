@@ -4,7 +4,6 @@ import type {
   DocumentArtifact,
   SourceFragment,
 } from '../../artifacts/document/contract.js';
-import { renderFragments } from '../../artifacts/document/render.js';
 import { targetId } from '../../targets/id.js';
 import type { AssessedRepository } from '../../validation/contract.js';
 import type {
@@ -13,6 +12,7 @@ import type {
   KnowledgeSourceUnit,
   KnowledgeStructuralKind,
 } from './contract.js';
+import { sourceUnitText } from './source-text.js';
 
 type DocumentUnitInput = Readonly<{
   readonly artifact: DocumentArtifact;
@@ -100,7 +100,7 @@ function documentUnit(input: DocumentUnitInput): KnowledgeSourceUnit {
   const artifactId = targetId(input.artifact.target);
   return {
     artifact: artifactId,
-    authoredText: renderFragments([input.fragment]),
+    authoredText: sourceUnitText(input.fragment),
     citationKeys: fragmentCitationKeys(input.fragment),
     headingPath: input.headingPath,
     id: knowledgeUnitId(artifactId, input.sequence),

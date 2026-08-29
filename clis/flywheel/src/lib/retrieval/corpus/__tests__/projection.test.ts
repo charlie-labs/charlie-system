@@ -73,6 +73,8 @@ const ready = true;
 | State | Meaning |
 | --- | --- |
 | ready | Continue |
+
+> Preserve this quote.
 `,
     }).source
   );
@@ -82,10 +84,12 @@ const ready = true;
     'list',
     'code',
     'table',
+    'blockquote',
   ]);
   expect(projection.units.map((unit) => unit.authoredText)).toEqual([
     '1. First step\n2. Second step',
     '```ts\nconst ready = true;\n```',
     '| State | Meaning |\n| --- | --- |\n| ready | Continue |',
+    '> Preserve this quote.',
   ]);
 });
