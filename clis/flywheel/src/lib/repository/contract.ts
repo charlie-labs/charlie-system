@@ -78,7 +78,8 @@ export type RepositoryEntry =
         | 'special-file'
         | 'symbolic-link'
         | 'unsupported-file-type'
-        | 'unsupported-location';
+        | 'unsupported-location'
+        | 'unsupported-path';
     }>;
 
 type RepositorySupportEntry =

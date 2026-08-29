@@ -48,19 +48,34 @@ test('treats --files positionals as paths instead of a search pattern', () => {
   ]);
 });
 
-test('treats -e and -f values as patterns rather than path operands', () => {
-  expect(() => exactPlan(['-f', 'patterns', '../outside'])).toThrow(
-    'repository-relative admitted path: ../outside'
-  );
-  expect(() => exactPlan(['-fpatterns', '../outside'])).toThrow(
-    'repository-relative admitted path: ../outside'
-  );
+test('treats -e values as patterns rather than path operands', () => {
   expect(exactPlan(['-e', '--follow']).rgArgs).toEqual([
     '-e',
     '--follow',
     ...policyArguments,
     ...exactPlan(['-e', '--follow']).searchPaths,
   ]);
+});
+
+test('rejects ambiguous clustered short options before classifying operands', () => {
+  expect(() => exactPlan(['-neSECRET', '../outside'])).toThrow(
+    'does not support clustered ripgrep short options: -neSECRET'
+  );
+});
+
+test('rejects file-backed ripgrep options', () => {
+  for (const rgArgs of [
+    ['-f', '../outside-patterns'],
+    ['-f../outside-patterns'],
+    ['--file', '../outside-patterns'],
+    ['--file=../outside-patterns'],
+    ['--ignore-file', '../outside-ignore'],
+    ['--ignore-file=../outside-ignore'],
+  ]) {
+    expect(() => exactPlan(rgArgs)).toThrow(
+      'does not permit ripgrep to read option values from files'
+    );
+  }
 });
 
 test('rejects paths outside scope, through symlinks, or into Rules', () => {
@@ -71,6 +86,7 @@ test('rejects paths outside scope, through symlinks, or into Rules', () => {
     'customer-wide/docs/linked/secret.md',
     'customer-wide/docs/AGENTS.md',
     'customer-wide/docs/.agents/rules/security.md',
+    'customer-wide/docs/nested/.git/config',
   ];
 
   for (const rejectedPath of rejectedPaths) {
@@ -87,6 +103,8 @@ test('rejects output, traversal, and command-execution modes', () => {
     '--generate=man',
     '--pre=cat',
     '--hostname-bin=hostname',
+    '-z',
+    '--search-zip',
   ]) {
     expect(() => exactPlan(['incident', argument])).toThrow();
   }

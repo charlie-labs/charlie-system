@@ -95,6 +95,9 @@ function crossesSymbolicLink(
 
 function isProhibitedPath(candidate: RepositoryPath): boolean {
   const segments = candidate.split('/');
+  if (segments.includes('.git')) {
+    return true;
+  }
   if (segments.at(-1) === 'AGENTS.md') {
     return true;
   }

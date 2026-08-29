@@ -87,7 +87,11 @@ async function collectEntry(
   entry: Dirent
 ): Promise<readonly RepositorySourceEntry[]> {
   const absolutePath = path.join(directoryPath, entry.name);
-  const relativePath = toRepositoryRelativePath(repositoryPath, absolutePath);
+  const relativePath = toRepositoryRelativePath(
+    repositoryPath,
+    absolutePath,
+    'filesystem-entry'
+  );
   const sourceEntry = {
     kind: sourceEntryKind(entry),
     path: relativePath,

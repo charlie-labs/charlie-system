@@ -3,6 +3,7 @@ import { mkdir, symlink } from 'node:fs/promises';
 import path from 'node:path';
 
 import { createFlywheelDeps } from '../../runtime/deps.js';
+import { discoverRepository } from '../discover.js';
 import { RepositoryPathError, RepositorySourceError } from '../errors.js';
 import { createWorkingTreeSource } from '../source/working-tree.js';
 import {
@@ -74,6 +75,46 @@ test('reads requested files as one ordered batch and reports missing files', asy
     ['customer-wide/docs/missing.md', 'missing'],
     ['customer-wide/docs/a.md', 'alpha'],
   ]);
+});
+
+test('keeps filesystem names with backslashes visible as unsupported entries', async () => {
+  const repositoryPath = await makeWorkingTree({
+    'customer-wide/docs/weird\\name.md': 'visible but unsupported\n',
+    'customer-wide/docs/weird\\directory/nested.md':
+      'also visible but unsupported\n',
+    'customer-wide/docs/regular.md': 'regular\n',
+  });
+  const source = createWorkingTreeSource({
+    filesystem: createFlywheelDeps().filesystem,
+    repositoryPath,
+  });
+
+  const inventory = await discoverRepository(source);
+
+  expect(inventory.entries).toContainEqual({
+    kind: 'unsupported',
+    path: 'customer-wide/docs/weird\\name.md',
+    reason: 'unsupported-path',
+    region: { kind: 'customer-wide' },
+  });
+  expect(inventory.entries).toContainEqual({
+    kind: 'unsupported',
+    path: 'customer-wide/docs/weird\\directory',
+    reason: 'unsupported-path',
+    region: { kind: 'customer-wide' },
+  });
+  expect(inventory.entries).toContainEqual({
+    kind: 'unsupported',
+    path: 'customer-wide/docs/weird\\directory/nested.md',
+    reason: 'unsupported-path',
+    region: { kind: 'customer-wide' },
+  });
+  expect(inventory.entries).toContainEqual({
+    artifactKind: 'document',
+    kind: 'artifact',
+    path: 'customer-wide/docs/regular.md',
+    region: { kind: 'customer-wide' },
+  });
 });
 
 test('rejects paths outside the repository and non-regular files', async () => {

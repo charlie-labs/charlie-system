@@ -13,7 +13,9 @@ export async function discoverRepository(
   const sourceEntries = await source.listEntries();
   const directories = sortedCopy(
     sourceEntries
-      .filter((entry) => entry.kind === 'directory')
+      .filter(
+        (entry) => entry.kind === 'directory' && !hasUnsupportedPath(entry.path)
+      )
       .map((entry) => entry.path),
     compareStrings
   );
@@ -21,7 +23,9 @@ export async function discoverRepository(
   const repositorySet = new Set(repositories);
   const entries = sortedCopy(
     sourceEntries
-      .filter((entry) => entry.kind !== 'directory')
+      .filter(
+        (entry) => entry.kind !== 'directory' || hasUnsupportedPath(entry.path)
+      )
       .map((entry) => classifyRepositoryEntry(entry, repositorySet)),
     (left, right) => compareStrings(left.path, right.path)
   );
@@ -32,6 +36,10 @@ export async function discoverRepository(
     repositories,
     state: source.state,
   };
+}
+
+function hasUnsupportedPath(repositoryPath: string): boolean {
+  return repositoryPath.includes('\\');
 }
 
 function discoverRepositoryIds(

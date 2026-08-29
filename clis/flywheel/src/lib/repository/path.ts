@@ -68,15 +68,25 @@ export function resolveRepositoryEntryPath(
 
 export function toRepositoryRelativePath(
   repositoryPath: string,
-  absolutePath: string
+  absolutePath: string,
+  source: 'validated-input' | 'filesystem-entry' = 'validated-input'
 ): RepositoryPath {
   if (!isWithinRepository(repositoryPath, absolutePath)) {
     throw new RepositoryPathError(
       `path is outside the selected repository: ${absolutePath}`
     );
   }
+  const relativePath = path.relative(repositoryPath, absolutePath);
+  if (source === 'filesystem-entry') {
+    if (relativePath === '') {
+      throw new RepositoryPathError(
+        `path does not identify a repository entry: ${absolutePath}`
+      );
+    }
+    return relativePath.split(path.sep).join('/');
+  }
   return normalizeRepositoryRelativePath(
-    path.relative(repositoryPath, absolutePath).split(path.sep).join('/')
+    relativePath.split(path.sep).join('/')
   );
 }
 

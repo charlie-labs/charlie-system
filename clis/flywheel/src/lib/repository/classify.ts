@@ -31,6 +31,9 @@ export function classifyRepositoryEntry(
 ): RepositoryEntry {
   const segments = sourceEntry.path.split('/');
   const region = repositoryRegion(segments, repositories);
+  if (sourceEntry.path.includes('\\')) {
+    return unsupported(sourceEntry.path, region, 'unsupported-path');
+  }
   if (sourceEntry.kind === 'symbolic-link') {
     return unsupported(sourceEntry.path, region, 'symbolic-link');
   }
@@ -227,6 +230,7 @@ function unsupported(
     | 'symbolic-link'
     | 'unsupported-file-type'
     | 'unsupported-location'
+    | 'unsupported-path'
 ): RepositoryEntry {
   return { kind: 'unsupported', path: repositoryPath, reason, region };
 }

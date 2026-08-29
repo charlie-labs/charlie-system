@@ -12,13 +12,11 @@ const RIPGREP_VALUE_OPTIONS = new Set([
   '--engine',
   '--field-context-separator',
   '--field-match-separator',
-  '--file',
   '--generate',
   '--glob',
   '--hostname-bin',
   '--hyperlink-format',
   '--iglob',
-  '--ignore-file',
   '--max-columns',
   '--max-count',
   '--max-depth',
@@ -44,7 +42,6 @@ const RIPGREP_VALUE_OPTIONS = new Set([
   '-T',
   '-d',
   '-e',
-  '-f',
   '-g',
   '-j',
   '-m',
@@ -52,7 +49,7 @@ const RIPGREP_VALUE_OPTIONS = new Set([
   '-t',
 ]);
 
-const PATTERN_OPTIONS = new Set(['--file', '--regexp', '-e', '-f']);
+const PATTERN_OPTIONS = new Set(['--regexp', '-e']);
 const INFORMATIONAL_OPTIONS = new Set([
   '--help',
   '--pcre2-version',
@@ -118,6 +115,7 @@ function consumeArgument(
     return 0;
   }
   rejectUnsafeOption(argument);
+  rejectClusteredShortOption(argument);
   if (hasInlineValue(argument)) {
     state.patternSeen ||= isPatternOption(argument);
     return 0;
@@ -172,9 +170,9 @@ function hasInlineValue(argument: string): boolean {
 
 function isPatternOption(argument: string): boolean {
   if (argument.startsWith('--')) {
-    return argument.startsWith('--file=') || argument.startsWith('--regexp=');
+    return argument.startsWith('--regexp=');
   }
-  return argument.startsWith('-e') || argument.startsWith('-f');
+  return argument.startsWith('-e');
 }
 
 function rejectUnsafeOption(argument: string): void {
@@ -188,6 +186,11 @@ function rejectUnsafeOption(argument: string): void {
       `content rg does not permit ripgrep command execution: ${argument}`
     );
   }
+  if (isFileBackedOption(argument)) {
+    throw new ExactSearchInvocationError(
+      `content rg does not permit ripgrep to read option values from files: ${argument}`
+    );
+  }
   if (isInformationalOption(argument)) {
     throw new ExactSearchInvocationError(
       `content rg does not support ripgrep informational option: ${argument}`
@@ -197,11 +200,37 @@ function rejectUnsafeOption(argument: string): void {
 
 function isCommandOption(argument: string): boolean {
   return (
+    argument === '-z' ||
+    argument === '--search-zip' ||
+    argument.startsWith('--search-zip=') ||
     argument === '--pre' ||
     argument.startsWith('--pre=') ||
     argument === '--hostname-bin' ||
     argument.startsWith('--hostname-bin=')
   );
+}
+
+function isFileBackedOption(argument: string): boolean {
+  return (
+    argument.startsWith('-f') ||
+    argument === '--file' ||
+    argument.startsWith('--file=') ||
+    argument === '--ignore-file' ||
+    argument.startsWith('--ignore-file=')
+  );
+}
+
+function rejectClusteredShortOption(argument: string): void {
+  if (
+    argument.length > 2 &&
+    argument.startsWith('-') &&
+    !argument.startsWith('--') &&
+    !hasInlineValue(argument)
+  ) {
+    throw new ExactSearchInvocationError(
+      `content rg does not support clustered ripgrep short options: ${argument}`
+    );
+  }
 }
 
 function isInformationalOption(argument: string): boolean {
