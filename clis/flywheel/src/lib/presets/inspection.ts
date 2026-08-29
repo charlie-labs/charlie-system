@@ -1,12 +1,12 @@
 import path from 'node:path';
 
-import { sortedCopy } from '../content/ordering.js';
 import type { AsyncFileSystem } from '../runtime/deps.js';
 import {
   PresetInvocationError,
   PresetNotFoundError,
   PresetOperationalError,
 } from './errors.js';
+import { sortedCopy } from './ordering.js';
 
 export const SKILL_PRESET_SOURCE_ROOT = path.resolve(
   import.meta.dir,

@@ -1,4 +1,4 @@
-import { defineConfig } from 'oxlint';
+import { defineConfig, type OxlintOverride } from 'oxlint';
 
 const basePlugins = [
   'import',
@@ -7,6 +7,156 @@ const basePlugins = [
   'typescript',
   'unicorn',
 ] as const;
+
+const systemImportRestrictions = [
+  { message: 'Use injected Flywheel dependencies.', name: 'bun' },
+  {
+    message: 'Use the injected process capability.',
+    name: 'node:child_process',
+  },
+  {
+    allowTypeImports: true,
+    message: 'Use the injected filesystem capability.',
+    name: 'node:fs',
+  },
+  {
+    message: 'Use the injected filesystem capability.',
+    name: 'node:fs/promises',
+  },
+  {
+    message: 'Use explicit inputs or injected dependencies.',
+    name: 'node:process',
+  },
+];
+
+const semanticLayers = [
+  'artifacts',
+  'graph',
+  'projection',
+  'references',
+  'targets',
+  'validation',
+] as const;
+const restrictedLayers = {
+  content: ['presets'],
+  presets: [...semanticLayers, 'content', 'repository', 'retrieval'],
+  repository: [...semanticLayers, 'content', 'presets', 'retrieval'],
+  retrieval: ['content', 'presets'],
+  runtime: [...semanticLayers, 'content', 'presets', 'repository', 'retrieval'],
+} as const;
+
+type OxlintRules = NonNullable<OxlintOverride['rules']>;
+type RestrictedImportsRule = NonNullable<OxlintRules['no-restricted-imports']>;
+
+const restrictedRuntimeGlobals: NonNullable<
+  OxlintRules['no-restricted-globals']
+> = [
+  'error',
+  { message: 'Use the injected Flywheel runtime.', name: 'Bun' },
+  { message: 'Use explicit inputs or injected dependencies.', name: 'process' },
+];
+
+function architectureImportRule(
+  forbiddenLayers: readonly string[],
+  allowSystemImports = false
+): RestrictedImportsRule {
+  const patterns = [
+    {
+      message: 'Flywheel library components must not depend on CLI modules.',
+      regex: '(^|/)cli(/|$)',
+    },
+  ];
+  if (forbiddenLayers.length > 0) {
+    patterns.push({
+      message: `This component must not depend on higher-level Flywheel components: ${forbiddenLayers.join(', ')}.`,
+      regex: `(^|/)(${forbiddenLayers.join('|')})(/|$)`,
+    });
+  }
+  return [
+    'error',
+    {
+      paths: allowSystemImports ? [] : systemImportRestrictions,
+      patterns,
+    },
+  ];
+}
+
+const flywheelArchitectureOverrides: OxlintOverride[] = [
+  {
+    files: ['clis/flywheel/src/lib/**/*.ts'],
+    rules: {
+      'import/no-mutable-exports': 'error',
+      'import/no-self-import': 'error',
+      'typescript/consistent-type-exports': 'error',
+      'typescript/consistent-type-imports': 'error',
+      'typescript/explicit-module-boundary-types': 'error',
+    },
+  },
+  {
+    files: ['clis/flywheel/src/lib/**/*.ts'],
+    excludeFiles: [
+      '**/__tests__/**',
+      'clis/flywheel/src/lib/repository/source/**',
+      'clis/flywheel/src/lib/runtime/**',
+    ],
+    rules: {
+      'no-restricted-globals': restrictedRuntimeGlobals,
+      'no-restricted-imports': architectureImportRule([]),
+    },
+  },
+  {
+    files: ['clis/flywheel/src/lib/runtime/**/*.ts'],
+    excludeFiles: ['**/__tests__/**'],
+    rules: {
+      'no-restricted-imports': architectureImportRule(
+        restrictedLayers.runtime,
+        true
+      ),
+    },
+  },
+  {
+    files: ['clis/flywheel/src/lib/repository/source/**/*.ts'],
+    excludeFiles: ['**/__tests__/**'],
+    rules: {
+      'no-restricted-globals': restrictedRuntimeGlobals,
+      'no-restricted-imports': architectureImportRule(
+        restrictedLayers.repository,
+        true
+      ),
+    },
+  },
+  {
+    files: ['clis/flywheel/src/lib/repository/*.ts'],
+    rules: {
+      'no-restricted-imports': architectureImportRule(
+        restrictedLayers.repository
+      ),
+    },
+  },
+  {
+    files: ['clis/flywheel/src/lib/retrieval/**/*.ts'],
+    excludeFiles: ['**/__tests__/**'],
+    rules: {
+      'no-restricted-imports': architectureImportRule(
+        restrictedLayers.retrieval
+      ),
+    },
+  },
+  {
+    files: ['clis/flywheel/src/lib/content/**/*.ts'],
+    excludeFiles: ['**/__tests__/**'],
+    rules: {
+      'no-restricted-imports': architectureImportRule(restrictedLayers.content),
+    },
+  },
+  {
+    files: ['clis/flywheel/src/lib/presets/**/*.ts'],
+    excludeFiles: ['**/__tests__/**'],
+    rules: {
+      'no-restricted-imports': architectureImportRule(restrictedLayers.presets),
+    },
+  },
+];
 
 export default defineConfig({
   ignorePatterns: ['coverage/**', 'dist/**'],
@@ -117,4 +267,5 @@ export default defineConfig({
     'import/no-unassigned-import': 'error',
     'unicorn/no-abusive-eslint-disable': 'error',
   },
+  overrides: flywheelArchitectureOverrides,
 });

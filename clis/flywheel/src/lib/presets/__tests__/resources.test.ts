@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test';
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { sortedCopy } from '../../content/ordering.js';
 import { createFlywheelDeps } from '../../runtime/deps.js';
+import { sortedCopy } from '../ordering.js';
 
 const packageRoot = path.resolve(import.meta.dir, '../../../..');
 const presetsRoot = path.join(packageRoot, 'presets');
