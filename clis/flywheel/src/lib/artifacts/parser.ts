@@ -51,7 +51,7 @@ export function isArtifactCompilation(
   return 'kind' in value;
 }
 
-function artifactProblem(
+export function artifactProblem(
   input: ArtifactParseInput,
   code: string,
   message: string
