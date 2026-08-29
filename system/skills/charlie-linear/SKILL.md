@@ -33,14 +33,11 @@ The main topics and verbs are:
 - Workspace lookup: `workspace` (`overview`) and `team`, `user`, `label`, and
   `state` (`list`).
 - Customers: `customer` and `customer-need` (`create`, `list`).
-- Agent integration: `agent-session` (`create`, `view`, `update`, `set-plan`,
-  `set-external-url`) and `agent-activity` (`create`, `create-elicitation`,
-  `list`).
 - Low-level access: `api graphql` runs raw Linear GraphQL when no higher-level
   topic exposes the needed operation.
-
-Use `ch-linear <topic> <verb> --help` as the authority for exact arguments,
-flags, defaults, accepted identifiers, and output shapes.
+- Global flags: `--json` returns raw JSON, `--limit` bounds results when
+  supported, and `--help` is the authority for exact arguments, flags, defaults,
+  accepted identifiers, and output shapes.
 
 ## Linear mechanics
 
