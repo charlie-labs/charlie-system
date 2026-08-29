@@ -1,0 +1,21 @@
+description: UPD-006 CRLF in source; LF in patch (whitespace fuzz)
+expect: success
+before:
+  src/crlf.ts: |-
+    const greet = (name: string) => {
+      return "Hello " + name + "!";
+    };
+patch: |-
+  *** Begin Patch
+  *** Update File: src/crlf.ts
+  @@ const greet
+  const greet = (name: string) => {
+  -  return "Hello " + name + "!";
+  +  return `Hello, ${name}!`;
+  };
+  *** End Patch
+after:
+  src/crlf.ts: |-
+    const greet = (name: string) => {
+      return `Hello, ${name}!`;
+    };

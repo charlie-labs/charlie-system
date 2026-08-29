@@ -1,0 +1,12 @@
+description: REN-004 target path already exists
+expect: error
+before:
+  doc/a.txt: |-
+    a
+  doc/b.txt: |-
+    b
+patch: |-
+  *** Begin Patch
+  *** Update File: doc/a.txt
+  *** Move to: doc/b.txt
+  *** End Patch

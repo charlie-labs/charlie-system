@@ -1,0 +1,13 @@
+id: DUP-003
+description: Section 1.6 – duplicate/ordering – add then delete same path
+expect: error
+before:
+  temp.txt: |-
+    foo
+patch: |
+  *** Begin Patch
+  *** Add File: temp.txt
+  + foo
+  +
+  *** Delete File: temp.txt
+  *** End Patch

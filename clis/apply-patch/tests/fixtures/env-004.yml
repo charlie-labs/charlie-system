@@ -1,0 +1,8 @@
+description: ENV-004 non-whitespace outside sentinels
+expect: error
+patch: |-
+  *** Begin Patch
+  *** Add File: foo.txt
+  + foo
+  *** End Patch
+  // stray text after envelope

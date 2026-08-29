@@ -1,0 +1,19 @@
+description: UPD-008 Unicode dash/quotes canonicalisation
+expect: success # ← change this
+before:
+  src/unicode.ts: |-
+    export const dash = '—';
+    export const quote = '“Hello”';
+patch: |-
+  *** Begin Patch
+  *** Update File: src/unicode.ts
+  @@ unicode punctuation
+  -export const dash = '—';
+  -export const quote = '“Hello”';
+  +export const dash = '-';
+  +export const quote = '"Hello"';
+  *** End Patch
+after:
+  src/unicode.ts: |-
+    export const dash = '-';
+    export const quote = '"Hello"';

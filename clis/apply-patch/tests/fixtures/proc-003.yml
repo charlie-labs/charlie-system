@@ -1,0 +1,15 @@
+description: PROC-003 smart-quotes canonicalisation
+expect: success
+before:
+  quotes.js: |
+    console.log(“hello”);
+patch: |-
+  *** Begin Patch
+  *** Update File: quotes.js
+  @@
+  -console.log("hello");
+  +console.log("HELLO");
+  *** End Patch
+after:
+  quotes.js: |
+    console.log("HELLO");

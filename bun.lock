@@ -16,6 +16,16 @@
         "zod3": "npm:zod@^3.25.76",
       },
     },
+    "clis/apply-patch": {
+      "name": "@charlie-labs/ch-apply-patch",
+      "version": "0.0.4",
+      "bin": {
+        "apply_patch": "./bin/apply_patch.ts",
+      },
+      "devDependencies": {
+        "yaml": "^2.9.0",
+      },
+    },
     "clis/ch-docs": {
       "name": "@charlie-labs/ch-docs",
       "version": "0.0.0",
@@ -66,6 +76,8 @@
     },
   },
   "packages": {
+    "@charlie-labs/ch-apply-patch": ["@charlie-labs/ch-apply-patch@workspace:clis/apply-patch"],
+
     "@charlie-labs/ch-docs": ["@charlie-labs/ch-docs@workspace:clis/ch-docs"],
 
     "@charlie-labs/flywheel": ["@charlie-labs/flywheel@workspace:clis/flywheel"],

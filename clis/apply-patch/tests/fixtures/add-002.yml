@@ -1,0 +1,9 @@
+description: 'ADD-002: add empty file'
+expect: success
+before: {}
+patch: |-
+  *** Begin Patch
+  *** Add File: empty.txt
+  *** End Patch
+after:
+  empty.txt: ''

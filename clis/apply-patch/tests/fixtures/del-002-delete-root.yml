@@ -1,0 +1,10 @@
+description: DEL-002 delete root-level file
+expect: error
+before:
+  README.md: |
+    This is the root README that will be removed by the patch.
+patch: |-
+  *** Begin Patch
+  *** Delete File: README.md
+  *** End Patch
+after: {}

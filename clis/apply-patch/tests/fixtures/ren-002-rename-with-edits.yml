@@ -1,0 +1,20 @@
+description: REN-002 rename with edits in same patch
+expect: success
+before:
+  src/api.ts: |-
+    export async function fetchData() {
+      return fetch('/api/v1/data');
+    }
+patch: |-
+  *** Begin Patch
+  *** Update File: src/api.ts
+  *** Move to: src/server/api.ts
+  @@
+  -  return fetch('/api/v1/data');
+  +  return fetch('/api/v2/data');
+  *** End Patch
+after:
+  src/server/api.ts: |-
+    export async function fetchData() {
+      return fetch('/api/v2/data');
+    }

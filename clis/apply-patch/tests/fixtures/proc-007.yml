@@ -1,0 +1,16 @@
+description: PROC-007 rename with edits
+expect: success
+before:
+  old.txt: |
+    old
+patch: |-
+  *** Begin Patch
+  *** Update File: old.txt
+  *** Move to: new.txt
+  @@
+  -old
+  +new
+  *** End Patch
+after:
+  new.txt: |
+    new

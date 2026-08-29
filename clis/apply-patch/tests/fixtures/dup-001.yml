@@ -1,0 +1,24 @@
+id: DUP-001
+description: Section 1.6 – duplicate/ordering – basic multi-file update
+expect: success
+before:
+  a.txt: |
+    apple
+  b.txt: |
+    banana
+patch: |
+  *** Begin Patch
+  *** Update File: b.txt
+  @@
+  -banana
+  +berry
+  *** Update File: a.txt
+  @@
+  -apple
+  +apricot
+  *** End Patch
+after:
+  a.txt: |
+    apricot
+  b.txt: |
+    berry

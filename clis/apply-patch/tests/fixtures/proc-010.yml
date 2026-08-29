@@ -1,0 +1,8 @@
+description: PROC-010 update on missing file should error
+expect: error
+patch: |-
+  *** Begin Patch
+  *** Update File: missing.txt
+  @@
+  +something
+  *** End Patch

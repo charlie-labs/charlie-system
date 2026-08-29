@@ -1,0 +1,10 @@
+description: 'ADD-004: add file in nested UTF-8 path'
+expect: success
+patch: |-
+  *** Begin Patch
+  *** Add File: src/深い/ディレクトリ/ファイルñ.txt
+  + multilingual content - こんにちは世界
+  *** End Patch
+after:
+  src/深い/ディレクトリ/ファイルñ.txt: |
+    multilingual content - こんにちは世界

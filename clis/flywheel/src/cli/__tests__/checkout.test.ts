@@ -23,7 +23,9 @@ test('proves the tracked checkout boundary and CLI inventory', async () => {
       .filter((file) => file.startsWith('clis/') && file !== 'clis/AGENTS.md')
       .every(
         (file) =>
-          file.startsWith('clis/ch-docs/') || file.startsWith('clis/flywheel/')
+          file.startsWith('clis/ch-docs/') ||
+          file.startsWith('clis/flywheel/') ||
+          file.startsWith('clis/apply-patch/')
       )
   ).toBe(true);
 });
