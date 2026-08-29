@@ -1,0 +1,23 @@
+mutation AgentSessionCreateOnComment($input: AgentSessionCreateOnComment!) {
+  agentSessionCreateOnComment(input: $input) {
+    success
+    lastSyncId
+    agentSession {
+      id
+      createdAt
+      updatedAt
+      status
+      type
+      comment {
+        id
+      }
+      issue {
+        id
+        identifier
+      }
+      externalUrls
+      summary
+      plan
+    }
+  }
+}

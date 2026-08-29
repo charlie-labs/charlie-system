@@ -1,0 +1,20 @@
+mutation AgentSessionCreateOnIssue($input: AgentSessionCreateOnIssue!) {
+  agentSessionCreateOnIssue(input: $input) {
+    success
+    lastSyncId
+    agentSession {
+      id
+      createdAt
+      updatedAt
+      status
+      type
+      issue {
+        id
+        identifier
+      }
+      externalUrls
+      summary
+      plan
+    }
+  }
+}

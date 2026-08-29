@@ -1,0 +1,6 @@
+fragment UserLite on User {
+  id
+  name
+  displayName
+  avatarUrl
+}

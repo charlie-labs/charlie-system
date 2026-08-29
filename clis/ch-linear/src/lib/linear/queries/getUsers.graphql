@@ -1,0 +1,17 @@
+query GetUsers($first: Int = 50, $after: String, $filter: UserFilter) {
+  users(first: $first, after: $after, filter: $filter) {
+    nodes {
+      id
+      name
+      email
+      displayName
+      active
+      admin
+      gitHubUserId
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

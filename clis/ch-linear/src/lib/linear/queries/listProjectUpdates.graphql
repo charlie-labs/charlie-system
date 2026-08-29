@@ -1,0 +1,38 @@
+query ListProjectUpdates(
+  $filter: ProjectUpdateFilter
+  $first: Int = 50
+  $after: String
+  $orderBy: PaginationOrderBy
+  $includeArchived: Boolean
+) {
+  projectUpdates(
+    filter: $filter
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    includeArchived: $includeArchived
+  ) {
+    nodes {
+      id
+      createdAt
+      updatedAt
+      body
+      url
+      health
+      archivedAt
+      user {
+        ...UserLite
+      }
+      project {
+        id
+        name
+        slugId
+      }
+      diffMarkdown
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

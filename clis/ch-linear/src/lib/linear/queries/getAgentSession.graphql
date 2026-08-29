@@ -1,0 +1,21 @@
+query GetAgentSession($id: String!) {
+  agentSession(id: $id) {
+    id
+    createdAt
+    updatedAt
+    status
+    type
+    issue {
+      id
+      identifier
+      title
+    }
+    comment {
+      id
+      body
+    }
+    externalUrls
+    summary
+    plan
+  }
+}

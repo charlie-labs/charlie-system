@@ -1,0 +1,71 @@
+# NOTE: Optional variables ($teamId, $statusType, $initiativeId) allow callers
+# to filter projects server-side instead of downloading the entire workspace
+# and performing client-side filtering. When a variable is `null` the
+# corresponding comparator field will also be `null`, effectively disabling
+# that part of the filter.
+
+query GetProjects(
+  $first: Int!
+  $after: String
+  $teamId: ID
+  $statusType: String
+  $initiativeId: ID
+) {
+  projects(
+    first: $first
+    after: $after
+    filter: {
+      # Team filter – match projects that have *some* team whose `id` equals
+      # the provided $teamId variable.
+      accessibleTeams: { some: { id: { eq: $teamId } } }
+      # Status type filter – compare against `status.type` (enum-like string
+      # such as "started", "planned", "completed").
+      status: { type: { eq: $statusType } }
+      # Initiative filter – match projects linked to *some* initiative whose
+      # `id` equals the provided $initiativeId variable.
+      initiatives: { some: { id: { eq: $initiativeId } } }
+    }
+  ) {
+    nodes {
+      id
+      name
+      description
+
+      teams(first: 10) {
+        nodes {
+          id
+          key
+          name
+        }
+      }
+      createdAt
+      updatedAt
+      targetDate
+      slugId
+      status {
+        id
+        name
+        position
+        type
+      }
+      priority
+      completedAt
+      lead {
+        id
+        name
+        displayName
+      }
+      initiatives(first: 10) {
+        nodes {
+          id
+          name
+          slugId
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

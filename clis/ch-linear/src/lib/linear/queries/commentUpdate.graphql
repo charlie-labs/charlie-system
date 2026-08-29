@@ -1,0 +1,18 @@
+mutation CommentUpdate($id: String!, $input: CommentUpdateInput!) {
+  commentUpdate(id: $id, input: $input) {
+    success
+    lastSyncId
+    comment {
+      id
+      body
+      createdAt
+      updatedAt
+      user {
+        id
+        name
+        displayName
+        avatarUrl
+      }
+    }
+  }
+}

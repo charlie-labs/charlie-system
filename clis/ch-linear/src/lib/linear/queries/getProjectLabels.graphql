@@ -1,0 +1,18 @@
+query GetProjectLabels($first: Int = 50, $after: String) {
+  projectLabels(first: $first, after: $after) {
+    nodes {
+      id
+      name
+      description
+      color
+      parent {
+        id
+        name
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

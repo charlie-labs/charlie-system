@@ -1,0 +1,12 @@
+query CustomerStatuses($first: Int = 100, $after: String) {
+  customerStatuses(first: $first, after: $after) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      id
+      name
+    }
+  }
+}

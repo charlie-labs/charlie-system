@@ -25,7 +25,8 @@ test('proves the tracked checkout boundary and CLI inventory', async () => {
         (file) =>
           file.startsWith('clis/ch-docs/') ||
           file.startsWith('clis/flywheel/') ||
-          file.startsWith('clis/apply-patch/')
+          file.startsWith('clis/apply-patch/') ||
+          file.startsWith('clis/ch-linear/')
       )
   ).toBe(true);
 });

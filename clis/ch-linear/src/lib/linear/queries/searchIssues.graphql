@@ -1,0 +1,47 @@
+query SearchIssues($term: String!, $first: Int = 20, $after: String) {
+  searchIssues(term: $term, first: $first, after: $after) {
+    nodes {
+      id
+      identifier
+      title
+      createdAt
+      updatedAt
+      completedAt
+      canceledAt
+      estimate
+      priority
+      priorityLabel
+      url
+
+      team {
+        id
+        key
+        name
+      }
+      state {
+        id
+        name
+        type
+        color
+        position
+      }
+      assignee {
+        ...UserLite
+      }
+      delegate {
+        ...UserLite
+      }
+      labels {
+        nodes {
+          id
+          name
+          color
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

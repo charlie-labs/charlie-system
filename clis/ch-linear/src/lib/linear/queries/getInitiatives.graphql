@@ -1,0 +1,40 @@
+# List initiatives with linked projects (used by list + workspace overview)
+# import "./initiativeFields.graphql"
+
+query GetInitiatives($first: Int!, $after: String) {
+  initiatives(first: $first, after: $after) {
+    nodes {
+      ...InitiativeFields
+      projects(first: 20) {
+        nodes {
+          id
+          name
+          description
+          # Lightweight default for list commands; additional fields below
+          status {
+            id
+            name
+            position
+            type
+          }
+          priority
+          completedAt
+          updatedAt
+          lead {
+            id
+            name
+            displayName
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
