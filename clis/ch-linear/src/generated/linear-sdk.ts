@@ -98,6 +98,8 @@ export type AgentActivityCreatePromptInput = {
   contextualMetadata?: InputMaybe<Scalars['JSONObject']['input']>;
   /** The identifier in UUID v4 format. If none is provided, the backend will generate one. */
   id?: InputMaybe<Scalars['String']['input']>;
+  /** [Internal] If true, the activity is queued and will be sent to the agent when it finishes its current task. */
+  queued?: InputMaybe<Scalars['Boolean']['input']>;
   /** An optional modifier that provides additional instructions on how the activity should be interpreted. */
   signal?: InputMaybe<AgentActivitySignal>;
   /** Metadata about this agent activity's signal. */
@@ -154,11 +156,23 @@ export enum AgentActivityType {
   Thought = 'thought'
 }
 
+/** The outcome of reconsidering a loop run blocked by its trusted-source policy. */
+export enum AgentAutomationRetryResolutionStatus {
+  NotScheduled = 'notScheduled',
+  Scheduled = 'scheduled'
+}
+
+/** The scope of the usage limit that blocked a loop run: the loop's own limit or the workspace-wide limit. */
+export enum AgentAutomationUsageLimitScope {
+  Loop = 'loop',
+  Workspace = 'workspace'
+}
+
 /** [Internal] Input for creating an agent session on behalf of the current user. */
 export type AgentSessionCreateInput = {
   /** The app user (agent) to create a session for. */
   appUserId: Scalars['String']['input'];
-  /** [Internal] Serialized JSON representing the page contexts this session is related to. Used for direct chat sessions to provide context about the current page (e.g., Issue, Project). */
+  /** [Internal] No longer supported. */
   context?: InputMaybe<Scalars['JSONObject']['input']>;
   /** The identifier in UUID v4 format. If none is provided, the backend will generate one. */
   id?: InputMaybe<Scalars['String']['input']>;
@@ -246,11 +260,74 @@ export type AgentSessionUserStateInput = {
   userId: Scalars['String']['input'];
 };
 
+/** Input for creating an agent skill. */
+export type AgentSkillCreateInput = {
+  /** The skill instructions in markdown format. */
+  body: Scalars['String']['input'];
+  /** The color of the skill icon. */
+  color?: InputMaybe<Scalars['String']['input']>;
+  /** The icon of the skill. */
+  icon?: InputMaybe<Scalars['String']['input']>;
+  /** The identifier in UUID v4 format. If none is provided, the backend will generate one. */
+  id?: InputMaybe<Scalars['String']['input']>;
+  /** The team to associate the skill with. */
+  teamId?: InputMaybe<Scalars['String']['input']>;
+  /** The title of the skill. */
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Agent skill filtering options. */
+export type AgentSkillFilter = {
+  /** Compound filters, all of which need to be matched by the agent skill. */
+  and?: InputMaybe<Array<AgentSkillFilter>>;
+  /** Comparator for the created at date. */
+  createdAt?: InputMaybe<DateComparator>;
+  /** Comparator for the identifier. */
+  id?: InputMaybe<IdComparator>;
+  /** Compound filters, one of which need to be matched by the agent skill. */
+  or?: InputMaybe<Array<AgentSkillFilter>>;
+  /** Comparator for the skill owner's user ID. */
+  ownerId?: InputMaybe<IdComparator>;
+  /** Comparator for whether the skill is shared with the workspace. */
+  shared?: InputMaybe<BooleanComparator>;
+  /** Filters that the skill's team must satisfy. */
+  team?: InputMaybe<NullableTeamFilter>;
+  /** Comparator for the updated at date. */
+  updatedAt?: InputMaybe<DateComparator>;
+};
+
+/** Input for updating an agent skill. */
+export type AgentSkillUpdateInput = {
+  /** The skill instructions in markdown format. */
+  body?: InputMaybe<Scalars['String']['input']>;
+  /** The color of the skill icon. */
+  color?: InputMaybe<Scalars['String']['input']>;
+  /** The icon of the skill. */
+  icon?: InputMaybe<Scalars['String']['input']>;
+  /** The team to associate the skill with. */
+  teamId?: InputMaybe<Scalars['String']['input']>;
+  /** The title of the skill. */
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** The kind of acknowledgement the agent expresses when it has nothing meaningful to reply. */
+export enum AiConversationAckKind {
+  Done = 'done',
+  Ignored = 'ignored',
+  Waiting = 'waiting'
+}
+
 /** The client platform from which an AI conversation was initiated. */
 export enum AiConversationClientPlatform {
   Desktop = 'desktop',
   Mobile = 'mobile',
   Web = 'web'
+}
+
+/** The kind of input an AI conversation elicitation asks for. */
+export enum AiConversationElicitationKind {
+  McpServerConnection = 'mcpServerConnection',
+  MultipleChoice = 'multipleChoice'
 }
 
 /** The action performed on the entity (leave empty if just found) */
@@ -261,20 +338,26 @@ export enum AiConversationEntityCardWidgetArgsAction {
 
 /** [Internal] The entity type */
 export enum AiConversationEntityCardWidgetArgsType {
+  AgentSession = 'AgentSession',
   AiPrompt = 'AiPrompt',
+  AiPromptRules = 'AiPromptRules',
   CustomView = 'CustomView',
   Customer = 'Customer',
   CustomerNeed = 'CustomerNeed',
   Dashboard = 'Dashboard',
   Document = 'Document',
+  Draft = 'Draft',
   Initiative = 'Initiative',
   InitiativeUpdate = 'InitiativeUpdate',
   Issue = 'Issue',
   IssueDraft = 'IssueDraft',
   Project = 'Project',
+  ProjectDraft = 'ProjectDraft',
+  ProjectMilestone = 'ProjectMilestone',
   ProjectUpdate = 'ProjectUpdate',
   PullRequest = 'PullRequest',
   Release = 'Release',
+  ReleaseNote = 'ReleaseNote',
   ReleasePipeline = 'ReleasePipeline',
   Team = 'Team',
   Template = 'Template',
@@ -289,7 +372,9 @@ export enum AiConversationEntityListWidgetArgsAction {
 
 /** [Internal] The entity type */
 export enum AiConversationEntityListWidgetArgsEntitiesType {
+  AgentSession = 'AgentSession',
   AiPrompt = 'AiPrompt',
+  AiPromptRules = 'AiPromptRules',
   CustomView = 'CustomView',
   Customer = 'Customer',
   CustomerNeed = 'CustomerNeed',
@@ -300,24 +385,45 @@ export enum AiConversationEntityListWidgetArgsEntitiesType {
   Issue = 'Issue',
   IssueDraft = 'IssueDraft',
   Project = 'Project',
+  ProjectDraft = 'ProjectDraft',
+  ProjectMilestone = 'ProjectMilestone',
   ProjectUpdate = 'ProjectUpdate',
   PullRequest = 'PullRequest',
   Release = 'Release',
+  ReleaseNote = 'ReleaseNote',
   ReleasePipeline = 'ReleasePipeline',
   Team = 'Team',
   Template = 'Template',
   WorkflowDefinition = 'WorkflowDefinition'
 }
 
+/** The category of an error part in an AI conversation. */
+export enum AiConversationErrorType {
+  Billing = 'billing',
+  Unknown = 'unknown',
+  UntrustedSources = 'untrustedSources',
+  UsageLimit = 'usageLimit'
+}
+
 /** The initial source of an AI conversation. */
 export enum AiConversationInitialSource {
   Comment = 'comment',
   DirectChat = 'directChat',
+  EntityChat = 'entityChat',
   Mcp = 'mcp',
   MicrosoftTeams = 'microsoftTeams',
+  Onboarding = 'onboarding',
   PullRequestComment = 'pullRequestComment',
   Slack = 'slack',
+  SubAgent = 'subAgent',
   Workflow = 'workflow'
+}
+
+/** The owner scope for an MCP server connection requested in an AI conversation. */
+export enum AiConversationMcpServerConnectionScopeType {
+  Team = 'team',
+  User = 'user',
+  WorkflowDefinition = 'workflowDefinition'
 }
 
 /** The phase during which a conversation part was generated. */
@@ -328,6 +434,10 @@ export enum AiConversationPartPhase {
 
 /** The type of a part in an AI conversation. */
 export enum AiConversationPartType {
+  Ack = 'ack',
+  Elicitation = 'elicitation',
+  ElicitationResponse = 'elicitationResponse',
+  Error = 'error',
   Event = 'event',
   Prompt = 'prompt',
   Reasoning = 'reasoning',
@@ -335,6 +445,11 @@ export enum AiConversationPartType {
   ToolCall = 'toolCall',
   Widget = 'widget',
   WidgetPlaceholder = 'widgetPlaceholder'
+}
+
+export enum AiConversationPostChatMessageToolCallArgsPlatform {
+  MicrosoftTeams = 'microsoftTeams',
+  Slack = 'slack'
 }
 
 export enum AiConversationQueryUpdatesToolCallArgsUpdateType {
@@ -345,6 +460,11 @@ export enum AiConversationQueryUpdatesToolCallArgsUpdateType {
 export enum AiConversationQueryViewToolCallArgsMode {
   Insight = 'insight',
   List = 'list'
+}
+
+export enum AiConversationReadFileToolCallArgsMode {
+  Read = 'read',
+  Search = 'search'
 }
 
 /** The status of an AI conversation. */
@@ -369,8 +489,10 @@ export enum AiConversationSubscribeToEventToolCallArgsType {
 
 /** The name of a tool that was called in an AI conversation. */
 export enum AiConversationTool {
+  Bash = 'Bash',
   CodeIntelligence = 'CodeIntelligence',
   CreateEntity = 'CreateEntity',
+  CreateSandbox = 'CreateSandbox',
   DeleteEntity = 'DeleteEntity',
   GetMicrosoftTeamsConversationHistory = 'GetMicrosoftTeamsConversationHistory',
   GetPullRequestCheckLogs = 'GetPullRequestCheckLogs',
@@ -379,17 +501,30 @@ export enum AiConversationTool {
   GetSlackConversationHistory = 'GetSlackConversationHistory',
   HandoffToCodingSession = 'HandoffToCodingSession',
   InvokeMcpTool = 'InvokeMcpTool',
+  ListCodingSessions = 'ListCodingSessions',
   NavigateToPage = 'NavigateToPage',
+  NotifyUsers = 'NotifyUsers',
+  PostChatMessage = 'PostChatMessage',
+  PromptCodingSession = 'PromptCodingSession',
   QueryActivity = 'QueryActivity',
   QueryUpdates = 'QueryUpdates',
   QueryView = 'QueryView',
+  ReadFile = 'ReadFile',
+  ReadSandboxFile = 'ReadSandboxFile',
+  ReadSetting = 'ReadSetting',
+  RemoveSpendLimit = 'RemoveSpendLimit',
   Research = 'Research',
   RestoreEntity = 'RestoreEntity',
   RetrieveEntities = 'RetrieveEntities',
   RetryPullRequestCheck = 'RetryPullRequestCheck',
   SearchDocumentation = 'SearchDocumentation',
   SearchEntities = 'SearchEntities',
+  SearchSettings = 'SearchSettings',
+  SetSpendLimit = 'SetSpendLimit',
+  SpawnSubagent = 'SpawnSubagent',
+  StartCodingSession = 'StartCodingSession',
   SubscribeToEvent = 'SubscribeToEvent',
+  SuggestRepository = 'SuggestRepository',
   SuggestValues = 'SuggestValues',
   TranscribeMedia = 'TranscribeMedia',
   TranscribeVideo = 'TranscribeVideo',
@@ -401,7 +536,8 @@ export enum AiConversationTool {
 /** The name of a widget in an AI conversation. */
 export enum AiConversationWidgetName {
   EntityCard = 'EntityCard',
-  EntityList = 'EntityList'
+  EntityList = 'EntityList',
+  Setting = 'Setting'
 }
 
 /** [Internal] AI prompt progress filtering options. */
@@ -614,6 +750,12 @@ export type AuditEntryFilter = {
   countryCode?: InputMaybe<StringComparator>;
   /** Comparator for the created at date. */
   createdAt?: InputMaybe<DateComparator>;
+  /** Comparator for the audited entity ID stored in metadata. */
+  entityId?: InputMaybe<StringComparator>;
+  /** Comparator for the audited entity identifier stored in metadata. */
+  entityIdentifier?: InputMaybe<StringComparator>;
+  /** Comparator for the audited entity type stored in metadata. */
+  entityType?: InputMaybe<StringComparator>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
   /** Comparator for the IP address. */
@@ -665,6 +807,8 @@ export type CommentCollectionFilter = {
   id?: InputMaybe<IdComparator>;
   /** [Internal] Filters that the comment's initiative must satisfy. */
   initiative?: InputMaybe<NullableInitiativeFilter>;
+  /** Filters that the comment's initiative update must satisfy. */
+  initiativeUpdate?: InputMaybe<NullableInitiativeUpdateFilter>;
   /** Filters that the comment's issue must satisfy. */
   issue?: InputMaybe<NullableIssueFilter>;
   /** Comparator for the collection length. */
@@ -709,7 +853,7 @@ export type CommentCreateInput = {
   documentContentId?: InputMaybe<Scalars['String']['input']>;
   /** The identifier in UUID v4 format. If none is provided, the backend will generate one. */
   id?: InputMaybe<Scalars['String']['input']>;
-  /** [Internal] The initiative to associate the comment with. */
+  /** The initiative to associate the comment with. */
   initiativeId?: InputMaybe<Scalars['String']['input']>;
   /** The initiative update to associate the comment with. */
   initiativeUpdateId?: InputMaybe<Scalars['String']['input']>;
@@ -719,7 +863,7 @@ export type CommentCreateInput = {
   parentId?: InputMaybe<Scalars['String']['input']>;
   /** The post to associate the comment with. */
   postId?: InputMaybe<Scalars['String']['input']>;
-  /** [Internal] The project to associate the comment with. */
+  /** The project to associate the comment with. */
   projectId?: InputMaybe<Scalars['String']['input']>;
   /** The project update to associate the comment with. */
   projectUpdateId?: InputMaybe<Scalars['String']['input']>;
@@ -743,6 +887,8 @@ export type CommentFilter = {
   id?: InputMaybe<IdComparator>;
   /** [Internal] Filters that the comment's initiative must satisfy. */
   initiative?: InputMaybe<NullableInitiativeFilter>;
+  /** Filters that the comment's initiative update must satisfy. */
+  initiativeUpdate?: InputMaybe<NullableInitiativeUpdateFilter>;
   /** Filters that the comment's issue must satisfy. */
   issue?: InputMaybe<NullableIssueFilter>;
   /** Filters that the comment's customer needs must satisfy. */
@@ -823,6 +969,10 @@ export type ContactSalesCreateInput = {
   sessionId?: InputMaybe<Scalars['String']['input']>;
   /** The page URL from which the sales inquiry was submitted, for attribution tracking. */
   url?: InputMaybe<Scalars['String']['input']>;
+  /** JSON serialized last-touch UTM parameters captured from the `utm` cookie at form submission. */
+  utm?: InputMaybe<Scalars['String']['input']>;
+  /** JSON serialized first-touch UTM parameters captured from the `utm_first` cookie at form submission. */
+  utmFirstTouch?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** [Internal] Comparator for content. */
@@ -852,6 +1002,8 @@ export type CreateOrganizationInput = {
   urlKey: Scalars['String']['input'];
   /** JSON serialized UTM parameters associated with the creation of the workspace. */
   utm?: InputMaybe<Scalars['String']['input']>;
+  /** JSON serialized UTM parameters captured on the user's first visit to the marketing site (first-touch attribution). */
+  utmFirstTouch?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Issue creation date sorting options. */
@@ -1412,6 +1564,42 @@ export enum CustomerVisibilityMode {
   SlackMembersAndGuests = 'SlackMembersAndGuests'
 }
 
+/** [Internal] Configuration for the customer attributes data source. */
+export type CustomersAttributesDataSourceConfigurationInput = {
+  /** [Internal] Whether to allow manual edits to customer attributes when no source is configured. */
+  allowManualEdits?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [Internal] Errors encountered while syncing customer attributes (set by sync workers). */
+  attributesErrors?: InputMaybe<Scalars['JSONObject']['input']>;
+  /** [Internal] Mapping from customer attribute keys (owner, revenue, size, status, tier, externalId) to external field IDs. */
+  attributesMapping?: InputMaybe<Scalars['JSONObject']['input']>;
+  /** [Internal] Integration details (when sourceType is 'integration'). */
+  integration?: InputMaybe<CustomersAttributesDataSourceIntegrationInput>;
+  /** [Internal] How customer attribute values are sourced: 'manual' or 'integration'. */
+  sourceType: Scalars['String']['input'];
+};
+
+/** [Internal] Integration providing customer attribute data. */
+export type CustomersAttributesDataSourceIntegrationInput = {
+  /** [Internal] The integration service that manages customer attributes. */
+  service: IntegrationService;
+};
+
+/** [Internal] Input for updating workspace Customers feature configuration. */
+export type CustomersConfigurationInput = {
+  /** [Internal] Configuration for the customer attributes data source. */
+  attributesDataSourceConfiguration?: InputMaybe<CustomersAttributesDataSourceConfigurationInput>;
+  /** [Internal] The team to use to create default issues for new request items. */
+  defaultTeamId?: InputMaybe<Scalars['String']['input']>;
+  /** [Internal] Domains or email addresses excluded entirely from the Customers feature. */
+  excludeList?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** [Internal] Domains or email addresses ignored when matching to a customer. */
+  ignoreList?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** [Internal] The currency code used for customer revenue. */
+  revenueCurrencyCode?: InputMaybe<Scalars['String']['input']>;
+  /** [Internal] How customer revenue should be displayed. */
+  revenueDisplay?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** Input for creating a new cycle. */
 export type CycleCreateInput = {
   /** The completion time of the cycle. If null, the cycle hasn't been completed. */
@@ -1577,6 +1765,24 @@ export type DeleteOrganizationInput = {
   deletionCode: Scalars['String']['input'];
 };
 
+/** [Internal] The kind of change for a file in a diff. */
+export enum DiffFileState {
+  Added = 'added',
+  Copied = 'copied',
+  Deleted = 'deleted',
+  Modified = 'modified',
+  Renamed = 'renamed',
+  TypeChanged = 'type_changed',
+  Unknown = 'unknown',
+  Unmerged = 'unmerged'
+}
+
+/** Whether the checkpoint belongs to a draft-only or live document agent flow. */
+export enum DocumentContentAgentCheckpointMode {
+  Draft = 'draft',
+  Live = 'live'
+}
+
 /** Input for creating a new document. */
 export type DocumentCreateInput = {
   /** The color of the icon. */
@@ -1595,6 +1801,8 @@ export type DocumentCreateInput = {
   issueId?: InputMaybe<Scalars['String']['input']>;
   /** The ID of the last template applied to the document. */
   lastAppliedTemplateId?: InputMaybe<Scalars['String']['input']>;
+  /** The owner of the document. Set to null to create a document without an owner. */
+  ownerId?: InputMaybe<Scalars['String']['input']>;
   /** Related project for the document. */
   projectId?: InputMaybe<Scalars['String']['input']>;
   /** Related release for the document. */
@@ -1645,10 +1853,14 @@ export type DocumentFilter = {
   issue?: InputMaybe<IssueFilter>;
   /** Compound filters, one of which need to be matched by the document. */
   or?: InputMaybe<Array<DocumentFilter>>;
+  /** Filters that the document's owner must satisfy. */
+  owner?: InputMaybe<NullableUserFilter>;
   /** Filters that the document's project must satisfy. */
   project?: InputMaybe<ProjectFilter>;
   /** Filters that the document's release must satisfy. */
   release?: InputMaybe<ReleaseFilter>;
+  /** [Internal] Comparator for the document's searchable content. */
+  searchableContent?: InputMaybe<ContentComparator>;
   /** Comparator for the document slug ID. */
   slugId?: InputMaybe<StringComparator>;
   /** Filters that the document's team must satisfy. */
@@ -1707,6 +1919,8 @@ export type DocumentUpdateInput = {
   issueId?: InputMaybe<Scalars['String']['input']>;
   /** The ID of the last template applied to the document. */
   lastAppliedTemplateId?: InputMaybe<Scalars['String']['input']>;
+  /** The owner of the document. Set to null to clear. */
+  ownerId?: InputMaybe<Scalars['String']['input']>;
   /** Related project for the document. */
   projectId?: InputMaybe<Scalars['String']['input']>;
   /** Related release for the document. */
@@ -1732,6 +1946,13 @@ export type DocumentUpdatedAtSort = {
   /** The order for the individual sort */
   order?: InputMaybe<PaginationSortOrder>;
 };
+
+/** The health status carried by a project update or initiative update draft. */
+export enum DraftUpdateHealthType {
+  AtRisk = 'atRisk',
+  OffTrack = 'offTrack',
+  OnTrack = 'onTrack'
+}
 
 /** Issue due date sorting options. */
 export type DueDateSort = {
@@ -1892,6 +2113,18 @@ export type EntityExternalLinkUpdateInput = {
   url?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Comparator for project and initiative identifiers. Accepts UUIDs and human-readable identifiers (e.g. "PROJ-123"). */
+export type EntityIdentifierIdComparator = {
+  /** Equals constraint. */
+  eq?: InputMaybe<Scalars['ID']['input']>;
+  /** In-array constraint. */
+  in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Not-equals constraint. */
+  neq?: InputMaybe<Scalars['ID']['input']>;
+  /** Not-in-array constraint. */
+  nin?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
 /** Comparator for estimates. */
 export type EstimateComparator = {
   /** Compound filters, one of which need to be matched by the estimate. */
@@ -1945,12 +2178,15 @@ export enum ExternalSyncService {
 
 export enum FacetPageSource {
   Feed = 'feed',
+  Initiatives = 'initiatives',
   Projects = 'projects',
   TeamIssues = 'teamIssues'
 }
 
 /** Input for creating a favorite. Exactly one target entity must be specified (e.g., issueId, projectId, customViewId, folderName, etc.). */
 export type FavoriteCreateInput = {
+  /** [INTERNAL] The identifier of the Agent conversation to favorite. */
+  aiConversationId?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the custom view to favorite. */
   customViewId?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the customer to favorite. */
@@ -1969,14 +2205,20 @@ export type FavoriteCreateInput = {
   id?: InputMaybe<Scalars['String']['input']>;
   /** [INTERNAL] The identifier of the initiative to favorite. */
   initiativeId?: InputMaybe<Scalars['String']['input']>;
+  /** [INTERNAL] The identifier of the initiative label to favorite. */
+  initiativeLabelId?: InputMaybe<Scalars['String']['input']>;
   /** The tab of the initiative to favorite. */
   initiativeTab?: InputMaybe<InitiativeTab>;
   /** The identifier of the issue to favorite. Can be a UUID or issue identifier (e.g., 'LIN-123'). */
   issueId?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the label to favorite. */
   labelId?: InputMaybe<Scalars['String']['input']>;
+  /** The predefined live folder to create. */
+  liveFolderPreset?: InputMaybe<Scalars['String']['input']>;
   /** The parent folder of the favorite. */
   parentId?: InputMaybe<Scalars['String']['input']>;
+  /** The tab of the release pipeline to favorite. */
+  pipelineTab?: InputMaybe<PipelineTab>;
   /** The identifier of team for the predefined view to favorite. */
   predefinedViewTeamId?: InputMaybe<Scalars['String']['input']>;
   /** The type of the predefined view to favorite. */
@@ -1991,6 +2233,8 @@ export type FavoriteCreateInput = {
   pullRequestId?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the release to favorite. */
   releaseId?: InputMaybe<Scalars['String']['input']>;
+  /** The identifier of the release note to favorite. */
+  releaseNoteId?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the release pipeline to favorite. */
   releasePipelineId?: InputMaybe<Scalars['String']['input']>;
   /** The position of the item in the favorites list. */
@@ -2135,6 +2379,10 @@ export type GitHubImportSettingsInput = {
   orgType: GithubOrgType;
   /** The names of the repositories connected for the GitHub integration. */
   repositories: Array<GitHubRepoInput>;
+  /** The date the repository list was last loaded from GitHub. Unset while the first load is still in progress. */
+  repositoriesSyncedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  /** The number of repositories the installation can access, as reported by GitHub. Known before the repository list itself has loaded. */
+  repositoryCount?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type GitHubPersonalSettingsInput = {
@@ -2151,6 +2399,8 @@ export enum GitHubRemoveCodeAccessAction {
 export type GitHubRepoInput = {
   /** Whether the repository is archived. */
   archived?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The repository's GitHub description, if any. */
+  description?: InputMaybe<Scalars['String']['input']>;
   /** The external identifier (GitHub node ID) for the repository. */
   externalId?: InputMaybe<Scalars['String']['input']>;
   /** The full name of the repository. */
@@ -2160,17 +2410,17 @@ export type GitHubRepoInput = {
 };
 
 export type GitHubRepoMappingInput = {
-  /** Whether the sync for this mapping is bidirectional. */
+  /** Whether Linear-created issues matching this mapping will create GitHub issues. */
   bidirectional?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Whether this mapping is the default one for issue creation. */
+  /** Whether this mapping is the default destination for Linear-created issues that do not match a label-filtered mapping. */
   default?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Labels to filter incoming GitHub issue creation by. */
+  /** Label names used as a creation filter. When set, only issues matching one of these labels will create a synced issue for this mapping. */
   gitHubLabels?: InputMaybe<Array<Scalars['String']['input']>>;
   /** The GitHub repo id. */
   gitHubRepoId: Scalars['Float']['input'];
   /** The unique identifier for this mapping. */
   id: Scalars['String']['input'];
-  /** The Linear team id to map to the given project. */
+  /** The Linear team id to map to the GitHub repository. */
   linearTeamId: Scalars['String']['input'];
 };
 
@@ -2294,9 +2544,20 @@ export enum IdentityProviderType {
   WebForms = 'webForms'
 }
 
+/** Which Inbox notifications contribute to Inbox badges. */
+export enum InboxBadgeScope {
+  All = 'all',
+  None = 'none',
+  Priority = 'priority'
+}
+
 export type InheritanceEntityMapping = {
   /** Mapping of the IssueLabel ID to the new IssueLabel name. */
   issueLabels?: InputMaybe<Scalars['JSONObject']['input']>;
+  /** Mapping of the ProjectLabel ID to the new ProjectLabel name. */
+  projectLabels?: InputMaybe<Scalars['JSONObject']['input']>;
+  /** [Internal] Mapping of the ProjectStatus ID to the workspace or parent team ProjectStatus ID its projects move to. */
+  projectStatuses?: InputMaybe<Scalars['JSONObject']['input']>;
   /** Mapping of the WorkflowState ID to the new WorkflowState ID. */
   workflowStates: Scalars['JSONObject']['input'];
 };
@@ -2309,12 +2570,16 @@ export type InitiativeCollectionFilter = {
   ancestors?: InputMaybe<InitiativeCollectionFilter>;
   /** Compound filters, all of which need to be matched by the initiative. */
   and?: InputMaybe<Array<InitiativeCollectionFilter>>;
+  /** [Internal] Comparator for the initiative canceled at date. */
+  canceledAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the initiative completed at date. */
   completedAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the created at date. */
   createdAt?: InputMaybe<DateComparator>;
   /** Filters that the initiative creator must satisfy. */
   creator?: InputMaybe<NullableUserFilter>;
+  /** [Internal] Comparator for the initiative's custom identifier. */
+  customIdentifier?: InputMaybe<NullableStringComparator>;
   /** Filters that needs to be matched by all initiatives. */
   every?: InputMaybe<InitiativeFilter>;
   /** Comparator for the initiative health: onTrack, atRisk, offTrack */
@@ -2322,11 +2587,13 @@ export type InitiativeCollectionFilter = {
   /** Comparator for the initiative health (with age): onTrack, atRisk, offTrack, outdated, noUpdate */
   healthWithAge?: InputMaybe<StringComparator>;
   /** Comparator for the identifier. */
-  id?: InputMaybe<IdComparator>;
+  id?: InputMaybe<EntityIdentifierIdComparator>;
   /** Filters that the initiative updates must satisfy. */
   initiativeUpdates?: InputMaybe<InitiativeUpdatesCollectionFilter>;
-  /** [Internal] Filters that the initiative labels must satisfy. */
+  /** Filters that the initiative labels must satisfy. */
   labels?: InputMaybe<InitiativeLabelCollectionFilter>;
+  /** Filters that the initiative lead team must satisfy. */
+  leadTeam?: InputMaybe<NullableTeamFilter>;
   /** Comparator for the collection length. */
   length?: InputMaybe<NumberComparator>;
   /** Comparator for the initiative name. */
@@ -2335,13 +2602,15 @@ export type InitiativeCollectionFilter = {
   or?: InputMaybe<Array<InitiativeCollectionFilter>>;
   /** Filters that the initiative owner must satisfy. */
   owner?: InputMaybe<NullableUserFilter>;
+  /** Comparator for the initiative priority. */
+  priority?: InputMaybe<NullableNumberComparator>;
   /** Comparator for the initiative slug ID. */
   slugId?: InputMaybe<StringComparator>;
   /** Filters that needs to be matched by some initiatives. */
   some?: InputMaybe<InitiativeFilter>;
   /** Comparator for the initiative started at date. */
   startedAt?: InputMaybe<NullableDateComparator>;
-  /** Comparator for the initiative status: Planned, Active, Completed */
+  /** Comparator for the initiative status: Proposed, Planned, Active, Completed, Canceled */
   status?: InputMaybe<StringComparator>;
   /** Comparator for the initiative target date. */
   targetDate?: InputMaybe<NullableDateComparator>;
@@ -2363,12 +2632,18 @@ export type InitiativeCreateInput = {
   icon?: InputMaybe<Scalars['String']['input']>;
   /** The identifier in UUID v4 format. If none is provided, the backend will generate one. */
   id?: InputMaybe<Scalars['String']['input']>;
-  /** [Internal] The identifiers of the initiative labels associated with this initiative. */
+  /** The identifiers of the initiative labels associated with this initiative. */
   labelIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** The team that leads the initiative. */
+  leadTeamId?: InputMaybe<Scalars['String']['input']>;
   /** The name of the initiative. */
   name: Scalars['String']['input'];
   /** The owner of the initiative. */
   ownerId?: InputMaybe<Scalars['String']['input']>;
+  /** The priority of the initiative. 0 = No priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low. */
+  priority?: InputMaybe<Scalars['Int']['input']>;
+  /** The sort order of the initiative within the workspace, when ordered by priority. */
+  prioritySortOrder?: InputMaybe<Scalars['Float']['input']>;
   /** The sort order of the initiative within the workspace. */
   sortOrder?: InputMaybe<Scalars['Float']['input']>;
   /** The initiative's status. */
@@ -2395,33 +2670,41 @@ export type InitiativeFilter = {
   ancestors?: InputMaybe<InitiativeCollectionFilter>;
   /** Compound filters, all of which need to be matched by the initiative. */
   and?: InputMaybe<Array<InitiativeFilter>>;
+  /** [Internal] Comparator for the initiative canceled at date. */
+  canceledAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the initiative completed at date. */
   completedAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the created at date. */
   createdAt?: InputMaybe<DateComparator>;
   /** Filters that the initiative creator must satisfy. */
   creator?: InputMaybe<NullableUserFilter>;
+  /** [Internal] Comparator for the initiative's custom identifier. */
+  customIdentifier?: InputMaybe<NullableStringComparator>;
   /** Comparator for the initiative health: onTrack, atRisk, offTrack */
   health?: InputMaybe<StringComparator>;
   /** Comparator for the initiative health (with age): onTrack, atRisk, offTrack, outdated, noUpdate */
   healthWithAge?: InputMaybe<StringComparator>;
   /** Comparator for the identifier. */
-  id?: InputMaybe<IdComparator>;
+  id?: InputMaybe<EntityIdentifierIdComparator>;
   /** Filters that the initiative updates must satisfy. */
   initiativeUpdates?: InputMaybe<InitiativeUpdatesCollectionFilter>;
-  /** [Internal] Filters that the initiative labels must satisfy. */
+  /** Filters that the initiative labels must satisfy. */
   labels?: InputMaybe<InitiativeLabelCollectionFilter>;
+  /** Filters that the initiative lead team must satisfy. */
+  leadTeam?: InputMaybe<NullableTeamFilter>;
   /** Comparator for the initiative name. */
   name?: InputMaybe<StringComparator>;
   /** Compound filters, one of which need to be matched by the initiative. */
   or?: InputMaybe<Array<InitiativeFilter>>;
   /** Filters that the initiative owner must satisfy. */
   owner?: InputMaybe<NullableUserFilter>;
+  /** Comparator for the initiative priority. */
+  priority?: InputMaybe<NullableNumberComparator>;
   /** Comparator for the initiative slug ID. */
   slugId?: InputMaybe<StringComparator>;
   /** Comparator for the initiative started at date. */
   startedAt?: InputMaybe<NullableDateComparator>;
-  /** Comparator for the initiative status: Planned, Active, Completed */
+  /** Comparator for the initiative status: Proposed, Planned, Active, Completed, Canceled */
   status?: InputMaybe<StringComparator>;
   /** Comparator for the initiative target date. */
   targetDate?: InputMaybe<NullableDateComparator>;
@@ -2477,6 +2760,24 @@ export type InitiativeLabelCollectionFilter = {
   updatedAt?: InputMaybe<DateComparator>;
 };
 
+/** Input for creating a new initiative label. A name is required. The label is created as a workspace-level label available to all initiatives. */
+export type InitiativeLabelCreateInput = {
+  /** The color of the label. */
+  color?: InputMaybe<Scalars['String']['input']>;
+  /** The description of the label. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** The identifier in UUID v4 format. If none is provided, the backend will generate one. */
+  id?: InputMaybe<Scalars['String']['input']>;
+  /** Whether the label is a group. */
+  isGroup?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The name of the label. */
+  name: Scalars['String']['input'];
+  /** The identifier of the parent label. */
+  parentId?: InputMaybe<Scalars['String']['input']>;
+  /** The time at which the label was retired. Set to null to restore a retired label. */
+  retiredAt?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
 /** Initiative label filtering options. */
 export type InitiativeLabelFilter = {
   /** Compound filters, all of which need to be matched by the label. */
@@ -2499,6 +2800,28 @@ export type InitiativeLabelFilter = {
   updatedAt?: InputMaybe<DateComparator>;
 };
 
+/** Input for updating an existing initiative label. All fields are optional; only provided fields will be updated. */
+export type InitiativeLabelUpdateInput = {
+  /** The color of the label. */
+  color?: InputMaybe<Scalars['String']['input']>;
+  /** The description of the label. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Whether the label is a group. */
+  isGroup?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The name of the label. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** The identifier of the parent label. */
+  parentId?: InputMaybe<Scalars['String']['input']>;
+  /** The time at which the label was retired. Set to null to restore a retired label. */
+  retiredAt?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+/** [Internal] Determines how a lead team change is applied to an initiative hierarchy. */
+export enum InitiativeLeadTeamChangeMode {
+  IncludeDescendants = 'includeDescendants',
+  SelectedOnly = 'selectedOnly'
+}
+
 /** Initiative manual sorting options. */
 export type InitiativeManualSort = {
   /** Whether nulls should be sorted first or last */
@@ -2517,6 +2840,16 @@ export type InitiativeNameSort = {
 
 /** Initiative owner sorting options. */
 export type InitiativeOwnerSort = {
+  /** Whether nulls should be sorted first or last */
+  nulls?: InputMaybe<PaginationNulls>;
+  /** The order for the individual sort */
+  order?: InputMaybe<PaginationSortOrder>;
+};
+
+/** Initiative priority sorting options. */
+export type InitiativePrioritySort = {
+  /** Whether to consider no priority as the highest or lowest priority */
+  noPriorityFirst?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether nulls should be sorted first or last */
   nulls?: InputMaybe<PaginationNulls>;
   /** The order for the individual sort */
@@ -2555,6 +2888,8 @@ export type InitiativeSortInput = {
   name?: InputMaybe<InitiativeNameSort>;
   /** Sort by initiative owner name. */
   owner?: InputMaybe<InitiativeOwnerSort>;
+  /** Sort by initiative priority. */
+  priority?: InputMaybe<InitiativePrioritySort>;
   /** Sort by initiative target date. */
   targetDate?: InputMaybe<InitiativeTargetDateSort>;
   /** Sort by initiative update date. */
@@ -2563,8 +2898,10 @@ export type InitiativeSortInput = {
 
 export enum InitiativeStatus {
   Active = 'Active',
+  Canceled = 'Canceled',
   Completed = 'Completed',
-  Planned = 'Planned'
+  Planned = 'Planned',
+  Proposed = 'Proposed'
 }
 
 /** Different tabs available inside an initiative. */
@@ -2649,18 +2986,26 @@ export type InitiativeUpdateInput = {
   color?: InputMaybe<Scalars['String']['input']>;
   /** The initiative's content in markdown format. */
   content?: InputMaybe<Scalars['String']['input']>;
+  /** [Internal] Sets or clears the custom identifier override for the initiative. Pass null to revert to the workspace default. */
+  customIdentifier?: InputMaybe<Scalars['String']['input']>;
   /** The description of the initiative. */
   description?: InputMaybe<Scalars['String']['input']>;
   /** The resolution type for the update reminder frequency (e.g., weekly, biweekly). */
   frequencyResolution?: InputMaybe<FrequencyResolutionType>;
   /** The initiative's icon. */
   icon?: InputMaybe<Scalars['String']['input']>;
-  /** [Internal] The identifiers of the initiative labels associated with this initiative. */
+  /** The identifiers of the initiative labels associated with this initiative. */
   labelIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** The team that leads the initiative. Set to null to clear. */
+  leadTeamId?: InputMaybe<Scalars['String']['input']>;
   /** The name of the initiative. */
   name?: InputMaybe<Scalars['String']['input']>;
   /** The owner of the initiative. */
   ownerId?: InputMaybe<Scalars['String']['input']>;
+  /** The priority of the initiative. 0 = No priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low. */
+  priority?: InputMaybe<Scalars['Int']['input']>;
+  /** The sort order of the initiative within the workspace, when ordered by priority. */
+  prioritySortOrder?: InputMaybe<Scalars['Float']['input']>;
   /** The sort order of the initiative within the workspace. */
   sortOrder?: InputMaybe<Scalars['Float']['input']>;
   /** The initiative's status. */
@@ -2689,8 +3034,6 @@ export type InitiativeUpdateUpdateInput = {
   bodyData?: InputMaybe<Scalars['JSON']['input']>;
   /** The health of the initiative at the time of the update. */
   health?: InputMaybe<InitiativeUpdateHealthType>;
-  /** Whether the diff between the current update and the previous one should be hidden. */
-  isDiffHidden?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 /** Initiative update date sorting options. */
@@ -2734,6 +3077,13 @@ export type InitiativeUpdatesFilter = {
   /** Comparator for the updated at date. */
   updatedAt?: InputMaybe<DateComparator>;
 };
+
+/** The visibility of an initiative. Derived from its lead team; public when no lead team is assigned. */
+export enum InitiativeVisibility {
+  Private = 'private',
+  Public = 'public',
+  Restricted = 'restricted'
+}
 
 export type IntegrationCustomerDataAttributesRefreshInput = {
   /** The integration service to refresh customer data attributes from. */
@@ -2841,6 +3191,10 @@ export type IntegrationTemplateCreateInput = {
 export type IntegrationUpdateInput = {
   /** The settings to update. */
   settings?: InputMaybe<IntegrationSettingsInput>;
+  /** The ID of the workflow definition draft that this integration should be assigned to. */
+  workflowDefinitionDraftId?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of the workflow definition that this integration should be assigned to. */
+  workflowDefinitionId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type IntegrationsSettingsCreateInput = {
@@ -2924,10 +3278,16 @@ export type IntercomSettingsInput = {
   automateTicketReopeningOnProjectCancellation?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether a ticket should be automatically reopened when its linked Linear project is completed. */
   automateTicketReopeningOnProjectCompletion?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [INTERNAL] An optional destination team ID for issues created by automatic Intercom conversation intake. */
+  automaticConversationIntakeTeamId?: InputMaybe<Scalars['String']['input']>;
   /** [ALPHA] Whether customer and customer requests should not be automatically created when conversations are linked to a Linear issue. */
   disableCustomerRequestsAutoCreation?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether Linear Agent should be enabled for this integration. */
   enableAiIntake?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether Linear Agent should process supported attachments from Intercom conversations during AI intake. When false, attachments are omitted from the prompt. */
+  enableAiIntakeAttachmentProcessing?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [INTERNAL] Whether new Intercom conversations should automatically create Linear issues with Linear Agent. */
+  enableAutomaticConversationIntake?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether an internal message should be added when someone comments on an issue. */
   sendNoteOnComment?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether an internal message should be added when a Linear issue changes status (for status types except completed or canceled). */
@@ -2994,12 +3354,20 @@ export type IssueCollectionFilter = {
   estimate?: InputMaybe<EstimateComparator>;
   /** Filters that needs to be matched by all issues. */
   every?: InputMaybe<IssueFilter>;
+  /** [Internal] Comparator for filtering issues bucketed as having active agent sessions, no closed agent pull requests, and no merged agent pull requests. */
+  hasActiveAgentSessions?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are blocked. */
   hasBlockedByRelations?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are blocking. */
   hasBlockingRelations?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues bucketed as having all agent sessions dismissed or closed, and no merged agent pull requests. */
+  hasDismissedAgentSessions?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are duplicates. */
   hasDuplicateRelations?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues bucketed as having an errored agent session, no active sessions, and no merged agent pull requests. */
+  hasErroredAgentSessions?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues which have agent-session-linked pull requests that were merged. */
+  hasMergedAgentPullRequests?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues with relations. */
   hasRelatedRelations?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which have been shared with users outside of the team. */
@@ -3210,12 +3578,20 @@ export type IssueFilter = {
   dueDate?: InputMaybe<NullableTimelessDateComparator>;
   /** Comparator for the issues estimate. */
   estimate?: InputMaybe<EstimateComparator>;
+  /** [Internal] Comparator for filtering issues bucketed as having active agent sessions, no closed agent pull requests, and no merged agent pull requests. */
+  hasActiveAgentSessions?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are blocked. */
   hasBlockedByRelations?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are blocking. */
   hasBlockingRelations?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues bucketed as having all agent sessions dismissed or closed, and no merged agent pull requests. */
+  hasDismissedAgentSessions?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are duplicates. */
   hasDuplicateRelations?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues bucketed as having an errored agent session, no active sessions, and no merged agent pull requests. */
+  hasErroredAgentSessions?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues which have agent-session-linked pull requests that were merged. */
+  hasMergedAgentPullRequests?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues with relations. */
   hasRelatedRelations?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which have been shared with users outside of the team. */
@@ -3679,12 +4055,14 @@ export type IssueUpdateInput = {
   teamId?: InputMaybe<Scalars['String']['input']>;
   /** The issue title. */
   title?: InputMaybe<Scalars['String']['input']>;
-  /** Whether the issue has been trashed. */
+  /** Whether the issue has been trashed. Set to true to trash, or null to restore. */
   trashed?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [Internal] Whether this issue has been explicitly marked as trusted. */
+  trusted?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type JiraConfigurationInput = {
-  /** The Jira personal access token. */
+  /** The Jira personal access token, or the API key of a Jira Cloud service account. */
   accessToken: Scalars['String']['input'];
   /** The Jira user's email address. A username is also accepted on Jira Server / DC. */
   email: Scalars['String']['input'];
@@ -3692,6 +4070,8 @@ export type JiraConfigurationInput = {
   hostname: Scalars['String']['input'];
   /** Whether this integration will be setup using the manual webhook flow. */
   manualSetup?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether the access token is the API key of a Jira Cloud service account. Defaults to detecting the service account key prefix. The site's cloudId is resolved from the hostname, and webhooks are always set up manually. */
+  serviceAccount?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type JiraFetchProjectStatusesInput = {
@@ -3731,6 +4111,8 @@ export type JiraProjectDataInput = {
 export type JiraSettingsInput = {
   /** The custom OAuth server token endpoint URL (enterprise SSO). */
   customOAuthServerUrl?: InputMaybe<Scalars['String']['input']>;
+  /** Whether this integration authenticates with a Jira Cloud service account API key. */
+  isCloudServiceAccount?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether this integration uses custom OAuth authentication (enterprise SSO). */
   isCustomOAuth?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether this integration is for Jira Server or not. */
@@ -3747,16 +4129,14 @@ export type JiraSettingsInput = {
   projects: Array<JiraProjectDataInput>;
   /** Whether the user needs to provide setup information about the webhook to complete the integration setup. Only relevant for integrations that use a manual setup flow */
   setupPending?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Jira status names grouped by project, separated into issue statuses (non-Epic) and project statuses (Epic). Structure: projectId -> { issueStatuses: string[], projectStatuses: string[] } */
-  statusNamesPerIssueType?: InputMaybe<Scalars['JSONObject']['input']>;
 };
 
 export type JiraUpdateInput = {
-  /** The Jira personal access token. */
+  /** The Jira personal access token, or the API key of a Jira Cloud service account. */
   accessToken?: InputMaybe<Scalars['String']['input']>;
   /** Whether to delete the current manual webhook configuration. */
   deleteWebhook?: InputMaybe<Scalars['Boolean']['input']>;
-  /** The Jira user email address associated with the personal access token. */
+  /** The Jira user email address associated with the access token. */
   email?: InputMaybe<Scalars['String']['input']>;
   /** The id of the integration to update. */
   id: Scalars['String']['input'];
@@ -3802,6 +4182,18 @@ export type LaunchDarklySettingsInput = {
   projectKey: Scalars['String']['input'];
 };
 
+/** How workspace MCP server access is restricted for Linear Agent. */
+export enum LinearAgentMcpServersMode {
+  All = 'all',
+  Allowlist = 'allowlist'
+}
+
+/** How workspace trusted source access is restricted for loops. */
+export enum LinearAgentTrustedSourcesMode {
+  Allowlist = 'allowlist',
+  None = 'none'
+}
+
 /** [ALPHA] Issue link count sorting options. */
 export type LinkCountSort = {
   /** Whether nulls should be sorted first or last */
@@ -3825,6 +4217,12 @@ export type McpServerCustomHeaderInput = {
   /** The HTTP header value. */
   value: Scalars['String']['input'];
 };
+
+/** [Internal] The analysis state of a meeting transcript. */
+export enum MeetingAnalysisStatus {
+  Completed = 'completed',
+  Pending = 'pending'
+}
 
 export type MicrosoftTeamsPostSettingsInput = {
   /** Microsoft Teams channel id. */
@@ -3868,10 +4266,12 @@ export type NameSort = {
 export enum NotificationCategory {
   AppsAndIntegrations = 'appsAndIntegrations',
   Assignments = 'assignments',
+  Billing = 'billing',
   CommentsAndReplies = 'commentsAndReplies',
   Customers = 'customers',
   DocumentChanges = 'documentChanges',
   Feed = 'feed',
+  Loops = 'loops',
   Mentions = 'mentions',
   PostsAndUpdates = 'postsAndUpdates',
   Reactions = 'reactions',
@@ -3888,6 +4288,8 @@ export type NotificationCategoryPreferencesInput = {
   appsAndIntegrations?: InputMaybe<PartialNotificationChannelPreferencesInput>;
   /** The preferences for notifications about assignments. */
   assignments?: InputMaybe<PartialNotificationChannelPreferencesInput>;
+  /** The preferences for billing notifications. */
+  billing?: InputMaybe<PartialNotificationChannelPreferencesInput>;
   /** The preferences for notifications about comments and replies. */
   commentsAndReplies?: InputMaybe<PartialNotificationChannelPreferencesInput>;
   /** The preferences for notifications about customers. */
@@ -3896,6 +4298,8 @@ export type NotificationCategoryPreferencesInput = {
   documentChanges?: InputMaybe<PartialNotificationChannelPreferencesInput>;
   /** The preferences for notifications about feed summaries. */
   feed?: InputMaybe<PartialNotificationChannelPreferencesInput>;
+  /** The preferences for notifications about loops. */
+  loops?: InputMaybe<PartialNotificationChannelPreferencesInput>;
   /** The preferences for notifications about mentions. */
   mentions?: InputMaybe<PartialNotificationChannelPreferencesInput>;
   /** The preferences for notifications about posts and updates. */
@@ -3988,6 +4392,8 @@ export type NotificationFilter = {
   id?: InputMaybe<IdComparator>;
   /** Compound filters, one of which need to be matched by the notification. */
   or?: InputMaybe<Array<NotificationFilter>>;
+  /** Comparator for the notification subscription type. */
+  subscriptionType?: InputMaybe<NotificationSubscriptionTypeComparator>;
   /** Comparator for the notification type. */
   type?: InputMaybe<StringComparator>;
   /** Comparator for the updated at date. */
@@ -4022,6 +4428,35 @@ export type NotificationSubscriptionCreateInput = {
   userContextViewType?: InputMaybe<UserContextViewType>;
   /** The identifier of the user to subscribe to. */
   userId?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** The delivery target type that caused a notification to be sent. */
+export enum NotificationSubscriptionType {
+  CustomView = 'customView',
+  Customer = 'customer',
+  Cycle = 'cycle',
+  Document = 'document',
+  Initiative = 'initiative',
+  Issue = 'issue',
+  Label = 'label',
+  OauthClientApproval = 'oauthClientApproval',
+  Project = 'project',
+  PullRequest = 'pullRequest',
+  Team = 'team',
+  User = 'user',
+  WorkflowDefinition = 'workflowDefinition'
+}
+
+/** Comparator for notification subscription type. */
+export type NotificationSubscriptionTypeComparator = {
+  /** Equals constraint. */
+  eq?: InputMaybe<NotificationSubscriptionType>;
+  /** In-array constraint. */
+  in?: InputMaybe<Array<NotificationSubscriptionType>>;
+  /** Not-equals constraint. */
+  neq?: InputMaybe<NotificationSubscriptionType>;
+  /** Not-in-array constraint. */
+  nin?: InputMaybe<Array<NotificationSubscriptionType>>;
 };
 
 /** Input for updating an existing notification subscription. Allows changing the subscribed notification types and active state. */
@@ -4065,6 +4500,8 @@ export type NullableCommentFilter = {
   id?: InputMaybe<IdComparator>;
   /** [Internal] Filters that the comment's initiative must satisfy. */
   initiative?: InputMaybe<NullableInitiativeFilter>;
+  /** Filters that the comment's initiative update must satisfy. */
+  initiativeUpdate?: InputMaybe<NullableInitiativeUpdateFilter>;
   /** Filters that the comment's issue must satisfy. */
   issue?: InputMaybe<NullableIssueFilter>;
   /** Filters that the comment's customer needs must satisfy. */
@@ -4201,12 +4638,18 @@ export type NullableDocumentContentFilter = {
   document?: InputMaybe<DocumentFilter>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
+  /** Filters that the document content initiative must satisfy. */
+  initiative?: InputMaybe<InitiativeFilter>;
+  /** Filters that the document content issue must satisfy. */
+  issue?: InputMaybe<IssueFilter>;
   /** Filter based on the existence of the relation. */
   null?: InputMaybe<Scalars['Boolean']['input']>;
   /** Compound filters, one of which need to be matched by the user. */
   or?: InputMaybe<Array<NullableDocumentContentFilter>>;
   /** Filters that the document content project must satisfy. */
   project?: InputMaybe<ProjectFilter>;
+  /** Filters that the document content project milestone must satisfy. */
+  projectMilestone?: InputMaybe<ProjectMilestoneFilter>;
   /** Comparator for the updated at date. */
   updatedAt?: InputMaybe<DateComparator>;
 };
@@ -4241,22 +4684,28 @@ export type NullableInitiativeFilter = {
   ancestors?: InputMaybe<InitiativeCollectionFilter>;
   /** Compound filters, all of which need to be matched by the initiative. */
   and?: InputMaybe<Array<NullableInitiativeFilter>>;
+  /** [Internal] Comparator for the initiative canceled at date. */
+  canceledAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the initiative completed at date. */
   completedAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the created at date. */
   createdAt?: InputMaybe<DateComparator>;
   /** Filters that the initiative creator must satisfy. */
   creator?: InputMaybe<NullableUserFilter>;
+  /** [Internal] Comparator for the initiative's custom identifier. */
+  customIdentifier?: InputMaybe<NullableStringComparator>;
   /** Comparator for the initiative health: onTrack, atRisk, offTrack */
   health?: InputMaybe<StringComparator>;
   /** Comparator for the initiative health (with age): onTrack, atRisk, offTrack, outdated, noUpdate */
   healthWithAge?: InputMaybe<StringComparator>;
   /** Comparator for the identifier. */
-  id?: InputMaybe<IdComparator>;
+  id?: InputMaybe<EntityIdentifierIdComparator>;
   /** Filters that the initiative updates must satisfy. */
   initiativeUpdates?: InputMaybe<InitiativeUpdatesCollectionFilter>;
-  /** [Internal] Filters that the initiative labels must satisfy. */
+  /** Filters that the initiative labels must satisfy. */
   labels?: InputMaybe<InitiativeLabelCollectionFilter>;
+  /** Filters that the initiative lead team must satisfy. */
+  leadTeam?: InputMaybe<NullableTeamFilter>;
   /** Comparator for the initiative name. */
   name?: InputMaybe<StringComparator>;
   /** Filter based on the existence of the relation. */
@@ -4265,11 +4714,13 @@ export type NullableInitiativeFilter = {
   or?: InputMaybe<Array<NullableInitiativeFilter>>;
   /** Filters that the initiative owner must satisfy. */
   owner?: InputMaybe<NullableUserFilter>;
+  /** Comparator for the initiative priority. */
+  priority?: InputMaybe<NullableNumberComparator>;
   /** Comparator for the initiative slug ID. */
   slugId?: InputMaybe<StringComparator>;
   /** Comparator for the initiative started at date. */
   startedAt?: InputMaybe<NullableDateComparator>;
-  /** Comparator for the initiative status: Planned, Active, Completed */
+  /** Comparator for the initiative status: Proposed, Planned, Active, Completed, Canceled */
   status?: InputMaybe<StringComparator>;
   /** Comparator for the initiative target date. */
   targetDate?: InputMaybe<NullableDateComparator>;
@@ -4277,6 +4728,28 @@ export type NullableInitiativeFilter = {
   teams?: InputMaybe<TeamCollectionFilter>;
   /** Comparator for the updated at date. */
   updatedAt?: InputMaybe<DateComparator>;
+};
+
+/** Nullable initiative update filtering options. */
+export type NullableInitiativeUpdateFilter = {
+  /** Compound filters, all of which need to be matched by the initiative update. */
+  and?: InputMaybe<Array<NullableInitiativeUpdateFilter>>;
+  /** Comparator for the created at date. */
+  createdAt?: InputMaybe<DateComparator>;
+  /** Comparator for the identifier. */
+  id?: InputMaybe<IdComparator>;
+  /** Filters that the initiative update initiative must satisfy. */
+  initiative?: InputMaybe<InitiativeFilter>;
+  /** Filter based on the existence of the relation. */
+  null?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Compound filters, one of which need to be matched by the initiative update. */
+  or?: InputMaybe<Array<NullableInitiativeUpdateFilter>>;
+  /** Filters that the initiative updates reactions must satisfy. */
+  reactions?: InputMaybe<ReactionCollectionFilter>;
+  /** Comparator for the updated at date. */
+  updatedAt?: InputMaybe<DateComparator>;
+  /** Filters that the initiative update creator must satisfy. */
+  user?: InputMaybe<UserFilter>;
 };
 
 /** Issue filtering options. */
@@ -4331,12 +4804,20 @@ export type NullableIssueFilter = {
   dueDate?: InputMaybe<NullableTimelessDateComparator>;
   /** Comparator for the issues estimate. */
   estimate?: InputMaybe<EstimateComparator>;
+  /** [Internal] Comparator for filtering issues bucketed as having active agent sessions, no closed agent pull requests, and no merged agent pull requests. */
+  hasActiveAgentSessions?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are blocked. */
   hasBlockedByRelations?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are blocking. */
   hasBlockingRelations?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues bucketed as having all agent sessions dismissed or closed, and no merged agent pull requests. */
+  hasDismissedAgentSessions?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which are duplicates. */
   hasDuplicateRelations?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues bucketed as having an errored agent session, no active sessions, and no merged agent pull requests. */
+  hasErroredAgentSessions?: InputMaybe<RelationExistsComparator>;
+  /** [Internal] Comparator for filtering issues which have agent-session-linked pull requests that were merged. */
+  hasMergedAgentPullRequests?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues with relations. */
   hasRelatedRelations?: InputMaybe<RelationExistsComparator>;
   /** Comparator for filtering issues which have been shared with users outside of the team. */
@@ -4457,6 +4938,8 @@ export type NullableProjectFilter = {
   createdAt?: InputMaybe<DateComparator>;
   /** Filters that the projects creator must satisfy. */
   creator?: InputMaybe<UserFilter>;
+  /** [Internal] Comparator for the project's custom identifier. */
+  customIdentifier?: InputMaybe<NullableStringComparator>;
   /** Count of customers */
   customerCount?: InputMaybe<NumberComparator>;
   /** Count of important customers */
@@ -4478,7 +4961,7 @@ export type NullableProjectFilter = {
   /** Comparator for the project health (with age): onTrack, atRisk, offTrack, outdated, noUpdate */
   healthWithAge?: InputMaybe<StringComparator>;
   /** Comparator for the identifier. */
-  id?: InputMaybe<IdComparator>;
+  id?: InputMaybe<EntityIdentifierIdComparator>;
   /** Filters that the projects initiatives must satisfy. */
   initiatives?: InputMaybe<InitiativeCollectionFilter>;
   /** Filters that the projects issues must satisfy. */
@@ -4489,6 +4972,8 @@ export type NullableProjectFilter = {
   lastAppliedTemplate?: InputMaybe<NullableTemplateFilter>;
   /** Filters that the projects lead must satisfy. */
   lead?: InputMaybe<NullableUserFilter>;
+  /** [ALPHA] Filters that the project's lead team must satisfy. */
+  leadTeam?: InputMaybe<NullableTeamFilter>;
   /** Filters that the projects members must satisfy. */
   members?: InputMaybe<UserCollectionFilter>;
   /** Comparator for the project name. */
@@ -4501,7 +4986,7 @@ export type NullableProjectFilter = {
   null?: InputMaybe<Scalars['Boolean']['input']>;
   /** Compound filters, one of which need to be matched by the project. */
   or?: InputMaybe<Array<NullableProjectFilter>>;
-  /** Comparator for the projects priority. */
+  /** Comparator for the project priority. */
   priority?: InputMaybe<NullableNumberComparator>;
   /** Filters that the project's milestones must satisfy. */
   projectMilestones?: InputMaybe<ProjectMilestoneCollectionFilter>;
@@ -4519,7 +5004,7 @@ export type NullableProjectFilter = {
   startedAt?: InputMaybe<NullableDateComparator>;
   /** [DEPRECATED] Comparator for the project state. */
   state?: InputMaybe<StringComparator>;
-  /** Filters that the project's status must satisfy. */
+  /** Filters that the project status must satisfy. */
   status?: InputMaybe<ProjectStatusFilter>;
   /** Comparator for the project target date. */
   targetDate?: InputMaybe<NullableDateComparator>;
@@ -4621,26 +5106,36 @@ export type NullableTeamFilter = {
   description?: InputMaybe<NullableStringComparator>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
-  /** Filters that the teams issues must satisfy. */
+  /** Filters that the team's issues must satisfy. */
   issues?: InputMaybe<IssueCollectionFilter>;
   /** Comparator for the team key. */
   key?: InputMaybe<StringComparator>;
+  /** Filters that the team's members must satisfy. */
+  members?: InputMaybe<UserCollectionFilter>;
   /** Comparator for the team name. */
   name?: InputMaybe<StringComparator>;
   /** Filter based on the existence of the relation. */
   null?: InputMaybe<Scalars['Boolean']['input']>;
   /** Compound filters, one of which need to be matched by the team. */
   or?: InputMaybe<Array<NullableTeamFilter>>;
-  /** Filters that the teams parent must satisfy. */
+  /** Filters that the team's owners must satisfy. */
+  owners?: InputMaybe<UserCollectionFilter>;
+  /** Filters that the team's parent must satisfy. */
   parent?: InputMaybe<NullableTeamFilter>;
-  /** Comparator for the team privacy. */
+  /** [DEPRECATED] Comparator for the team privacy. */
   private?: InputMaybe<BooleanComparator>;
   /** Filters that the team's release pipelines must satisfy. */
   releasePipelines?: InputMaybe<ReleasePipelineCollectionFilter>;
+  /** [Internal] Filters that the private team forming this team's visibility boundary must satisfy. Only relevant for non-public teams. */
+  restrictedBy?: InputMaybe<NullableTeamFilter>;
   /** Comparator for the time at which the team was retired. */
   retiredAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the updated at date. */
   updatedAt?: InputMaybe<DateComparator>;
+  /** [Internal] Filters that the team's members must satisfy. Alias of `members` matching the filter shape produced by the app; prefer `members`. */
+  users?: InputMaybe<UserCollectionFilter>;
+  /** Comparator for the team visibility. */
+  visibility?: InputMaybe<TeamVisibilityComparator>;
 };
 
 /** Template filtering options. */
@@ -4659,6 +5154,8 @@ export type NullableTemplateFilter = {
   null?: InputMaybe<Scalars['Boolean']['input']>;
   /** Compound filters, one of which need to be matched by the template. */
   or?: InputMaybe<Array<NullableTemplateFilter>>;
+  /** Filters that the template's team must satisfy. */
+  team?: InputMaybe<NullableTeamFilter>;
   /** Comparator for the template's type. */
   type?: InputMaybe<StringComparator>;
   /** Comparator for the updated at date. */
@@ -4745,6 +5242,66 @@ export type NumberComparator = {
   nin?: InputMaybe<Array<Scalars['Float']['input']>>;
 };
 
+/** Input for creating an OAuth application through the public API. */
+export type OAuthApplicationCreateInput = {
+  /** User-facing description of the OAuth application. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Name of the developer or company that built the OAuth application. */
+  developer: Scalars['String']['input'];
+  /** URL of the developer's website, homepage, or documentation. */
+  developerUrl?: InputMaybe<Scalars['String']['input']>;
+  /** OAuth grant capabilities the app may use. authorization_code is required. Defaults to authorization_code. */
+  grantTypes?: InputMaybe<Array<OAuthApplicationGrantType>>;
+  /** Optional client-supplied idempotency key. Reusing the same key with the same managing OAuth application returns the existing OAuth application instead of creating a duplicate. The key does not apply to archived applications. */
+  idempotencyKey?: InputMaybe<Scalars['String']['input']>;
+  /** URL of the OAuth application's icon. */
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  /** The OAuth application's name. */
+  name: Scalars['String']['input'];
+  /** Allowed redirect URIs for OAuth authorization flows. */
+  redirectUris: Array<Scalars['String']['input']>;
+  /** Resource types the OAuth application's webhooks subscribe to. */
+  webhookResourceTypes?: InputMaybe<Array<WebhookResourceType>>;
+  /** Webhook URL used for delivering webhook payloads. */
+  webhookUrl?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Distribution setting for an OAuth application. */
+export enum OAuthApplicationDistribution {
+  Private = 'private',
+  Public = 'public'
+}
+
+/** OAuth grant type supported by an OAuth application. */
+export enum OAuthApplicationGrantType {
+  AuthorizationCode = 'authorization_code',
+  ClientCredentials = 'client_credentials'
+}
+
+/** Input for updating an OAuth application through the public API. */
+export type OAuthApplicationUpdateInput = {
+  /** User-facing description of the OAuth application. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Name of the developer or company that built the OAuth application. */
+  developer?: InputMaybe<Scalars['String']['input']>;
+  /** URL of the developer's website, homepage, or documentation. */
+  developerUrl?: InputMaybe<Scalars['String']['input']>;
+  /** OAuth grant capabilities the app may use. authorization_code is required. Omit to keep the existing grant types. */
+  grantTypes?: InputMaybe<Array<OAuthApplicationGrantType>>;
+  /** URL of the OAuth application's icon. */
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  /** The OAuth application's name. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Allowed redirect URIs for OAuth authorization flows. */
+  redirectUris?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Whether webhook delivery is enabled for this OAuth application. */
+  webhookEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Resource types the OAuth application's webhooks subscribe to. */
+  webhookResourceTypes?: InputMaybe<Array<WebhookResourceType>>;
+  /** Webhook URL used for delivering webhook payloads. */
+  webhookUrl?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** The different requests statuses possible for an OAuth client approval request. */
 export enum OAuthClientApprovalStatus {
   Approved = 'approved',
@@ -4774,9 +5331,13 @@ export type OrganizationAuthSettingsInput = {
   hideNonPrimaryOrganizations?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
-/** [Internal] Input for updating Coding Agent settings for the workspace. */
+/** [Internal] Input for updating Coding Sessions settings for the workspace. */
 export type OrganizationCodingAgentSettingsInput = {
-  /** [Internal] The model preference used for Coding Agent sessions. */
+  /** [Internal] Whether Coding Sessions require uploaded user commit signing keys. */
+  commitSigningEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [Internal] The provider-agnostic reasoning effort level used for Coding Sessions. Clamped to the selected model's provider when the session runs. */
+  effort?: InputMaybe<Scalars['String']['input']>;
+  /** [Internal] The model preference used for Coding Sessions. */
   model?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -4858,20 +5419,36 @@ export type OrganizationLinearAgentMcpServerAllowlistEntryInput = {
 
 /** [Internal] Input for updating Linear Agent settings for the workspace. */
 export type OrganizationLinearAgentSettingsInput = {
-  /** [Internal] The MCP server allowlist for Linear Agent. When unset, all MCP servers are allowed. */
+  /** [Internal] Legacy MCP server allowlist for Linear Agent. */
   mcpServersAllowlist?: InputMaybe<Array<OrganizationLinearAgentMcpServerAllowlistEntryInput>>;
   /** [Internal] Whether the workspace has enabled MCP servers for Linear Agent. */
   mcpServersEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [Internal] Whether all MCP servers or only approved MCP servers are allowed for Linear Agent. */
+  mcpServersMode?: InputMaybe<LinearAgentMcpServersMode>;
+  /** [Internal] Trusted-source allowlist for loops. */
+  trustedSourcesAllowlist?: InputMaybe<Array<OrganizationLinearAgentTrustedSourcesAllowlistEntryInput>>;
+  /** [Internal] Whether external trusted sources are disabled or restricted to approved sources for loops. */
+  trustedSourcesMode?: InputMaybe<LinearAgentTrustedSourcesMode>;
   /** [Internal] Whether the workspace has enabled web search for Linear Agent. */
   webSearchEnabled?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** [Internal] A trusted-source entry for the loop allowlist. */
+export type OrganizationLinearAgentTrustedSourcesAllowlistEntryInput = {
+  /** [Internal] The trusted-source key that loops are allowed to use. */
+  key: Scalars['String']['input'];
+};
+
 /** Input for updating workspace security settings such as role-based access controls. */
 export type OrganizationSecuritySettingsInput = {
+  /** The minimum role required to grant or revoke the workspace admin role. */
+  adminManagementRole?: InputMaybe<UserRoleType>;
   /** The minimum role required to manage agent guidance prompts and settings. */
   agentGuidanceRole?: InputMaybe<UserRoleType>;
   /** The minimum role required to manage API settings. */
   apiSettingsRole?: InputMaybe<UserRoleType>;
+  /** The minimum role required to manage workspace loops. */
+  automationManagementRole?: InputMaybe<UserRoleType>;
   /** The minimum role required to import data. */
   importRole?: InputMaybe<UserRoleType>;
   /** The minimum role required to install and connect new integrations. */
@@ -4886,6 +5463,8 @@ export type OrganizationSecuritySettingsInput = {
   teamCreationRole?: InputMaybe<UserRoleType>;
   /** The minimum role required to manage workspace templates. */
   templateManagementRole?: InputMaybe<UserRoleType>;
+  /** The minimum role required to create initiatives without a lead team or move initiatives between workspace and team scopes. */
+  workspaceInitiativesRole?: InputMaybe<UserRoleType>;
 };
 
 /** Input for starting a workspace trial on a specific plan. */
@@ -4894,9 +5473,17 @@ export type OrganizationStartTrialInput = {
   planType: Scalars['String']['input'];
 };
 
+/** [Internal] Input for updating workspace theme settings. */
+export type OrganizationThemeSettingsInput = {
+  /** [ALPHA] Dark theme palette: CSS custom property name (`--name`) to color or length value. */
+  darkTheme?: InputMaybe<Scalars['JSONObject']['input']>;
+  /** [ALPHA] Light theme palette: CSS custom property name (`--name`) to color or length value. */
+  lightTheme?: InputMaybe<Scalars['JSONObject']['input']>;
+};
+
 /** Input for updating the workspace. */
 export type OrganizationUpdateInput = {
-  /** [INTERNAL] Whether the workspace has enabled agent automation. */
+  /** [INTERNAL] Whether the workspace has enabled loops. */
   agentAutomationEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** [INTERNAL] Whether the workspace has enabled the AI add-on. */
   aiAddonEnabled?: InputMaybe<Scalars['Boolean']['input']>;
@@ -4906,8 +5493,6 @@ export type OrganizationUpdateInput = {
   aiTelemetryEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether the workspace has enabled resolved thread AI summaries. */
   aiThreadSummariesEnabled?: InputMaybe<Scalars['Boolean']['input']>;
-  /** List of services that are allowed to be used for login. */
-  allowedAuthServices?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Allowed file upload content types. */
   allowedFileUploadContentTypes?: InputMaybe<Array<Scalars['String']['input']>>;
   /** The authentication settings for the workspace. */
@@ -4916,16 +5501,20 @@ export type OrganizationUpdateInput = {
   codeIntelligenceEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** [INTERNAL] GitHub repository in owner/repo format for code intelligence. */
   codeIntelligenceRepository?: InputMaybe<Scalars['String']['input']>;
-  /** [INTERNAL] Whether the workspace has enabled the Coding Agent. */
+  /** [INTERNAL] Whether the workspace has enabled Coding Sessions. */
   codingAgentEnabled?: InputMaybe<Scalars['Boolean']['input']>;
-  /** [Internal] Settings for Coding Agent features. */
+  /** [Internal] Settings for Coding Sessions features. */
   codingAgentSettings?: InputMaybe<OrganizationCodingAgentSettingsInput>;
   /** [INTERNAL] Configuration settings for the Customers feature. */
-  customersConfiguration?: InputMaybe<Scalars['JSONObject']['input']>;
+  customersConfiguration?: InputMaybe<CustomersConfigurationInput>;
   /** [INTERNAL] Whether the workspace is using customers. */
   customersEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Default schedule for how often feed summaries are generated. */
   defaultFeedSummarySchedule?: InputMaybe<FeedSummarySchedule>;
+  /** The default home view for members of the workspace who have not chosen their own default. */
+  defaultHomeView?: InputMaybe<Scalars['String']['input']>;
+  /** The id of the specific initiative, project, view, or dashboard used as the default home view. The type of entity is given by defaultHomeView. */
+  defaultHomeViewTargetId?: InputMaybe<Scalars['String']['input']>;
   /** Whether the workspace has enabled the feed feature. */
   feedEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** The month at which the fiscal year starts. */
@@ -4940,8 +5529,6 @@ export type OrganizationUpdateInput = {
   gitLinkbackMessagesEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether the Git integration linkback messages should be sent for public repositories. */
   gitPublicLinkbackMessagesEnabled?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Whether to hide other workspaces for new users signing up with email domains claimed by this organization. */
-  hideNonPrimaryOrganizations?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether HIPAA compliance is enabled for the workspace. */
   hipaaComplianceEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** [ALPHA] The n-weekly frequency at which to prompt for initiative updates. */
@@ -4968,6 +5555,10 @@ export type OrganizationUpdateInput = {
   projectUpdateRemindersDay?: InputMaybe<Day>;
   /** The hour at which project updates are sent. */
   projectUpdateRemindersHour?: InputMaybe<Scalars['Float']['input']>;
+  /** How Linear suggests and links issues for pull requests that have none linked: 'off', 'suggest', or 'autoOnMerge'. */
+  pullRequestIssueMode?: InputMaybe<Scalars['String']['input']>;
+  /** Whether the workspace generates AI Pull Request guides for new pull requests. */
+  pullRequestTourEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether the workspace has opted for reduced customer support attachment information. */
   reducedPersonalInformation?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether agent invocation is restricted to full workspace members. */
@@ -4987,7 +5578,7 @@ export type OrganizationUpdateInput = {
   /** [Internal] Whether the Slack project channels feature is enabled for the workspace. */
   slackProjectChannelsEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** [ALPHA] Theme settings for the workspace. */
-  themeSettings?: InputMaybe<Scalars['JSONObject']['input']>;
+  themeSettings?: InputMaybe<OrganizationThemeSettingsInput>;
   /** The URL key of the workspace. */
   urlKey?: InputMaybe<Scalars['String']['input']>;
   /** [Internal] The list of working days. Sunday is 0, Monday is 1, etc. */
@@ -5036,6 +5627,71 @@ export type PartialNotificationChannelPreferencesInput = {
   slack?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** [INTERNAL] Input for a Startup Program partner application submitted from the website. */
+export type PartnerApplicationCreateInput = {
+  /** Number of cohorts run per year (accelerators and programs). */
+  cohortsPerYear?: InputMaybe<Scalars['String']['input']>;
+  /** Number of companies per cohort (accelerators and programs). */
+  companiesPerCohort?: InputMaybe<Scalars['String']['input']>;
+  /** Whether the applicant confirmed the distribution terms. */
+  consent: Scalars['Boolean']['input'];
+  /** One-line description of what the organization does. */
+  description: Scalars['String']['input'];
+  /** Channels the organization will use to distribute the offer. */
+  distributionChannels?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Business email of the applicant. */
+  email: Scalars['String']['input'];
+  /** Full name of the applicant. */
+  fullName: Scalars['String']['input'];
+  /** Stages the firm primarily invests at (venture capital firms). */
+  investmentStages?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Number of active members or startups in the network (communities). */
+  networkSize?: InputMaybe<Scalars['String']['input']>;
+  /** Whether the organization already offers software perks from other companies. */
+  offersSoftwarePerks?: InputMaybe<Scalars['String']['input']>;
+  /** Name of the partner organization. */
+  organizationName: Scalars['String']['input'];
+  /** Type of the partner organization (e.g., venture capital firm, accelerator). */
+  organizationType: Scalars['String']['input'];
+  /** Website of the partner organization. */
+  organizationWebsite: Scalars['String']['input'];
+  /** Which other software perks the organization offers, when applicable. */
+  otherPerks?: InputMaybe<Scalars['String']['input']>;
+  /** Number of active portfolio companies (venture capital firms). */
+  portfolioCompanies?: InputMaybe<Scalars['String']['input']>;
+  /** Primary countries or regions the organization operates in. */
+  region: Scalars['String']['input'];
+  /** The applicant's role or title at the organization. */
+  role: Scalars['String']['input'];
+};
+
+/** [Internal] The kind of benefit a partner offer grants, which determines how its discount value is interpreted. */
+export enum PartnerDiscountType {
+  AmountOff = 'amount_off',
+  FreeSeats = 'free_seats',
+  PercentOff = 'percent_off'
+}
+
+/** The kind of partner program an offer belongs to. */
+export enum PartnerOfferCategory {
+  Accelerator = 'accelerator',
+  Investor = 'investor',
+  StartupCommunity = 'startup_community'
+}
+
+/** [Internal] Why a workspace cannot redeem a partner offer. */
+export enum PartnerOfferIneligibilityReason {
+  AlreadyRedeemed = 'alreadyRedeemed',
+  AlreadySubscribed = 'alreadySubscribed',
+  OtherOfferPending = 'otherOfferPending'
+}
+
+/** Different tabs available inside a release pipeline. */
+export enum PipelineTab {
+  ReleaseNotes = 'releaseNotes',
+  Releases = 'releases'
+}
+
 /** Type of Post */
 export enum PostType {
   Summary = 'summary',
@@ -5050,6 +5706,8 @@ export type PrioritySort = {
   nulls?: InputMaybe<PaginationNulls>;
   /** The order for the individual sort */
   order?: InputMaybe<PaginationSortOrder>;
+  /** Whether to tiebreak issues sharing a priority by their priority sort order */
+  usePrioritySortOrderTiebreaker?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 /** [Internal] The scope of product intelligence suggestion data for a team. */
@@ -5078,6 +5736,8 @@ export type ProjectCollectionFilter = {
   createdAt?: InputMaybe<DateComparator>;
   /** Filters that the projects creator must satisfy. */
   creator?: InputMaybe<UserFilter>;
+  /** [Internal] Comparator for the project's custom identifier. */
+  customIdentifier?: InputMaybe<NullableStringComparator>;
   /** Count of customers */
   customerCount?: InputMaybe<NumberComparator>;
   /** Count of important customers */
@@ -5101,7 +5761,7 @@ export type ProjectCollectionFilter = {
   /** Comparator for the project health (with age): onTrack, atRisk, offTrack, outdated, noUpdate */
   healthWithAge?: InputMaybe<StringComparator>;
   /** Comparator for the identifier. */
-  id?: InputMaybe<IdComparator>;
+  id?: InputMaybe<EntityIdentifierIdComparator>;
   /** Filters that the projects initiatives must satisfy. */
   initiatives?: InputMaybe<InitiativeCollectionFilter>;
   /** Filters that the projects issues must satisfy. */
@@ -5112,6 +5772,8 @@ export type ProjectCollectionFilter = {
   lastAppliedTemplate?: InputMaybe<NullableTemplateFilter>;
   /** Filters that the projects lead must satisfy. */
   lead?: InputMaybe<NullableUserFilter>;
+  /** [ALPHA] Filters that the project's lead team must satisfy. */
+  leadTeam?: InputMaybe<NullableTeamFilter>;
   /** Comparator for the collection length. */
   length?: InputMaybe<NumberComparator>;
   /** Filters that the projects members must satisfy. */
@@ -5124,7 +5786,7 @@ export type ProjectCollectionFilter = {
   nextProjectMilestone?: InputMaybe<ProjectMilestoneFilter>;
   /** Compound filters, one of which need to be matched by the project. */
   or?: InputMaybe<Array<ProjectCollectionFilter>>;
-  /** Comparator for the projects priority. */
+  /** Comparator for the project priority. */
   priority?: InputMaybe<NullableNumberComparator>;
   /** Filters that the project's milestones must satisfy. */
   projectMilestones?: InputMaybe<ProjectMilestoneCollectionFilter>;
@@ -5144,7 +5806,7 @@ export type ProjectCollectionFilter = {
   startedAt?: InputMaybe<NullableDateComparator>;
   /** [DEPRECATED] Comparator for the project state. */
   state?: InputMaybe<StringComparator>;
-  /** Filters that the project's status must satisfy. */
+  /** Filters that the project status must satisfy. */
   status?: InputMaybe<ProjectStatusFilter>;
   /** Comparator for the project target date. */
   targetDate?: InputMaybe<NullableDateComparator>;
@@ -5172,6 +5834,8 @@ export type ProjectCreateInput = {
   lastAppliedTemplateId?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the project lead. */
   leadId?: InputMaybe<Scalars['String']['input']>;
+  /** [Internal] The identifier of the team that leads the project. */
+  leadTeamId?: InputMaybe<Scalars['String']['input']>;
   /** The identifiers of the members of this project. */
   memberIds?: InputMaybe<Array<Scalars['String']['input']>>;
   /** The name of the project. */
@@ -5226,6 +5890,8 @@ export type ProjectFilter = {
   createdAt?: InputMaybe<DateComparator>;
   /** Filters that the projects creator must satisfy. */
   creator?: InputMaybe<UserFilter>;
+  /** [Internal] Comparator for the project's custom identifier. */
+  customIdentifier?: InputMaybe<NullableStringComparator>;
   /** Count of customers */
   customerCount?: InputMaybe<NumberComparator>;
   /** Count of important customers */
@@ -5247,7 +5913,7 @@ export type ProjectFilter = {
   /** Comparator for the project health (with age): onTrack, atRisk, offTrack, outdated, noUpdate */
   healthWithAge?: InputMaybe<StringComparator>;
   /** Comparator for the identifier. */
-  id?: InputMaybe<IdComparator>;
+  id?: InputMaybe<EntityIdentifierIdComparator>;
   /** Filters that the projects initiatives must satisfy. */
   initiatives?: InputMaybe<InitiativeCollectionFilter>;
   /** Filters that the projects issues must satisfy. */
@@ -5258,6 +5924,8 @@ export type ProjectFilter = {
   lastAppliedTemplate?: InputMaybe<NullableTemplateFilter>;
   /** Filters that the projects lead must satisfy. */
   lead?: InputMaybe<NullableUserFilter>;
+  /** [ALPHA] Filters that the project's lead team must satisfy. */
+  leadTeam?: InputMaybe<NullableTeamFilter>;
   /** Filters that the projects members must satisfy. */
   members?: InputMaybe<UserCollectionFilter>;
   /** Comparator for the project name. */
@@ -5268,7 +5936,7 @@ export type ProjectFilter = {
   nextProjectMilestone?: InputMaybe<ProjectMilestoneFilter>;
   /** Compound filters, one of which need to be matched by the project. */
   or?: InputMaybe<Array<ProjectFilter>>;
-  /** Comparator for the projects priority. */
+  /** Comparator for the project priority. */
   priority?: InputMaybe<NullableNumberComparator>;
   /** Filters that the project's milestones must satisfy. */
   projectMilestones?: InputMaybe<ProjectMilestoneCollectionFilter>;
@@ -5286,7 +5954,7 @@ export type ProjectFilter = {
   startedAt?: InputMaybe<NullableDateComparator>;
   /** [DEPRECATED] Comparator for the project state. */
   state?: InputMaybe<StringComparator>;
-  /** Filters that the project's status must satisfy. */
+  /** Filters that the project status must satisfy. */
   status?: InputMaybe<ProjectStatusFilter>;
   /** Comparator for the project target date. */
   targetDate?: InputMaybe<NullableDateComparator>;
@@ -5332,7 +6000,7 @@ export type ProjectLabelCollectionFilter = {
   updatedAt?: InputMaybe<DateComparator>;
 };
 
-/** Input for creating a new project label. A name is required. The label is created as a workspace-level label available to all projects. */
+/** Input for creating a new project label. A name is required. If no team is specified, the label is created as a workspace-level label available to all teams. */
 export type ProjectLabelCreateInput = {
   /** The color of the label. */
   color?: InputMaybe<Scalars['String']['input']>;
@@ -5348,6 +6016,8 @@ export type ProjectLabelCreateInput = {
   parentId?: InputMaybe<Scalars['String']['input']>;
   /** The time at which the label was retired. Set to null to restore a retired label. */
   retiredAt?: InputMaybe<Scalars['DateTime']['input']>;
+  /** [Internal] The team associated with the label. If not given, the label will be associated with the entire workspace. */
+  teamId?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Project label filtering options. */
@@ -5624,6 +6294,8 @@ export type ProjectStatusCreateInput = {
   name: Scalars['String']['input'];
   /** The position of the status in the workspace's project flow. */
   position: Scalars['Float']['input'];
+  /** [Internal] The identifier of the team to scope the status to. If not given, the status is a workspace-level status. */
+  teamId?: InputMaybe<Scalars['String']['input']>;
   /** The type of the project status. */
   type: ProjectStatusType;
 };
@@ -5646,6 +6318,8 @@ export type ProjectStatusFilter = {
   position?: InputMaybe<NumberComparator>;
   /** Filters that the project status projects must satisfy. */
   projects?: InputMaybe<ProjectCollectionFilter>;
+  /** Filters that the project status's team must satisfy. Use `{ null: true }` to filter workspace-level statuses. */
+  team?: InputMaybe<NullableTeamFilter>;
   /** Comparator for the project status type. */
   type?: InputMaybe<StringComparator>;
   /** Comparator for the updated at date. */
@@ -5761,6 +6435,8 @@ export type ProjectUpdateInput = {
   lastAppliedTemplateId?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the project lead. */
   leadId?: InputMaybe<Scalars['String']['input']>;
+  /** [Internal] The identifier of the team that leads the project. */
+  leadTeamId?: InputMaybe<Scalars['String']['input']>;
   /** The identifiers of the members of this project. */
   memberIds?: InputMaybe<Array<Scalars['String']['input']>>;
   /** The name of the project. */
@@ -5819,8 +6495,6 @@ export type ProjectUpdateUpdateInput = {
   bodyData?: InputMaybe<Scalars['JSON']['input']>;
   /** The health of the project at the time of the update. */
   health?: InputMaybe<ProjectUpdateHealthType>;
-  /** Whether the diff between the current update and the previous one should be hidden. */
-  isDiffHidden?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 /** Project update date sorting options. */
@@ -6019,6 +6693,8 @@ export type ReleaseCollectionFilter = {
   createdAt?: InputMaybe<DateComparator>;
   /** Filters that needs to be matched by all releases. */
   every?: InputMaybe<ReleaseFilter>;
+  /** Comparator for whether the release is covered by any (non-archived) release note. Filter with `{ eq: false }` to retrieve releases that do not yet have release notes attached. */
+  hasReleaseNotes?: InputMaybe<BooleanComparator>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
   /** Comparator for the collection length. */
@@ -6041,18 +6717,34 @@ export type ReleaseCollectionFilter = {
 
 /** Input for completing a release in a specific pipeline. */
 export type ReleaseCompleteInput = {
-  /** The commit SHA associated with this completion. If a completed release with this SHA already exists, it will be returned instead of completing a new release. */
+  /** The commit SHA to store when moving a release to completed. With a version, an existing SHA is preserved. Without a version, this SHA replaces the started release's SHA and is used to detect retries. */
   commitSha?: InputMaybe<Scalars['String']['input']>;
+  /** Documents to attach to the completed release. Existing documents with the same title are updated. */
+  documents?: InputMaybe<Array<ReleaseDocumentInput>>;
+  /** External links to attach to the completed release. */
+  links?: InputMaybe<Array<ReleaseLinkInput>>;
+  /** Optional release name to apply when completing the release. */
+  name?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the pipeline to mark a release as completed. */
   pipelineId: Scalars['String']['input'];
+  /** Release notes covering the completed release. */
+  releaseNotes?: InputMaybe<ReleaseNoteInput>;
   /** The version of the release to complete. If not provided, the latest started release will be completed. */
   version?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Base input for completing a release. Contains the optional version and commit SHA. The pipeline ID is provided separately or inferred from the access key. */
 export type ReleaseCompleteInputBase = {
-  /** The commit SHA associated with this completion. If a completed release with this SHA already exists, it will be returned instead of completing a new release. */
+  /** The commit SHA to store when moving a release to completed. With a version, an existing SHA is preserved. Without a version, this SHA replaces the started release's SHA and is used to detect retries. */
   commitSha?: InputMaybe<Scalars['String']['input']>;
+  /** Documents to attach to the completed release. Existing documents with the same title are updated. */
+  documents?: InputMaybe<Array<ReleaseDocumentInput>>;
+  /** External links to attach to the completed release. */
+  links?: InputMaybe<Array<ReleaseLinkInput>>;
+  /** Optional release name to apply when completing the release. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Release notes covering the completed release. */
+  releaseNotes?: InputMaybe<ReleaseNoteInput>;
   /** The version of the release to complete. If not provided, the latest started release will be completed. */
   version?: InputMaybe<Scalars['String']['input']>;
 };
@@ -6089,14 +6781,26 @@ export type ReleaseCreateInput = {
 export type ReleaseDebugSinkInput = {
   /** List of paths applied during commit scanning. */
   includePaths?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Regex used to filter commit subjects during scanning. */
+  includeSubjects?: InputMaybe<Array<Scalars['String']['input']>>;
   /** List of commit SHAs that were inspected. */
   inspectedShas: Array<Scalars['String']['input']>;
+  /** Custom regex used to extract issue identifiers from commit subjects. */
+  issuePattern?: InputMaybe<Scalars['String']['input']>;
   /** Map of issue identifiers to their source information. */
   issues: Scalars['JSONObject']['input'];
   /** Pull request debug information. */
   pullRequests: Array<Scalars['JSONObject']['input']>;
   /** Map of reverted issue identifiers to their source information. */
   revertedIssues?: InputMaybe<Scalars['JSONObject']['input']>;
+};
+
+/** A document to attach to the release. Existing documents on the release with the same title are updated in place. Bad rows (empty title, oversized title/body) are skipped with a warning rather than failing the release command. */
+export type ReleaseDocumentInput = {
+  /** The document body as markdown. */
+  content: Scalars['String']['input'];
+  /** The title of the document. Used to match existing documents on the release for upsert. */
+  title: Scalars['String']['input'];
 };
 
 /** Release filtering options. */
@@ -6107,6 +6811,8 @@ export type ReleaseFilter = {
   completedAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the created at date. */
   createdAt?: InputMaybe<DateComparator>;
+  /** Comparator for whether the release is covered by any (non-archived) release note. Filter with `{ eq: false }` to retrieve releases that do not yet have release notes attached. */
+  hasReleaseNotes?: InputMaybe<BooleanComparator>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
   /** Comparator for the release name. */
@@ -6121,6 +6827,14 @@ export type ReleaseFilter = {
   updatedAt?: InputMaybe<DateComparator>;
   /** Comparator for the release version. */
   version?: InputMaybe<StringComparator>;
+};
+
+/** An external link to attach to the release. */
+export type ReleaseLinkInput = {
+  /** Optional label for the link. If omitted, the API derives one from the URL. */
+  label?: InputMaybe<Scalars['String']['input']>;
+  /** The URL of the link. */
+  url: Scalars['String']['input'];
 };
 
 /** Input for creating a release note. */
@@ -6138,6 +6852,42 @@ export type ReleaseNoteCreateInput = {
   /** Explicit release IDs to include. Mutually exclusive with rangeFromReleaseId/rangeToReleaseId — exactly one of the two shapes must be provided. */
   releaseIds?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Optional user-supplied title. */
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Release note filtering options. */
+export type ReleaseNoteFilter = {
+  /** Compound filters, all of which need to be matched by the release note. */
+  and?: InputMaybe<Array<ReleaseNoteFilter>>;
+  /** Comparator for the created at date. */
+  createdAt?: InputMaybe<DateComparator>;
+  /** Comparator for the identifier. */
+  id?: InputMaybe<IdComparator>;
+  /** Compound filters, one of which need to be matched by the release note. */
+  or?: InputMaybe<Array<ReleaseNoteFilter>>;
+  /** Filters that the release note's pipeline must satisfy. */
+  pipeline?: InputMaybe<ReleasePipelineFilter>;
+  /** Filters that a release covered by the release note must satisfy. */
+  release?: InputMaybe<ReleaseFilter>;
+  /** Comparator for the release note slug ID. */
+  slugId?: InputMaybe<StringComparator>;
+  /** Comparator for the release note title. */
+  title?: InputMaybe<StringComparator>;
+  /** Comparator for the updated at date. */
+  updatedAt?: InputMaybe<DateComparator>;
+};
+
+/** The generation status of a release note's body content. */
+export enum ReleaseNoteGenerationStatus {
+  Completed = 'completed',
+  Pending = 'pending'
+}
+
+/** Release notes to attach to the release. Upserts the existing release notes that cover only this release. Bad input (empty title, oversized title/body) is skipped with a warning rather than failing the release command. */
+export type ReleaseNoteInput = {
+  /** The release notes body as markdown. */
+  content: Scalars['String']['input'];
+  /** Optional title. If omitted, the UI derives one from the release range. */
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -6177,12 +6927,16 @@ export type ReleasePipelineCollectionFilter = {
   some?: InputMaybe<ReleasePipelineFilter>;
   /** Filters that the release pipeline's teams must satisfy. */
   teams?: InputMaybe<TeamCollectionFilter>;
+  /** Comparator for the pipeline type. */
+  type?: InputMaybe<ReleasePipelineTypeComparator>;
   /** Comparator for the updated at date. */
   updatedAt?: InputMaybe<DateComparator>;
 };
 
 /** Input for creating a new release pipeline. */
 export type ReleasePipelineCreateInput = {
+  /** Whether to automatically generate a release note when a release is completed. Defaults to false. */
+  autoGenerateReleaseNotesOnCompletion?: InputMaybe<Scalars['Boolean']['input']>;
   /** The identifier in UUID v4 format. If none is provided, the backend will generate one. */
   id?: InputMaybe<Scalars['String']['input']>;
   /** Glob patterns to include commits affecting matching file paths. */
@@ -6191,6 +6945,8 @@ export type ReleasePipelineCreateInput = {
   isProduction?: InputMaybe<Scalars['Boolean']['input']>;
   /** The name of the pipeline. */
   name: Scalars['String']['input'];
+  /** Whether completing a scheduled release moves its open issues to the next release. Defaults to true. When false, open issues remain on the completed release. */
+  rolloverIssuesOnCompletion?: InputMaybe<Scalars['Boolean']['input']>;
   /** The pipeline's unique slug identifier. If not provided, it will be auto-generated. */
   slugId?: InputMaybe<Scalars['String']['input']>;
   /** The identifiers of the teams this pipeline is associated with. */
@@ -6215,6 +6971,8 @@ export type ReleasePipelineFilter = {
   or?: InputMaybe<Array<ReleasePipelineFilter>>;
   /** Filters that the release pipeline's teams must satisfy. */
   teams?: InputMaybe<TeamCollectionFilter>;
+  /** Comparator for the pipeline type. */
+  type?: InputMaybe<ReleasePipelineTypeComparator>;
   /** Comparator for the updated at date. */
   updatedAt?: InputMaybe<DateComparator>;
 };
@@ -6239,14 +6997,32 @@ export enum ReleasePipelineType {
   Scheduled = 'scheduled'
 }
 
+/** Comparator for release pipeline type. */
+export type ReleasePipelineTypeComparator = {
+  /** Equals constraint. */
+  eq?: InputMaybe<ReleasePipelineType>;
+  /** In-array constraint. */
+  in?: InputMaybe<Array<ReleasePipelineType>>;
+  /** Not-equals constraint. */
+  neq?: InputMaybe<ReleasePipelineType>;
+  /** Not-in-array constraint. */
+  nin?: InputMaybe<Array<ReleasePipelineType>>;
+  /** Null constraint. Matches any non-null values if the given value is false, otherwise it matches null values. */
+  null?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 /** Input for updating an existing release pipeline. */
 export type ReleasePipelineUpdateInput = {
+  /** Whether to automatically generate a release note when a release is completed. */
+  autoGenerateReleaseNotesOnCompletion?: InputMaybe<Scalars['Boolean']['input']>;
   /** Glob patterns to include commits affecting matching file paths. */
   includePathPatterns?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Whether this pipeline targets a production environment. Default to true. */
   isProduction?: InputMaybe<Scalars['Boolean']['input']>;
   /** The name of the pipeline. */
   name?: InputMaybe<Scalars['String']['input']>;
+  /** Whether completing a scheduled release moves its open issues to the next release. When false, open issues remain on the completed release. */
+  rolloverIssuesOnCompletion?: InputMaybe<Scalars['Boolean']['input']>;
   /** The pipeline's unique slug identifier. */
   slugId?: InputMaybe<Scalars['String']['input']>;
   /** The identifiers of the teams this pipeline is associated with. */
@@ -6353,14 +7129,20 @@ export type ReleaseSyncInput = {
   commitSha: Scalars['String']['input'];
   /** Debug information for release creation diagnostics. */
   debugSink?: InputMaybe<ReleaseDebugSinkInput>;
+  /** Documents to attach to the release. Existing documents on the release with the same title are updated. */
+  documents?: InputMaybe<Array<ReleaseDocumentInput>>;
   /** Issue references (e.g. ENG-123) to associate with this release. */
   issueReferences?: InputMaybe<Array<IssueReferenceInput>>;
+  /** External links to attach to the release. */
+  links?: InputMaybe<Array<ReleaseLinkInput>>;
   /** The name of the release. */
   name?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the pipeline this release belongs to. */
   pipelineId: Scalars['String']['input'];
   /** Pull request references to look up. Issues linked to found PRs will be associated with this release. */
   pullRequestReferences?: InputMaybe<Array<PullRequestReferenceInput>>;
+  /** Release notes covering this release. Upserts the existing release notes that cover only this release. */
+  releaseNotes?: InputMaybe<ReleaseNoteInput>;
   /** Information about the source repository. */
   repository?: InputMaybe<RepositoryDataInput>;
   /** Issue references that were reverted and should be removed from the release. */
@@ -6375,12 +7157,18 @@ export type ReleaseSyncInputBase = {
   commitSha: Scalars['String']['input'];
   /** Debug information for release creation diagnostics. */
   debugSink?: InputMaybe<ReleaseDebugSinkInput>;
+  /** Documents to attach to the release. Existing documents on the release with the same title are updated. */
+  documents?: InputMaybe<Array<ReleaseDocumentInput>>;
   /** Issue references (e.g. ENG-123) to associate with this release. */
   issueReferences?: InputMaybe<Array<IssueReferenceInput>>;
+  /** External links to attach to the release. */
+  links?: InputMaybe<Array<ReleaseLinkInput>>;
   /** The name of the release. */
   name?: InputMaybe<Scalars['String']['input']>;
   /** Pull request references to look up. Issues linked to found PRs will be associated with this release. */
   pullRequestReferences?: InputMaybe<Array<PullRequestReferenceInput>>;
+  /** Release notes covering this release. Upserts the existing release notes that cover only this release. */
+  releaseNotes?: InputMaybe<ReleaseNoteInput>;
   /** Information about the source repository. */
   repository?: InputMaybe<RepositoryDataInput>;
   /** Issue references that were reverted and should be removed from the release. */
@@ -6391,8 +7179,16 @@ export type ReleaseSyncInputBase = {
 
 /** Input for updating a release by pipeline identifier. Extends the base update input with the target pipeline identifier. */
 export type ReleaseUpdateByPipelineInput = {
+  /** Documents to attach to the updated release. Existing documents with the same title are updated. */
+  documents?: InputMaybe<Array<ReleaseDocumentInput>>;
+  /** External links to attach to the updated release. */
+  links?: InputMaybe<Array<ReleaseLinkInput>>;
+  /** Optional release name to apply when updating the release. */
+  name?: InputMaybe<Scalars['String']['input']>;
   /** The identifier of the pipeline. */
   pipelineId: Scalars['String']['input'];
+  /** Release notes covering the updated release. */
+  releaseNotes?: InputMaybe<ReleaseNoteInput>;
   /** The stage name to set. First tries exact match, then falls back to case-insensitive matching with dashes/underscores treated as spaces. */
   stage?: InputMaybe<Scalars['String']['input']>;
   /** The version of the release to update. If not provided, the latest started or latest planned release will be updated. */
@@ -6401,6 +7197,14 @@ export type ReleaseUpdateByPipelineInput = {
 
 /** Base input for updating a release by pipeline. Contains optional version and stage name. The pipeline ID is provided separately or inferred from the access key. */
 export type ReleaseUpdateByPipelineInputBase = {
+  /** Documents to attach to the updated release. Existing documents with the same title are updated. */
+  documents?: InputMaybe<Array<ReleaseDocumentInput>>;
+  /** External links to attach to the updated release. */
+  links?: InputMaybe<Array<ReleaseLinkInput>>;
+  /** Optional release name to apply when updating the release. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Release notes covering the updated release. */
+  releaseNotes?: InputMaybe<ReleaseNoteInput>;
   /** The stage name to set. First tries exact match, then falls back to case-insensitive matching with dashes/underscores treated as spaces. */
   stage?: InputMaybe<Scalars['String']['input']>;
   /** The version of the release to update. If not provided, the latest started or latest planned release will be updated. */
@@ -6417,8 +7221,6 @@ export type ReleaseUpdateInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   /** The name of the release. */
   name?: InputMaybe<Scalars['String']['input']>;
-  /** The identifier of the pipeline this release belongs to. */
-  pipelineId?: InputMaybe<Scalars['String']['input']>;
   /** The current stage of the release. */
   stageId?: InputMaybe<Scalars['String']['input']>;
   /** The estimated start date of the release. */
@@ -6427,7 +7229,7 @@ export type ReleaseUpdateInput = {
   startedAt?: InputMaybe<Scalars['DateTime']['input']>;
   /** The estimated completion date of the release. */
   targetDate?: InputMaybe<Scalars['TimelessDate']['input']>;
-  /** Whether the release has been trashed. */
+  /** Whether the release has been trashed. Set to true to trash, or null to restore. */
   trashed?: InputMaybe<Scalars['Boolean']['input']>;
   /** The version of the release. */
   version?: InputMaybe<Scalars['String']['input']>;
@@ -6439,7 +7241,7 @@ export type RepositoryDataInput = {
   name: Scalars['String']['input'];
   /** The owner of the repository (e.g., organization or user name). */
   owner: Scalars['String']['input'];
-  /** The VCS provider hosting the repository (e.g., 'github', 'gitlab'). */
+  /** The VCS provider hosting the repository (e.g., 'github', 'gitlab', 'bitbucket'). */
   provider: Scalars['String']['input'];
   /** The base URL of the repository on the hosting provider (e.g., 'https://github.com/linear/linear-app'). */
   url: Scalars['String']['input'];
@@ -6734,10 +7536,14 @@ export type SlackChannelNameMappingInput = {
   name: Scalars['String']['input'];
   /** Whether or not synced Slack threads should be updated with a message when their Ask is accepted from triage. */
   postAcceptedFromTriageUpdates?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether or not synced Slack threads should be updated with a message when their Ask has an updated assignee. */
+  postAssignmentUpdates?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether or not synced Slack threads should be updated with a message and emoji when their Ask is canceled. */
   postCancellationUpdates?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether or not synced Slack threads should be updated with a message and emoji when their Ask is completed. */
   postCompletionUpdates?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether or not synced Slack threads should be updated with a message when their Ask's SLA is at risk or breached. */
+  postSlaUpdates?: InputMaybe<Scalars['Boolean']['input']>;
   /** Which teams are connected to the channel and settings for those teams. */
   teams: Array<SlackAsksTeamSettingsInput>;
 };
@@ -6764,12 +7570,16 @@ export type SlackPostSettingsInput = {
 };
 
 export type SlackSettingsInput = {
+  /** Whether Linear Agent may respond in private channels for this Slack integration. */
+  allowAgentInPrivateChannels?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether Linear Agent should be enabled for this Slack integration. */
   enableAgent?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether Code Intelligence should be enabled for this Slack integration. */
   enableCodeIntelligence?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether Linear Agent should be given Org-wide access within Slack workflows. */
   enableLinearAgentWorkflowAccess?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether Loops may read and send messages through this Slack integration. */
+  enableLoops?: InputMaybe<Scalars['Boolean']['input']>;
   /** Enterprise id of the connected Slack enterprise */
   enterpriseId?: InputMaybe<Scalars['String']['input']>;
   /** Enterprise name of the connected Slack enterprise */
@@ -6782,6 +7592,8 @@ export type SlackSettingsInput = {
   shouldUnfurl?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether to show unfurls in the default style instead of Work Objects in Slack */
   shouldUseDefaultUnfurl?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether Linear Agent should automatically sync threads in private channels for this Slack integration. */
+  syncAgentThreadsInPrivateChannels?: InputMaybe<Scalars['Boolean']['input']>;
   /** Slack workspace id */
   teamId?: InputMaybe<Scalars['String']['input']>;
   /** Slack workspace name */
@@ -6796,6 +7608,8 @@ export type SourceMetadataComparator = {
   salesforceMetadata?: InputMaybe<SalesforceMetadataIntegrationComparator>;
   /** Comparator for the sub type. */
   subType?: InputMaybe<SubTypeComparator>;
+  /** Comparator for the workflow definition that created the issue. */
+  workflowDefinitionId?: InputMaybe<WorkflowDefinitionIdComparator>;
 };
 
 /** Comparator for `sourceType` field. */
@@ -7020,10 +7834,14 @@ export type TeamCreateInput = {
   inheritIssueEstimation?: InputMaybe<Scalars['Boolean']['input']>;
   /** [Internal] Whether the team should inherit its product intelligence scope from its parent. Only applies to sub-teams. */
   inheritProductIntelligenceScope?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [Internal] Whether the team should inherit project statuses from its parent team, or from the workspace when it has no parent. */
+  inheritProjectStatuses?: InputMaybe<Scalars['Boolean']['input']>;
   /** [Internal] Whether the team should inherit its Slack auto-create project channel setting from its parent. Only applies to sub-teams. */
   inheritSlackAutoCreateProjectChannel?: InputMaybe<Scalars['Boolean']['input']>;
   /** [Internal] Whether the team should inherit workflow statuses from its parent. */
   inheritWorkflowStatuses?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether initiatives are shown in the team's sidebar. */
+  initiativesEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether to allow zeros in issues estimates. */
   issueEstimationAllowZero?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether to add additional points to the estimate scale. */
@@ -7034,8 +7852,6 @@ export type TeamCreateInput = {
   issueSharingEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** The key of the team. If not given, the key will be generated based on the name of the team. */
   key?: InputMaybe<Scalars['String']['input']>;
-  /** The workflow state into which issues are moved when they are marked as a duplicate of another issue. */
-  markedAsDuplicateWorkflowStateId?: InputMaybe<Scalars['String']['input']>;
   /** The name of the team. */
   name: Scalars['String']['input'];
   /** The parent team ID. */
@@ -7070,24 +7886,34 @@ export type TeamFilter = {
   description?: InputMaybe<NullableStringComparator>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
-  /** Filters that the teams issues must satisfy. */
+  /** Filters that the team's issues must satisfy. */
   issues?: InputMaybe<IssueCollectionFilter>;
   /** Comparator for the team key. */
   key?: InputMaybe<StringComparator>;
+  /** Filters that the team's members must satisfy. */
+  members?: InputMaybe<UserCollectionFilter>;
   /** Comparator for the team name. */
   name?: InputMaybe<StringComparator>;
   /** Compound filters, one of which need to be matched by the team. */
   or?: InputMaybe<Array<TeamFilter>>;
-  /** Filters that the teams parent must satisfy. */
+  /** Filters that the team's owners must satisfy. */
+  owners?: InputMaybe<UserCollectionFilter>;
+  /** Filters that the team's parent must satisfy. */
   parent?: InputMaybe<NullableTeamFilter>;
-  /** Comparator for the team privacy. */
+  /** [DEPRECATED] Comparator for the team privacy. */
   private?: InputMaybe<BooleanComparator>;
   /** Filters that the team's release pipelines must satisfy. */
   releasePipelines?: InputMaybe<ReleasePipelineCollectionFilter>;
+  /** [Internal] Filters that the private team forming this team's visibility boundary must satisfy. Only relevant for non-public teams. */
+  restrictedBy?: InputMaybe<NullableTeamFilter>;
   /** Comparator for the time at which the team was retired. */
   retiredAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the updated at date. */
   updatedAt?: InputMaybe<DateComparator>;
+  /** [Internal] Filters that the team's members must satisfy. Alias of `members` matching the filter shape produced by the app; prefer `members`. */
+  users?: InputMaybe<UserCollectionFilter>;
+  /** Comparator for the team visibility. */
+  visibility?: InputMaybe<TeamVisibilityComparator>;
 };
 
 /** Input for creating a new team membership. */
@@ -7125,6 +7951,10 @@ export enum TeamRoleType {
 }
 
 export type TeamSecuritySettingsInput = {
+  /** The minimum team role required to manage agent skills in the team. */
+  agentSkillsManagement?: InputMaybe<TeamRoleType>;
+  /** The minimum team role required to manage loops in the team. */
+  automationManagement?: InputMaybe<TeamRoleType>;
   /** The minimum team role required to share issues with non-team-members. */
   issueSharing?: InputMaybe<TeamRoleType>;
   /** The minimum team role required to manage labels in the team. */
@@ -7202,10 +8032,14 @@ export type TeamUpdateInput = {
   inheritIssueEstimation?: InputMaybe<Scalars['Boolean']['input']>;
   /** [Internal] Whether the team should inherit its product intelligence scope from its parent. Only applies to sub-teams. */
   inheritProductIntelligenceScope?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [Internal] Whether the team should inherit project statuses from its parent team, or from the workspace when it has no parent. */
+  inheritProjectStatuses?: InputMaybe<Scalars['Boolean']['input']>;
   /** [Internal] Whether the team should inherit its Slack auto-create project channel setting from its parent. Only applies to sub-teams. */
   inheritSlackAutoCreateProjectChannel?: InputMaybe<Scalars['Boolean']['input']>;
   /** [Internal] Whether the team should inherit workflow statuses from its parent. */
   inheritWorkflowStatuses?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether initiatives are shown in the team's sidebar. */
+  initiativesEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether to allow zeros in issues estimates. */
   issueEstimationAllowZero?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether to add additional points to the estimate scale. */
@@ -7218,8 +8052,6 @@ export type TeamUpdateInput = {
   joinByDefault?: InputMaybe<Scalars['Boolean']['input']>;
   /** The key of the team. */
   key?: InputMaybe<Scalars['String']['input']>;
-  /** The workflow state into which issues are moved when they are marked as a duplicate of another issue. */
-  markedAsDuplicateWorkflowStateId?: InputMaybe<Scalars['String']['input']>;
   /** The name of the team. */
   name?: InputMaybe<Scalars['String']['input']>;
   /** The parent team ID. */
@@ -7256,6 +8088,25 @@ export type TeamUpdateInput = {
   upcomingCycleCount?: InputMaybe<Scalars['Float']['input']>;
 };
 
+/** The visibility of a team. A team can be public, private, or restricted within an enclosing private-team boundary. */
+export enum TeamVisibility {
+  Private = 'private',
+  Public = 'public',
+  Restricted = 'restricted'
+}
+
+/** Comparator for team visibility. */
+export type TeamVisibilityComparator = {
+  /** Equals constraint. */
+  eq?: InputMaybe<TeamVisibility>;
+  /** In-array constraint. */
+  in?: InputMaybe<Array<TeamVisibility>>;
+  /** Not-equals constraint. */
+  neq?: InputMaybe<TeamVisibility>;
+  /** Not-in-array constraint. */
+  nin?: InputMaybe<Array<TeamVisibility>>;
+};
+
 /** Input for creating a new template. A name, type, and template data are required. If no team is specified, the template is shared across the workspace. */
 export type TemplateCreateInput = {
   /** The color of the template icon. */
@@ -7278,6 +8129,28 @@ export type TemplateCreateInput = {
   templateData: Scalars['JSON']['input'];
   /** The template type, e.g. 'issue', 'project', or 'document'. */
   type: Scalars['String']['input'];
+};
+
+/** Template filtering options. */
+export type TemplateFilter = {
+  /** Compound filters, all of which need to be matched by the template. */
+  and?: InputMaybe<Array<TemplateFilter>>;
+  /** Comparator for the created at date. */
+  createdAt?: InputMaybe<DateComparator>;
+  /** Comparator for the identifier. */
+  id?: InputMaybe<IdComparator>;
+  /** Comparator for the inherited template's ID. */
+  inheritedFromId?: InputMaybe<IdComparator>;
+  /** Comparator for the template's name. */
+  name?: InputMaybe<StringComparator>;
+  /** Compound filters, one of which need to be matched by the template. */
+  or?: InputMaybe<Array<TemplateFilter>>;
+  /** Filters that the template's team must satisfy. */
+  team?: InputMaybe<NullableTeamFilter>;
+  /** Comparator for the template's type. */
+  type?: InputMaybe<StringComparator>;
+  /** Comparator for the updated at date. */
+  updatedAt?: InputMaybe<DateComparator>;
 };
 
 /** Input for updating an existing template. All fields are optional; only provided fields will be updated. */
@@ -7314,8 +8187,15 @@ export type TimeInStatusSort = {
   order?: InputMaybe<PaginationSortOrder>;
 };
 
+export type TimeScheduleConfigInput = {
+  /** Record of the next on-call shift keyed by Linear user id, e.g. `{ "<linearUserId>": { "startsAt": "X", "endsAt": "Y" } }`. */
+  nextShiftByUserId: Scalars['JSONObject']['input'];
+};
+
 /** Input for creating a new time schedule. */
 export type TimeScheduleCreateInput = {
+  /** [ALPHA] The schedule configuration. */
+  config?: InputMaybe<TimeScheduleConfigInput>;
   /** The schedule entries. */
   entries: Array<TimeScheduleEntryInput>;
   /** The unique identifier of the external schedule. */
@@ -7341,6 +8221,8 @@ export type TimeScheduleEntryInput = {
 
 /** Input for updating an existing time schedule. */
 export type TimeScheduleUpdateInput = {
+  /** [ALPHA] The schedule configuration. Pass null to clear it. */
+  config?: InputMaybe<TimeScheduleConfigInput>;
   /** The schedule entries. */
   entries?: InputMaybe<Array<TimeScheduleEntryInput>>;
   /** The unique identifier of the external schedule. */
@@ -7424,6 +8306,44 @@ export type UpdatedAtSort = {
   nulls?: InputMaybe<PaginationNulls>;
   /** The order for the individual sort */
   order?: InputMaybe<PaginationSortOrder>;
+};
+
+/** Usage alert filtering options. */
+export type UsageAlertFilter = {
+  /** Compound filters, all of which need to be matched by the alert. */
+  and?: InputMaybe<Array<UsageAlertFilter>>;
+  /** Comparator for the created at date. */
+  createdAt?: InputMaybe<DateComparator>;
+  /** Comparator for the identifier. */
+  id?: InputMaybe<IdComparator>;
+  /** Compound filters, one of which need to be matched by the alert. */
+  or?: InputMaybe<Array<UsageAlertFilter>>;
+  /** Comparator for the condition the alert was triggered by. */
+  type?: InputMaybe<UsageAlertTypeComparator>;
+  /** Comparator for the updated at date. */
+  updatedAt?: InputMaybe<DateComparator>;
+};
+
+/** The condition a usage alert was triggered by. */
+export enum UsageAlertType {
+  /** Usage credits ran out. */
+  Exhausted = 'exhausted',
+  /** A promotional usage credit grant is nearing its expiration. */
+  ExpiringPromoCredit = 'expiringPromoCredit',
+  /** Prepaid usage credits crossed below the low-balance threshold. */
+  LowBalance = 'lowBalance'
+}
+
+/** Comparator for the condition a usage alert was triggered by. */
+export type UsageAlertTypeComparator = {
+  /** Equals constraint. */
+  eq?: InputMaybe<UsageAlertType>;
+  /** In-array constraint. */
+  in?: InputMaybe<Array<UsageAlertType>>;
+  /** Not-equals constraint. */
+  neq?: InputMaybe<UsageAlertType>;
+  /** Not-in-array constraint. */
+  nin?: InputMaybe<Array<UsageAlertType>>;
 };
 
 /** User filtering options. */
@@ -7521,6 +8441,9 @@ export enum UserFlagType {
   AgentExamplesDismissed = 'agentExamplesDismissed',
   AgentHomeHeadlineSeen = 'agentHomeHeadlineSeen',
   AgentHomePageNotice = 'agentHomePageNotice',
+  AgentLoopsPromoShown = 'agentLoopsPromoShown',
+  AgentSharedSkillsPromoDismissed = 'agentSharedSkillsPromoDismissed',
+  AgentSharedSkillsSplashAnimationSeen = 'agentSharedSkillsSplashAnimationSeen',
   All = 'all',
   AnalyticsWelcomeDismissed = 'analyticsWelcomeDismissed',
   CanPlaySnake = 'canPlaySnake',
@@ -7549,6 +8472,7 @@ export enum UserFlagType {
   IssueMovePromptCompleted = 'issueMovePromptCompleted',
   JoinTeamIntroductionDismissed = 'joinTeamIntroductionDismissed',
   ListSelectionTip = 'listSelectionTip',
+  LoopEditRestrictionSpeedbumpShown = 'loopEditRestrictionSpeedbumpShown',
   MigrateThemePreference = 'migrateThemePreference',
   MilestoneOnboardingIsSeenAndDismissed = 'milestoneOnboardingIsSeenAndDismissed',
   ProjectBacklogWelcomeDismissed = 'projectBacklogWelcomeDismissed',
@@ -7556,10 +8480,13 @@ export enum UserFlagType {
   ProjectUpdatesWelcomeDismissed = 'projectUpdatesWelcomeDismissed',
   ProjectWelcomeDismissed = 'projectWelcomeDismissed',
   PulseWelcomeDismissed = 'pulseWelcomeDismissed',
+  ReviewsPromptToConnectGithubDismissed = 'reviewsPromptToConnectGithubDismissed',
   RewindBannerDismissed = 'rewindBannerDismissed',
   SlackAgentPromoFromCreateNewIssueShown = 'slackAgentPromoFromCreateNewIssueShown',
   SlackBotWelcomeMessageShown = 'slackBotWelcomeMessageShown',
   SlackCommentReactionTipShown = 'slackCommentReactionTipShown',
+  SlackProjectChannelsPromoDismissed = 'slackProjectChannelsPromoDismissed',
+  SlackProjectChannelsPromoShown = 'slackProjectChannelsPromoShown',
   TeamsBotWelcomeMessageShown = 'teamsBotWelcomeMessageShown',
   TeamsPageIntroductionDismissed = 'teamsPageIntroductionDismissed',
   ThreadedCommentsNudgeIsSeen = 'threadedCommentsNudgeIsSeen',
@@ -7627,13 +8554,17 @@ export type UserSettingsUpdateInput = {
   feedLastSeenTime?: InputMaybe<Scalars['DateTime']['input']>;
   /** [Internal] How often to generate a feed summary. */
   feedSummarySchedule?: InputMaybe<FeedSummarySchedule>;
+  /** [Internal] Which Inbox notifications contribute to Inbox badges. 'all' includes all unread notifications; 'priority' includes only Priority Inbox notifications; 'none' hides the count. */
+  inboxBadgeScope?: InputMaybe<InboxBadgeScope>;
   /** The user's notification category preferences. */
   notificationCategoryPreferences?: InputMaybe<NotificationCategoryPreferencesInput>;
   /** The user's notification channel preferences. */
   notificationChannelPreferences?: InputMaybe<PartialNotificationChannelPreferencesInput>;
   /** The user's notification delivery preferences. */
   notificationDeliveryPreferences?: InputMaybe<NotificationDeliveryPreferencesInput>;
-  /** The user's settings. */
+  /** [Internal] Whether the Priority Inbox is enabled for the user. */
+  priorityInboxEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The user's settings. Merged key by key into the existing settings: keys missing from the object are left unchanged, and a key set to null is removed. */
   settings?: InputMaybe<Scalars['JSONObject']['input']>;
   /** Whether this user is subscribed to changelog email or not. */
   subscribedToChangelog?: InputMaybe<Scalars['Boolean']['input']>;
@@ -7687,6 +8618,8 @@ export type ViewPreferencesCreateInput = {
   id?: InputMaybe<Scalars['String']['input']>;
   /** [Internal] The initiative these view preferences are associated with. */
   initiativeId?: InputMaybe<Scalars['String']['input']>;
+  /** The initiative label these view preferences are associated with. */
+  initiativeLabelId?: InputMaybe<Scalars['String']['input']>;
   /** The default parameters for the insight on that view. */
   insights?: InputMaybe<Scalars['JSONObject']['input']>;
   /** The label these view preferences are associated with. */
@@ -7729,6 +8662,8 @@ export enum ViewType {
   Agents = 'agents',
   AllIssues = 'allIssues',
   Archive = 'archive',
+  AutomationRunHistory = 'automationRunHistory',
+  Automations = 'automations',
   Backlog = 'backlog',
   Board = 'board',
   CompletedCycle = 'completedCycle',
@@ -7745,14 +8680,21 @@ export enum ViewType {
   FeedCreated = 'feedCreated',
   FeedFollowing = 'feedFollowing',
   FeedPopular = 'feedPopular',
+  /** @deprecated No longer available */
   Focus = 'focus',
   Inbox = 'inbox',
+  InboxOther = 'inboxOther',
+  InboxPriority = 'inboxPriority',
   Initiative = 'initiative',
+  InitiativeLabel = 'initiativeLabel',
   InitiativeOverview = 'initiativeOverview',
   InitiativeOverviewSubInitiatives = 'initiativeOverviewSubInitiatives',
   Initiatives = 'initiatives',
+  InitiativesAll = 'initiativesAll',
+  InitiativesCanceled = 'initiativesCanceled',
   InitiativesCompleted = 'initiativesCompleted',
   InitiativesPlanned = 'initiativesPlanned',
+  InitiativesProposed = 'initiativesProposed',
   IssueIdentifiers = 'issueIdentifiers',
   Label = 'label',
   MyIssues = 'myIssues',
@@ -7810,6 +8752,32 @@ export type WebhookCreateInput = {
   url: Scalars['String']['input'];
 };
 
+/** A webhook event stream resource type that an OAuth application can subscribe to. */
+export enum WebhookResourceType {
+  AgentSessionEvent = 'AgentSessionEvent',
+  AppUserNotification = 'AppUserNotification',
+  Attachment = 'Attachment',
+  Comment = 'Comment',
+  Customer = 'Customer',
+  CustomerNeed = 'CustomerNeed',
+  Cycle = 'Cycle',
+  Document = 'Document',
+  Initiative = 'Initiative',
+  InitiativeUpdate = 'InitiativeUpdate',
+  Issue = 'Issue',
+  IssueLabel = 'IssueLabel',
+  IssueSla = 'IssueSLA',
+  OAuthAuthorization = 'OAuthAuthorization',
+  PermissionChange = 'PermissionChange',
+  Project = 'Project',
+  ProjectLabel = 'ProjectLabel',
+  ProjectUpdate = 'ProjectUpdate',
+  Reaction = 'Reaction',
+  Release = 'Release',
+  ReleaseNote = 'ReleaseNote',
+  User = 'User'
+}
+
 /** Input for updating an existing webhook. */
 export type WebhookUpdateInput = {
   /** Whether this webhook is enabled. */
@@ -7822,6 +8790,33 @@ export type WebhookUpdateInput = {
   secret?: InputMaybe<Scalars['String']['input']>;
   /** The URL that will be called on data changes. */
   url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum WorkflowActivationMode {
+  AnyUpdate = 'anyUpdate',
+  ConditionsStartedMatching = 'conditionsStartedMatching',
+  WatchedPropertyChanged = 'watchedPropertyChanged'
+}
+
+export enum WorkflowDefinitionEditAccess {
+  Everyone = 'everyone',
+  Owner = 'owner',
+  TeamOwners = 'teamOwners',
+  WorkspaceAdmins = 'workspaceAdmins'
+}
+
+/** Comparator for the workflow definition that created an issue. */
+export type WorkflowDefinitionIdComparator = {
+  /** Equals constraint. */
+  eq?: InputMaybe<Scalars['ID']['input']>;
+  /** In-array constraint. */
+  in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Not-equals constraint. */
+  neq?: InputMaybe<Scalars['ID']['input']>;
+  /** Not-in-array constraint. */
+  nin?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Null constraint. Matches any non-null values if the given value is false, otherwise it matches null values. */
+  null?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 /** Input for creating a new workflow state (issue status) in a team. The name, type, color, and team are required. */
@@ -7891,6 +8886,8 @@ export type WorkflowStateUpdateInput = {
 };
 
 export enum WorkflowTrigger {
+  CycleEnded = 'cycleEnded',
+  CycleStarted = 'cycleStarted',
   EntityCreated = 'entityCreated',
   EntityCreatedOrUpdated = 'entityCreatedOrUpdated',
   EntityRemoved = 'entityRemoved',
@@ -7899,10 +8896,14 @@ export enum WorkflowTrigger {
 }
 
 export enum WorkflowTriggerType {
+  Cycle = 'cycle',
+  Document = 'document',
+  Initiative = 'initiative',
   Issue = 'issue',
   Project = 'project',
   Release = 'release',
-  Schedule = 'schedule'
+  Schedule = 'schedule',
+  Team = 'team'
 }
 
 export enum WorkflowType {
@@ -7925,14 +8926,20 @@ export type ZendeskSettingsInput = {
   automateTicketReopeningOnProjectCancellation?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether a ticket should be automatically reopened when its linked Linear project is completed. */
   automateTicketReopeningOnProjectCompletion?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [INTERNAL] Whether API requests authenticate with a user-provided bearer token instead of a Zendesk OAuth token. Only used together with `customApiUrl`. */
+  bearerTokenAuth?: InputMaybe<Scalars['Boolean']['input']>;
   /** The ID of the Linear bot user. */
   botUserId?: InputMaybe<Scalars['String']['input']>;
   /** [INTERNAL] Temporary flag indicating if the integration has the necessary scopes for Customers */
   canReadCustomers?: InputMaybe<Scalars['Boolean']['input']>;
+  /** [INTERNAL] Custom base URL for Zendesk API requests, such as a proxy in front of Zendesk. When unset, API requests use the standard subdomain URL. OAuth requests always use the standard subdomain URL. */
+  customApiUrl?: InputMaybe<Scalars['String']['input']>;
   /** [ALPHA] Whether customer and customer requests should not be automatically created when conversations are linked to a Linear issue. */
   disableCustomerRequestsAutoCreation?: InputMaybe<Scalars['Boolean']['input']>;
   /** Whether Linear Agent should be enabled for this integration. */
   enableAiIntake?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether Linear Agent should process supported attachments from Zendesk tickets during AI intake. When false, attachments are omitted from the prompt. */
+  enableAiIntakeAttachmentProcessing?: InputMaybe<Scalars['Boolean']['input']>;
   /** The host mappings from Zendesk brands. */
   hostMappings?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Whether an internal message should be added when someone comments on an issue. */
@@ -7943,7 +8950,7 @@ export type ZendeskSettingsInput = {
   subdomain: Scalars['String']['input'];
   /** [INTERNAL] Flag indicating if the integration supports OAuth refresh tokens */
   supportsOAuthRefresh?: InputMaybe<Scalars['Boolean']['input']>;
-  /** The URL of the connected Zendesk organization. */
+  /** The URL of the connected Zendesk organization, used to link into Zendesk. API requests use `customApiUrl` when it is set. */
   url: Scalars['String']['input'];
 };
 

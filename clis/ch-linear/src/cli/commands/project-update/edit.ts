@@ -43,7 +43,6 @@ export default class ProjectUpdateEdit extends BaseCommand<
 
   static examples = [
     '<%= config.bin %> <%= command.id %> 123e… --health atRisk --body -',
-    '<%= config.bin %> <%= command.id %> 123e… --health offTrack --hide-diff --json',
   ];
 
   static args = {
@@ -61,10 +60,6 @@ export default class ProjectUpdateEdit extends BaseCommand<
     health: Flags.string({
       description:
         'New health: onTrack | atRisk | offTrack (aliases supported)',
-    }),
-    'hide-diff': Flags.boolean({
-      description: 'Hide the diff section for this update (isDiffHidden=true)',
-      allowNo: true,
     }),
   } as const;
 
@@ -100,10 +95,6 @@ export default class ProjectUpdateEdit extends BaseCommand<
 
       if (flags.health !== undefined) {
         input.health = normalizeUpdateHealth(flags.health);
-      }
-
-      if (flags['hide-diff'] !== undefined) {
-        input.isDiffHidden = flags['hide-diff'];
       }
 
       if (Object.keys(input).length === 0) {
