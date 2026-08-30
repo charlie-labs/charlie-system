@@ -1,0 +1,14 @@
+# Fetch issue by human-readable identifier (e.g. "BOT-1234")
+# Uses the searchIssues endpoint and returns the first match’s id + identifier.
+query GetIssueByIdentifier($identifier: String!, $first: Int = 2) {
+  searchIssues(term: $identifier, first: $first) {
+    nodes {
+      id
+      identifier
+      createdAt
+      updatedAt
+      completedAt
+      canceledAt
+    }
+  }
+}

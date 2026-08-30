@@ -1,0 +1,101 @@
+{
+  "name": "@charlie-labs/ch-linear",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/lib/index.ts",
+  "types": "src/lib/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/lib/index.ts",
+      "import": "./src/lib/index.ts"
+    }
+  },
+  "bin": {
+    "ch-linear": "./bin/run.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "codegen": "graphql-codegen --config codegen.yml",
+    "codegen:verify": "bun run scripts/verify-codegen.ts",
+    "examples:verify": "bun run scripts/verify-examples.ts",
+    "integration-test": "LINEAR_RUN_INTEGRATION=1 bun test src/cli/commands/api/__tests__/graphql.integration.test.ts",
+    "start": "bun run ./bin/run.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@charlie-labs/format-for": "workspace:*",
+    "@charlie-labs/oclif-plugin-helpers-zod3": "workspace:*",
+    "@oclif/core": "^4.10.6",
+    "@oclif/plugin-help": "^6.2.25",
+    "@oclif/plugin-not-found": "^3",
+    "@oclif/plugin-plugins": "^5",
+    "graphql-request": "^6",
+    "zod3": "npm:zod@^3.25.76"
+  },
+  "devDependencies": {
+    "@graphql-codegen/add": "^5.0.3",
+    "@graphql-codegen/cli": "^5.0.5",
+    "@graphql-codegen/typescript": "^4.1.6",
+    "@graphql-codegen/typescript-graphql-request": "^6.2.0",
+    "@graphql-codegen/typescript-operations": "^4.6.0",
+    "@types/bun": "^1.3.14",
+    "graphql": "^16"
+  },
+  "oclif": {
+    "bin": "ch-linear",
+    "dirname": "ch-linear",
+    "commands": {
+      "strategy": "pattern",
+      "target": "./src/cli/commands",
+      "globPatterns": [
+        "**/*.+(js|cjs|mjs|ts|tsx|mts|cts)",
+        "!**/*.+(d.ts|test.ts|test.js|spec.ts|spec.js|d.mts|d.cts)?(x)",
+        "!**/__tests__/**"
+      ]
+    },
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins",
+      "@oclif/plugin-not-found"
+    ],
+    "additionalHelpFlags": [
+      "-h"
+    ],
+    "topicSeparator": " ",
+    "description": "ch-linear is a command-line interface (CLI) for interacting with the Linear GraphQL API from your terminal.\n\nREQUIREMENTS\n  The CLI expects the following environment variable to be set:\n    • LINEAR_API_KEY – a personal API key obtained from Linear › Settings › API\n\nGLOBAL FLAGS\n  --json     Output raw JSON instead of a formatted table\n  --limit    Limit the number of records fetched/displayed (when supported)\n  --help     Show usage information for any command\n",
+    "examples": [
+      "# List all projects in the workspace\nch-linear project list",
+      "# View a single issue by its ID with recent comments\nch-linear issue view LIN-1234 --comments",
+      "# Create a new issue non-interactively\nch-linear issue create --team ENG --title \"Bug: crash on save\" --priority 2",
+      "# Update an existing issue non-interactively\nch-linear issue edit LIN-1234 --state \"In Progress\" --title \"Refactor auth module\"",
+      "# Search issues assigned to alice\nch-linear issue search --assignee alice --limit 10",
+      "# List all labels in the workspace (raw JSON)\nch-linear label list --json",
+      "# List all workflow states (raw JSON)\nch-linear state list --json",
+      "# List all teams with pagination limit\nch-linear team list --limit 50",
+      "# List all users (raw JSON)\nch-linear user list --json",
+      "# List projects and output raw JSON\nch-linear project list --json"
+    ],
+    "topics": {
+      "issue": {
+        "description": "Create, view, edit, and search Linear issues"
+      },
+      "project": {
+        "description": "List and inspect Linear projects"
+      },
+      "label": {
+        "description": "List Linear labels and their metadata"
+      },
+      "state": {
+        "description": "List workflow states for issues"
+      },
+      "team": {
+        "description": "List and inspect Linear teams"
+      },
+      "user": {
+        "description": "List and inspect Linear users"
+      }
+    }
+  }
+}

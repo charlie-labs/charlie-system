@@ -1,0 +1,25 @@
+mutation CreateIssue($input: IssueCreateInput!) {
+  issueCreate(input: $input) {
+    success
+    lastSyncId
+    issue {
+      id
+      identifier
+      title
+      url
+
+      team {
+        id
+        key
+        name
+      }
+      delegate {
+        ...UserLite
+      }
+      createdAt
+      updatedAt
+      completedAt
+      canceledAt
+    }
+  }
+}

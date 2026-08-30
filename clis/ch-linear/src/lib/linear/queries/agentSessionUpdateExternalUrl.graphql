@@ -1,0 +1,26 @@
+mutation AgentSessionUpdateExternalUrl(
+  $id: String!
+  $input: AgentSessionUpdateExternalUrlInput!
+) {
+  agentSessionUpdateExternalUrl(id: $id, input: $input) {
+    success
+    lastSyncId
+    agentSession {
+      id
+      createdAt
+      updatedAt
+      status
+      type
+      issue {
+        id
+        identifier
+      }
+      comment {
+        id
+      }
+      externalUrls
+      summary
+      plan
+    }
+  }
+}

@@ -1,0 +1,18 @@
+query GetCommentReactions($id: String!) {
+  viewer {
+    id
+  }
+  comment(id: $id) {
+    id
+    reactions {
+      id
+      emoji
+      user {
+        id
+      }
+      externalUser {
+        id
+      }
+    }
+  }
+}

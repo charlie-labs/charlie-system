@@ -1,0 +1,16 @@
+# Initiative details
+# import "./initiativeFields.graphql"
+
+query GetInitiative($id: String!) {
+  initiative(id: $id) {
+    ...InitiativeFields
+    projects {
+      nodes {
+        id
+        name
+        slugId
+        color
+      }
+    }
+  }
+}

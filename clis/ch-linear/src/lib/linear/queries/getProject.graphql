@@ -1,0 +1,130 @@
+# Linear Project – full detail
+query GetProject(
+  $id: String!
+  $issuesFirst: Int = 250
+  $needsFirst: Int = 250
+) {
+  project(id: $id) {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+    slugId
+    url
+    color
+    content
+    priority
+    targetDate
+
+    status {
+      id
+      name
+      position
+      type
+    }
+
+    teams(first: 10) {
+      nodes {
+        id
+        key
+        name
+      }
+    }
+
+    # Replaced singular `initiative` with `initiatives` connection
+    initiatives(first: 10) {
+      nodes {
+        id
+        name
+        slugId
+      }
+    }
+
+    lead {
+      id
+      name
+      displayName
+    }
+
+    # Project labels
+    labels(first: 50) {
+      nodes {
+        id
+        name
+      }
+    }
+
+    # Associated issues (max 250)
+    issues(first: $issuesFirst) {
+      nodes {
+        id
+        identifier
+        title
+        priority
+        priorityLabel
+        state {
+          id
+          name
+          type
+          color
+          position
+        }
+        assignee {
+          ...UserLite
+        }
+        delegate {
+          ...UserLite
+        }
+        createdAt
+        updatedAt
+        completedAt
+        canceledAt
+      }
+    }
+
+    # Associated customer needs (max 250, ordered by most-recent update)
+    needs(first: $needsFirst, orderBy: updatedAt) {
+      nodes {
+        id
+        body
+        priority
+        createdAt
+        archivedAt
+        customer {
+          id
+          name
+        }
+        creator {
+          id
+          name
+          displayName
+        }
+        issue {
+          id
+          identifier
+          createdAt
+          updatedAt
+          completedAt
+          canceledAt
+        }
+      }
+    }
+
+    documents(first: 10) {
+      nodes {
+        id
+        title
+        url
+      }
+    }
+
+    externalLinks(first: 10) {
+      nodes {
+        id
+        label
+        url
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+mutation CommentReactionCreate($input: ReactionCreateInput!) {
+  reactionCreate(input: $input) {
+    success
+    lastSyncId
+    reaction {
+      id
+      emoji
+      user {
+        id
+        name
+        displayName
+        avatarUrl
+      }
+    }
+  }
+}

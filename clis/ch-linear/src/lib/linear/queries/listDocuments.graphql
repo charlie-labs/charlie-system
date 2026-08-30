@@ -1,0 +1,20 @@
+query ListDocuments($filter: DocumentFilter, $first: Int = 20, $after: String) {
+  documents(filter: $filter, first: $first, after: $after) {
+    nodes {
+      id
+      slugId
+      title
+      project {
+        name
+      }
+      creator {
+        displayName
+        name
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

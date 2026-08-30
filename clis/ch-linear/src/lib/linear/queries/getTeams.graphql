@@ -1,0 +1,13 @@
+query GetTeams($first: Int = 50, $after: String) {
+  teams(first: $first, after: $after) {
+    nodes {
+      id
+      key
+      name
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

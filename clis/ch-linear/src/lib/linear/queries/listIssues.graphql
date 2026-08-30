@@ -1,0 +1,45 @@
+query ListIssues(
+  $filter: IssueFilter
+  $first: Int = 20
+  $after: String
+  $orderBy: PaginationOrderBy
+) {
+  issues(filter: $filter, first: $first, after: $after, orderBy: $orderBy) {
+    nodes {
+      id
+      identifier
+      title
+      createdAt
+      updatedAt
+      completedAt
+      canceledAt
+      estimate
+      priority
+      priorityLabel
+      state {
+        id
+        name
+        type
+        color
+        position
+      }
+      assignee {
+        ...UserLite
+      }
+      delegate {
+        ...UserLite
+      }
+      labels {
+        nodes {
+          id
+          name
+          color
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

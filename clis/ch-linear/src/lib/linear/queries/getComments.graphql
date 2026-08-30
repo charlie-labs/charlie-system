@@ -1,0 +1,21 @@
+# Lists comments with pagination support
+query GetComments($first: Int = 20, $after: String, $filter: CommentFilter) {
+  comments(first: $first, after: $after, filter: $filter) {
+    nodes {
+      id
+      body
+      createdAt
+      updatedAt
+      user {
+        id
+        name
+        displayName
+        avatarUrl
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

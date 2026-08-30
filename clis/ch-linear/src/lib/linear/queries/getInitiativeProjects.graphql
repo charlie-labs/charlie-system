@@ -1,0 +1,32 @@
+# Fetch additional projects for a single initiative (bounded pagination helper)
+
+query GetInitiativeProjects($id: String!, $first: Int!, $after: String) {
+  initiative(id: $id) {
+    id
+    projects(first: $first, after: $after) {
+      nodes {
+        id
+        name
+        description
+        status {
+          id
+          name
+          position
+          type
+        }
+        priority
+        completedAt
+        updatedAt
+        lead {
+          id
+          name
+          displayName
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

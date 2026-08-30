@@ -1,0 +1,6 @@
+mutation CommentReactionDelete($id: String!) {
+  reactionDelete(id: $id) {
+    success
+    lastSyncId
+  }
+}

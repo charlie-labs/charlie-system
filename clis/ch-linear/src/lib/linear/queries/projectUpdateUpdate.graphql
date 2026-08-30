@@ -1,0 +1,23 @@
+mutation ProjectUpdateUpdate($id: String!, $input: ProjectUpdateUpdateInput!) {
+  projectUpdateUpdate(id: $id, input: $input) {
+    success
+    lastSyncId
+    projectUpdate {
+      id
+      createdAt
+      updatedAt
+      body
+      url
+      health
+      user {
+        ...UserLite
+      }
+      project {
+        id
+        name
+        slugId
+      }
+      diffMarkdown
+    }
+  }
+}

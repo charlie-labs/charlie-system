@@ -1,0 +1,45 @@
+query CustomerNeeds(
+  $filter: CustomerNeedFilter
+  $first: Int = 50
+  $after: String
+) {
+  customerNeeds(
+    filter: $filter
+    first: $first
+    after: $after
+    orderBy: updatedAt
+  ) {
+    nodes {
+      id
+      body
+      priority
+      createdAt
+      archivedAt
+      customer {
+        id
+        name
+      }
+      creator {
+        id
+        name
+        displayName
+      }
+      issue {
+        id
+        identifier
+        createdAt
+        updatedAt
+        completedAt
+        canceledAt
+      }
+      project {
+        id
+        name
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
