@@ -13,6 +13,7 @@ import {
   ContentInvocationError,
   ContentOperationalError,
   ContentRelatedError,
+  ContentSetupError,
   ContentShowError,
 } from '../../lib/content/errors.js';
 import {
@@ -29,6 +30,21 @@ type ContentCommandConfig =
 export abstract class ContentCommand<
   Cfg extends ContentCommandConfig,
 > extends BaseCommand<Cfg> {
+  protected override toErrorJson(error: unknown) {
+    const result = super.toErrorJson(error);
+    if (!(error instanceof ContentSetupError)) return result;
+    return {
+      ...result,
+      error: {
+        ...result.error,
+        copied: error.result.copied,
+        path: error.path,
+        reason: error.reason,
+        skipped: error.result.skipped,
+      },
+    };
+  }
+
   protected override async catch(error: CommandError): Promise<unknown> {
     if (isOclifParserError(error)) {
       return super.catch(

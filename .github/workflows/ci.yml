@@ -47,6 +47,9 @@ jobs:
       - name: Run maintained tests
         run: bun run test
 
+      - name: Verify ch-linear generated SDK
+        run: bun run --cwd clis/ch-linear codegen:verify
+
       - name: Run production-library coverage
         run: bun test --coverage --coverage-reporter=lcov --coverage-dir=coverage clis/flywheel/src clis/ch-docs/src
 

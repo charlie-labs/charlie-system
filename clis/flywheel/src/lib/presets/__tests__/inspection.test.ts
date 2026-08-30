@@ -55,6 +55,10 @@ test('reads the selected payload and specialization without writes', async () =>
   const baseFilesystem = createFlywheelDeps().filesystem;
   const calls: string[] = [];
   const filesystem: AsyncFileSystem = {
+    mkdir: async (directoryPath) => {
+      calls.push(`mkdir:${directoryPath}`);
+      return baseFilesystem.mkdir(directoryPath);
+    },
     readFile: async (filePath) => {
       calls.push(`readFile:${filePath}`);
       return baseFilesystem.readFile(filePath);
@@ -74,6 +78,10 @@ test('reads the selected payload and specialization without writes', async () =>
     stat: async (filePath) => {
       calls.push(`stat:${filePath}`);
       return baseFilesystem.stat(filePath);
+    },
+    writeFile: async (filePath, bytes) => {
+      calls.push(`writeFile:${filePath}`);
+      return baseFilesystem.writeFile(filePath, bytes);
     },
   };
 
