@@ -1,3 +1,10 @@
 [install]
 linker = "isolated"
 minimumReleaseAge = 172800
+
+[test]
+coveragePathIgnorePatterns = [
+  "**/__tests__/**",
+  "**/src/cli/**",
+  "**/packages/**",
+]

@@ -41,6 +41,12 @@ jobs:
       - name: Install dependencies
         run: bun ci
 
+      - name: Run maintained tests
+        run: bun run test
+
+      - name: Run production-library coverage
+        run: bun test --coverage --coverage-reporter=lcov --coverage-dir=coverage clis/flywheel/src clis/ch-docs/src
+
       - name: Check formatting
         run: bun run fmt:check
 
