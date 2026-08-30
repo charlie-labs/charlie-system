@@ -24,6 +24,8 @@ test('proves the tracked checkout boundary and CLI inventory', async () => {
       .every(
         (file) =>
           file.startsWith('clis/ch-docs/') ||
+          file.startsWith('clis/ch-sentry/') ||
+          file.startsWith('clis/ch-slack/') ||
           file.startsWith('clis/flywheel/') ||
           file.startsWith('clis/apply-patch/') ||
           file.startsWith('clis/ch-linear/')
