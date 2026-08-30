@@ -12,7 +12,7 @@
   "scripts": {
     "check": "bun run fmt:check && bun run lint && bun run knip && bun run typecheck && bun run cli",
     "cli": "bun run --cwd clis/flywheel start",
-    "test": "bun test --parallel=1 clis/flywheel/src clis/ch-docs/src",
+    "test": "bun test clis/flywheel/src clis/ch-docs/src",
     "test:flywheel": "bun test clis/flywheel/src",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",

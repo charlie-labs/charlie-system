@@ -41,6 +41,9 @@ jobs:
       - name: Install dependencies
         run: bun ci
 
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes ripgrep
+
       - name: Run maintained tests
         run: bun run test
 
