@@ -1,9 +1,12 @@
 # Flywheel CLI architecture
 
 The Flywheel CLI treats the customer knowledge repository as canonical authored
-source. Commands inspect that source through a small set of composable library
-boundaries; they do not establish competing interpretations of repository
-layout, artifact identity, references, or validity.
+source. Inspection commands consume that source through a small set of
+composable library boundaries; they do not establish competing interpretations
+of repository layout, artifact identity, references, or validity. The explicit
+`content setup` commands are the separate bootstrap boundary: they copy only
+missing entries from package-owned scaffold trees into the selected knowledge
+repository and do not compile, validate, compare, repair, or publish content.
 
 The fuller design and delivery rationale lives in
 [`architecture-plan.md`](../../architecture-plan.md). This document records the
@@ -36,6 +39,9 @@ that satisfies their contract.
 
 - The repository boundary owns paths, repository regions, repository
   identities, selections, source access, discovery, and entry classification.
+- The setup boundary owns package-scaffold traversal and create-only writes to
+  the selected knowledge repository. It does not read source-repository
+  checkouts or existing destination file bytes.
 - Artifact components own their public artifact contract and parser. Parser
   implementation types, including Markdown AST types, remain private.
 - Reference resolution owns the distinction between authored references and
@@ -128,6 +134,9 @@ retrieval share repository authority but retain separate contracts:
   external identities without fetching them; and
 - ranked retrieval consumes eligible source-authored knowledge together with
   an explicit validation assessment.
+- setup copies an inspectable package-owned scaffold tree, leaves existing
+  destination entries unchanged, and returns deterministic copied/skipped
+  paths without performing validation or Git operations.
 
 For ranked retrieval, repository, lifecycle, and content-type eligibility is
 applied before candidate limits or ranking cutoffs. Backend candidates remain
@@ -203,6 +212,10 @@ Each component owns focused tests for its local semantics. Boundary tests cover
 the values exchanged between components, and a small number of end-to-end
 fixtures prove composition across stages. CLI tests concentrate on argument
 handling, exit behavior, and rendering rather than duplicating library tests.
+
+Setup tests additionally cover create-only copying, empty directories,
+structural mismatches, symbolic-link rejection, traversal rejection, identity
+normalization, and JSON/human output separation.
 
 Performance-sensitive invariants should be proved structurally where possible:
 one source listing per operation, batch reads, parse-once compilation, and no

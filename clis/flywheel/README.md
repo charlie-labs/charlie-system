@@ -1,24 +1,31 @@
 # `flywheel`
 
-The internal Flywheel CLI is the command-line entrypoint for inspecting
-checkout-local Flywheel content.
+The internal Flywheel CLI is the command-line entrypoint for inspecting and
+explicitly initializing checkout-local Flywheel content.
 
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the durable component boundaries,
 invariants, and performance posture that guide implementation.
 
-The current CLI provides these read-only commands:
+The current CLI provides these inspection commands and explicit setup commands:
 
 - `knowledge search <query>`
 - `content rg`
 - `content show <target>`
 - `content related <target>`
 - `content validate`
+- `content setup customer`
+- `content setup source-repo <owner/name>`
 - `skill preset list`
 - `skill preset show <preset>`
 
 Skill preset inspection reads only the inert sources under `presets/skills/`;
-it never materializes or installs a preset. The CLI does not read or modify
-source repositories, providers, tasks, transcripts, or lifecycle state.
+it never materializes or installs a preset. Setup is the only content command
+that writes: it copies absent entries from inspectable, package-owned scaffold
+trees, leaves every existing destination unchanged, and reports `copied` and
+`skipped` paths. Setup never reads a source-repository checkout, compares
+content, validates the resulting repository, commits, or pushes. The CLI does
+not read or modify source repositories, providers, tasks, transcripts, or
+lifecycle state.
 
 ## Development
 
@@ -51,6 +58,16 @@ results. Use `skill preset list` to inspect available local Skill identities
 and `skill preset show placeholder-skill` to print its payload and
 specialization guidance. The package does not read a general configuration
 file or ambient customer, source-repository, or Task context.
+
+`content setup customer` and `content setup source-repo <owner/name>` use
+package-owned scaffold roots and create only missing directories and files.
+The source-repository identity is normalized as `owner/name`; its scaffold may
+use the tokens `__owner__`, `__name__`, and `__repository_id__` in paths or
+UTF-8 text. Both commands return `validationPerformed: false` in JSON mode
+and print the same copy report in human mode. This checkout intentionally does
+not provide authoritative customer Role/Daemon content or a Repository entity
+schema/filename; those product inputs must land before production scaffold
+payloads are added.
 
 ## Qualification
 
