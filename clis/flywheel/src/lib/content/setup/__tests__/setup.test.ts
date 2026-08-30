@@ -12,7 +12,7 @@ import path from 'node:path';
 import { createFlywheelDeps } from '../../../runtime/deps.js';
 import { ContentInvocationError } from '../../errors.js';
 import { ContentSetupError } from '../../setup-error.js';
-import { copyScaffoldTree } from '../copy.js';
+import { copyScaffoldDirectories } from '../copy.js';
 import { runCustomerSetup } from '../customer.js';
 import { runSourceRepositorySetup } from '../source-repo.js';
 
@@ -35,7 +35,7 @@ test('scaffolds manifest directories and ignores other source files', async () =
   );
   await writeFile(path.join(sourceRoot, 'README.md'), 'do not install');
 
-  const result = await copyScaffoldTree({
+  const result = await copyScaffoldDirectories({
     destinationRoot,
     filesystem: createFlywheelDeps().filesystem,
     sourceRoot,
@@ -55,7 +55,7 @@ test('does not read source content files', async () => {
   await writeFile(path.join(sourceRoot, 'content.md'), 'do not install');
   const baseFilesystem = createFlywheelDeps().filesystem;
 
-  const result = await copyScaffoldTree({
+  const result = await copyScaffoldDirectories({
     destinationRoot,
     filesystem: {
       ...baseFilesystem,
@@ -77,7 +77,7 @@ test('skips existing directories and preserves their contents', async () => {
   await mkdir(path.join(destinationRoot, 'existing'));
   await writeFile(path.join(destinationRoot, 'existing', 'keep.txt'), 'keep');
 
-  const result = await copyScaffoldTree({
+  const result = await copyScaffoldDirectories({
     destinationRoot,
     filesystem: createFlywheelDeps().filesystem,
     sourceRoot,
@@ -100,7 +100,7 @@ test('deduplicates repeated manifest destinations in the report', async () => {
     ['directory', 'directory', 'directory/child'].join('\n')
   );
 
-  const result = await copyScaffoldTree({
+  const result = await copyScaffoldDirectories({
     destinationRoot,
     filesystem: createFlywheelDeps().filesystem,
     sourceRoot,
@@ -119,7 +119,7 @@ test('fails on a destination structural mismatch without replacing it', async ()
   await writeFile(path.join(destinationRoot, 'nested'), 'keep');
 
   const error = await captureFailure(() =>
-    copyScaffoldTree({
+    copyScaffoldDirectories({
       destinationRoot,
       filesystem: createFlywheelDeps().filesystem,
       sourceRoot,
@@ -148,7 +148,7 @@ test('rejects a symbolic-link directory manifest without following it', async ()
   await symlink(outsideManifest, path.join(sourceRoot, 'DIRECTORIES'));
 
   const error = await captureFailure(() =>
-    copyScaffoldTree({
+    copyScaffoldDirectories({
       destinationRoot,
       filesystem: createFlywheelDeps().filesystem,
       sourceRoot,
@@ -169,11 +169,14 @@ test('rejects transformed paths that escape the destination root', async () => {
   await writeFile(path.join(sourceRoot, 'DIRECTORIES'), 'directory\n');
 
   const error = await captureFailure(() =>
-    copyScaffoldTree({
+    copyScaffoldDirectories({
       destinationRoot,
       filesystem: createFlywheelDeps().filesystem,
       sourceRoot,
-      transform: { destinationPath: () => '../outside' },
+      transform: {
+        destinationPath: () => '../outside',
+        fileBytes: (_sourcePath, bytes) => bytes,
+      },
     })
   );
 

@@ -1,4 +1,4 @@
-import type { Stats } from 'node:fs';
+import type { Dirent, Stats } from 'node:fs';
 import path from 'node:path';
 
 import type { AsyncFileSystem } from '../../runtime/deps.js';
@@ -7,6 +7,58 @@ import type { ScaffoldDirectoryManifest } from './contract.js';
 import type { MutableSetupReport } from './copy-context.js';
 
 const DIRECTORY_MANIFEST_PATH = 'DIRECTORIES';
+
+export async function readSourceEntries(
+  filesystem: AsyncFileSystem,
+  sourcePath: string,
+  report: MutableSetupReport
+): Promise<Dirent[]> {
+  try {
+    return await filesystem.readdir(sourcePath);
+  } catch (error) {
+    return throwSetupError(
+      report,
+      sourcePath,
+      `source directory cannot be read: ${errorMessage(error)}`,
+      error
+    );
+  }
+}
+
+export async function readSourceStats(
+  filesystem: AsyncFileSystem,
+  sourcePath: string,
+  report: MutableSetupReport
+): Promise<Stats> {
+  try {
+    return await filesystem.lstat(sourcePath);
+  } catch (error) {
+    return throwSetupError(
+      report,
+      sourcePath,
+      `source entry cannot be inspected: ${errorMessage(error)}`,
+      error
+    );
+  }
+}
+
+export async function readSourceBytes(
+  filesystem: AsyncFileSystem,
+  sourcePath: string,
+  reportPath: string,
+  report: MutableSetupReport
+): Promise<Uint8Array> {
+  try {
+    return await filesystem.readFileBytes(sourcePath);
+  } catch (error) {
+    return throwSetupError(
+      report,
+      reportPath,
+      `source file cannot be read: ${errorMessage(error)}`,
+      error
+    );
+  }
+}
 
 export async function readDirectoryManifest(
   filesystem: AsyncFileSystem,
