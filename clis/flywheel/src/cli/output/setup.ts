@@ -1,10 +1,11 @@
-import type { SetupResult } from '../../lib/content/setup/contract.js';
+import type { SetupResult } from '../../lib/content/setup/index.js';
 
 export function renderSetupResult(result: SetupResult): string {
   return [
     formatPaths('copied', result.copied),
     formatPaths('skipped', result.skipped),
     'validation: not performed; run content validate before treating the repository as valid or durable',
+    'markers: empty scaffold directories include .gitkeep files for later Git tracking',
     'changes: setup changes have not been committed or pushed',
   ].join('\n');
 }

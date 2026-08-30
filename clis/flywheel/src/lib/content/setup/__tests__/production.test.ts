@@ -2,6 +2,7 @@ import { afterEach, expect, test } from 'bun:test';
 import {
   mkdtemp,
   readdir,
+  readFile,
   rm,
   stat,
   symlink,
@@ -19,6 +20,27 @@ import {
 import { runSourceRepositorySetup } from '../source-repo.js';
 
 const temporaryDirectories: string[] = [];
+
+const CUSTOMER_MARKERS = [
+  '.flywheel/.gitkeep',
+  'customer-wide/.agents/daemons/pr-review/.gitkeep',
+  'customer-wide/.agents/skills/.gitkeep',
+  'customer-wide/catalog/.gitkeep',
+  'customer-wide/docs/.gitkeep',
+  'roles/.gitkeep',
+] as const;
+
+const SOURCE_REPOSITORY_MARKERS = [
+  '.flywheel/.gitkeep',
+  'customer-wide/.agents/daemons/.gitkeep',
+  'customer-wide/.agents/skills/.gitkeep',
+  'customer-wide/catalog/.gitkeep',
+  'customer-wide/docs/.gitkeep',
+  'repo-specific/acme/api/.agents/daemons/.gitkeep',
+  'repo-specific/acme/api/.agents/skills/.gitkeep',
+  'repo-specific/acme/api/catalog/.gitkeep',
+  'repo-specific/acme/api/docs/.gitkeep',
+] as const;
 
 afterEach(async () => {
   await Promise.all(
@@ -94,23 +116,33 @@ test('materializes the production customer directory tree and remains create-onl
   expect(first.validationPerformed).toBe(false);
   expect(first.copied).toEqual([
     '.flywheel',
+    '.flywheel/.gitkeep',
     'customer-wide',
     'customer-wide/.agents',
     'customer-wide/.agents/daemons',
     'customer-wide/.agents/daemons/pr-review',
+    'customer-wide/.agents/daemons/pr-review/.gitkeep',
     'customer-wide/.agents/skills',
+    'customer-wide/.agents/skills/.gitkeep',
     'customer-wide/catalog',
+    'customer-wide/catalog/.gitkeep',
     'customer-wide/docs',
+    'customer-wide/docs/.gitkeep',
     'roles',
+    'roles/.gitkeep',
   ]);
   expect(first.skipped).toEqual([]);
   expect(second.copied).toEqual([]);
   expect(second.skipped).toEqual(first.copied);
-  expect(await filePaths(destinationRoot)).toEqual([]);
-  await expectDirectories(destinationRoot, first.copied);
+  expect(await filePaths(destinationRoot)).toEqual([...CUSTOMER_MARKERS]);
+  await expectDirectories(
+    destinationRoot,
+    first.copied.filter(isDirectoryPath)
+  );
+  await expectEmptyFiles(destinationRoot, CUSTOMER_MARKERS);
 });
 
-test('materializes the production source-repository directory tree without content files', async () => {
+test('materializes the production source-repository directory tree with Git markers', async () => {
   const destinationRoot = await makeDirectory('customer-repository');
 
   const first = await runSourceRepositorySetup({
@@ -129,26 +161,41 @@ test('materializes the production source-repository directory tree without conte
   expect(first.validationPerformed).toBe(false);
   expect(first.copied).toEqual([
     '.flywheel',
+    '.flywheel/.gitkeep',
     'customer-wide',
     'customer-wide/.agents',
     'customer-wide/.agents/daemons',
+    'customer-wide/.agents/daemons/.gitkeep',
     'customer-wide/.agents/skills',
+    'customer-wide/.agents/skills/.gitkeep',
     'customer-wide/catalog',
+    'customer-wide/catalog/.gitkeep',
     'customer-wide/docs',
+    'customer-wide/docs/.gitkeep',
     'repo-specific',
     'repo-specific/acme',
     'repo-specific/acme/api',
     'repo-specific/acme/api/.agents',
     'repo-specific/acme/api/.agents/daemons',
+    'repo-specific/acme/api/.agents/daemons/.gitkeep',
     'repo-specific/acme/api/.agents/skills',
+    'repo-specific/acme/api/.agents/skills/.gitkeep',
     'repo-specific/acme/api/catalog',
+    'repo-specific/acme/api/catalog/.gitkeep',
     'repo-specific/acme/api/docs',
+    'repo-specific/acme/api/docs/.gitkeep',
   ]);
   expect(first.skipped).toEqual([]);
   expect(second.copied).toEqual([]);
   expect(second.skipped).toEqual(first.copied);
-  expect(await filePaths(destinationRoot)).toEqual([]);
-  await expectDirectories(destinationRoot, first.copied);
+  expect(await filePaths(destinationRoot)).toEqual([
+    ...SOURCE_REPOSITORY_MARKERS,
+  ]);
+  await expectDirectories(
+    destinationRoot,
+    first.copied.filter(isDirectoryPath)
+  );
+  await expectEmptyFiles(destinationRoot, SOURCE_REPOSITORY_MARKERS);
 });
 
 test('rejects a symbolic-link directory manifest without following it', async () => {
@@ -199,6 +246,22 @@ async function expectDirectories(
       );
     })
   );
+}
+
+async function expectEmptyFiles(
+  root: string,
+  relativePaths: readonly string[]
+): Promise<void> {
+  await Promise.all(
+    relativePaths.map(async (relativePath) => {
+      expect((await stat(path.join(root, relativePath))).isFile()).toBe(true);
+      expect(await readFile(path.join(root, relativePath), 'utf8')).toBe('');
+    })
+  );
+}
+
+function isDirectoryPath(relativePath: string): boolean {
+  return !relativePath.endsWith('/.gitkeep');
 }
 
 async function filePaths(root: string): Promise<readonly string[]> {

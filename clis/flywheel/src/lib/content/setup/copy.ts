@@ -1,26 +1,21 @@
-import type { Dirent } from 'node:fs';
 import path from 'node:path';
 
-import { normalizeRepositoryRelativePath } from '../../repository/path.js';
 import type {
   ScaffoldCopyInput,
-  ScaffoldCopyTransform,
+  ScaffoldDirectoryManifest,
   SetupCopyResult,
 } from './contract.js';
-import {
-  IDENTITY_TRANSFORM,
-  type CopyContext,
-  type MutableSetupReport,
-} from './copy-context.js';
+import { IDENTITY_TRANSFORM, type CopyContext } from './copy-context.js';
 import {
   ensureDestinationDirectory,
   ensureDestinationRoot,
 } from './copy-destination.js';
 import {
-  copyDirectoryEntry,
-  copyFileEntry,
-  type CopyDirectoryInput,
-} from './copy-file.js';
+  copyEntry,
+  mapDestinationPath,
+  sortEntries,
+  type CopyDirectory,
+} from './copy-entry.js';
 import {
   readDirectoryManifest,
   readSourceEntries,
@@ -38,7 +33,14 @@ export async function copyScaffoldTree(
       ? {}
       : { directoryManifest: input.directoryManifest }),
     filesystem: input.filesystem,
+    handledDirectories: new Set(),
     report: { copied: [], skipped: [] },
+    ...(input.shouldCopyDirectory === undefined
+      ? {}
+      : { shouldCopyDirectory: input.shouldCopyDirectory }),
+    ...(input.shouldCopyFile === undefined
+      ? {}
+      : { shouldCopyFile: input.shouldCopyFile }),
     transform: input.transform ?? IDENTITY_TRANSFORM,
   };
   await assertSourceDirectory(context, input.sourceRoot);
@@ -54,6 +56,7 @@ export async function copyScaffoldDirectories(
   const context: CopyContext = {
     destinationRoot: path.resolve(input.destinationRoot),
     filesystem: input.filesystem,
+    handledDirectories: new Set(),
     report: { copied: [], skipped: [] },
     transform: input.transform ?? IDENTITY_TRANSFORM,
   };
@@ -63,9 +66,24 @@ export async function copyScaffoldDirectories(
     input.sourceRoot,
     context.report
   );
-  await ensureDestinationRoot(context);
-  await copyDirectoryManifest(context, manifest.directories);
-  return sortedReport(context.report);
+  return copyScaffoldTree({
+    ...input,
+    directoryManifest: manifest,
+    shouldCopyDirectory: createManifestDirectoryFilter(manifest),
+    shouldCopyFile: (sourceRelativePath) =>
+      path.posix.basename(sourceRelativePath) === '.gitkeep',
+  });
+}
+
+function createManifestDirectoryFilter(
+  manifest: ScaffoldDirectoryManifest
+): (sourceRelativePath: string) => boolean {
+  const directories = new Set(manifest.directories);
+  return (sourceRelativePath) =>
+    directories.has(sourceRelativePath) ||
+    manifest.directories.some((directory) =>
+      directory.startsWith(`${sourceRelativePath}/`)
+    );
 }
 
 async function copyManifestDirectories(
@@ -75,38 +93,23 @@ async function copyManifestDirectories(
   if (manifest === undefined) return;
   await manifest.directories.reduce(
     (previous, sourcePath) =>
-      previous.then(() => copyManifestDirectory(context, sourcePath)),
+      previous.then(() => copyManifestDirectoryAndMark(context, sourcePath)),
     Promise.resolve()
   );
 }
 
-async function copyDirectoryManifest(
+async function copyManifestDirectoryAndMark(
   context: CopyContext,
-  directories: readonly string[]
+  sourcePath: string
 ): Promise<void> {
-  const destinationPaths = new Set<string>();
-  const mappedDirectories: string[] = [];
-  directories.forEach((sourcePath) => {
-    const destinationRelativePath = mapDestinationPath(
-      context.transform,
-      sourcePath,
-      context.report
-    );
-    if (destinationPaths.has(destinationRelativePath)) return;
-    destinationPaths.add(destinationRelativePath);
-    mappedDirectories.push(destinationRelativePath);
-  });
-  await mappedDirectories.reduce(
-    (previous, destinationRelativePath) =>
-      previous.then(() =>
-        ensureDestinationDirectory(
-          context,
-          path.join(context.destinationRoot, destinationRelativePath),
-          destinationRelativePath
-        )
-      ),
-    Promise.resolve()
+  const destinationRelativePath = mapDestinationPath(
+    context.transform,
+    sourcePath,
+    context.report
   );
+  if (context.handledDirectories.has(destinationRelativePath)) return;
+  await copyManifestDirectory(context, sourcePath);
+  context.handledDirectories.add(destinationRelativePath);
 }
 
 async function copyManifestDirectory(
@@ -134,6 +137,8 @@ async function copyDirectory(
   const entries = sortEntries(
     await readSourceEntries(context.filesystem, sourceDirectory, context.report)
   );
+  const copyDirectoryEntry: CopyDirectory = (directory, relativeDirectory) =>
+    copyDirectory(context, directory, relativeDirectory);
   await entries.reduce(
     (previous, entry) =>
       previous.then(() => {
@@ -142,84 +147,13 @@ async function copyDirectory(
           sourceRelativeDirectory,
           entry.name
         );
-        return copyEntry(context, sourcePath, sourceRelativePath);
+        return copyEntry(context, {
+          copyDirectory: copyDirectoryEntry,
+          sourcePath,
+          sourceRelativePath,
+        });
       }),
     Promise.resolve()
-  );
-}
-
-function sortEntries(entries: readonly Dirent[]): Dirent[] {
-  const sorted: Dirent[] = [];
-  for (const entry of entries) {
-    const index = sorted.findIndex(
-      (candidate) => candidate.name.localeCompare(entry.name) > 0
-    );
-    if (index < 0) {
-      sorted.push(entry);
-    } else {
-      sorted.splice(index, 0, entry);
-    }
-  }
-  return sorted;
-}
-
-async function copyEntry(
-  context: CopyContext,
-  sourcePath: string,
-  sourceRelativePath: string
-): Promise<void> {
-  const sourceStats = await readSourceStats(
-    context.filesystem,
-    sourcePath,
-    context.report
-  );
-  if (sourceRelativePath === context.directoryManifest?.sourcePath) {
-    if (!sourceStats.isFile()) {
-      throwSetupError(
-        context.report,
-        sourceRelativePath,
-        'source entry is not a regular file or directory'
-      );
-    }
-    return;
-  }
-  const destinationRelativePath = mapDestinationPath(
-    context.transform,
-    sourceRelativePath,
-    context.report
-  );
-  const destinationPath = path.join(
-    context.destinationRoot,
-    destinationRelativePath
-  );
-  if (sourceStats.isDirectory()) {
-    const directoryInput: CopyDirectoryInput = {
-      destinationPath,
-      destinationRelativePath,
-      sourcePath,
-      sourceRelativePath,
-    };
-    await copyDirectoryEntry(
-      context,
-      directoryInput,
-      (directory, relativeDirectory) =>
-        copyDirectory(context, directory, relativeDirectory)
-    );
-    return;
-  }
-  if (sourceStats.isFile()) {
-    await copyFileEntry(context, {
-      destinationPath,
-      destinationRelativePath,
-      sourcePath,
-      sourceRelativePath,
-    });
-    return;
-  }
-  throwSetupError(
-    context.report,
-    sourceRelativePath,
-    'source entry is not a regular file or directory'
   );
 }
 
@@ -237,25 +171,6 @@ async function assertSourceDirectory(
       context.report,
       sourcePath,
       'source scaffold root is not a directory'
-    );
-  }
-}
-
-function mapDestinationPath(
-  transform: ScaffoldCopyTransform,
-  sourcePath: string,
-  report: MutableSetupReport
-): string {
-  try {
-    return normalizeRepositoryRelativePath(
-      transform.destinationPath(sourcePath)
-    );
-  } catch (error) {
-    return throwSetupError(
-      report,
-      sourcePath,
-      `destination path is unsafe: ${error instanceof Error ? error.message : String(error)}`,
-      error
     );
   }
 }

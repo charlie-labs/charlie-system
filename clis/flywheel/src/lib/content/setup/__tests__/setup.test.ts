@@ -29,6 +29,10 @@ afterEach(async () => {
 test('scaffolds manifest directories and ignores other source files', async () => {
   const sourceRoot = await makeDirectory('source');
   const destinationRoot = await makeDirectory('destination');
+  await mkdir(path.join(sourceRoot, 'empty-dir'));
+  await writeFile(path.join(sourceRoot, 'empty-dir', '.gitkeep'), '');
+  await mkdir(path.join(sourceRoot, 'ignored'));
+  await writeFile(path.join(sourceRoot, 'ignored', '.gitkeep'), '');
   await writeFile(
     path.join(sourceRoot, 'DIRECTORIES'),
     ['empty-dir', 'nested', 'nested/deep'].join('\n')
@@ -42,10 +46,14 @@ test('scaffolds manifest directories and ignores other source files', async () =
   });
 
   expect(result).toEqual({
-    copied: ['empty-dir', 'nested', 'nested/deep'],
+    copied: ['empty-dir', 'empty-dir/.gitkeep', 'nested', 'nested/deep'],
     skipped: [],
   });
+  expect(
+    await readFile(path.join(destinationRoot, 'empty-dir/.gitkeep'), 'utf8')
+  ).toBe('');
   expect(await exists(path.join(destinationRoot, 'README.md'))).toBe(false);
+  expect(await exists(path.join(destinationRoot, 'ignored'))).toBe(false);
 });
 
 test('does not read source content files', async () => {
@@ -90,6 +98,36 @@ test('skips existing directories and preserves their contents', async () => {
   expect(
     await readFile(path.join(destinationRoot, 'existing/keep.txt'), 'utf8')
   ).toBe('keep');
+});
+
+test('copies missing markers without changing an existing marker file', async () => {
+  const sourceRoot = await makeDirectory('source');
+  const destinationRoot = await makeDirectory('destination');
+  await mkdir(path.join(sourceRoot, 'existing'));
+  await writeFile(path.join(sourceRoot, 'existing', '.gitkeep'), 'source');
+  await writeFile(
+    path.join(sourceRoot, 'DIRECTORIES'),
+    ['existing', 'new'].join('\n')
+  );
+  await mkdir(path.join(destinationRoot, 'existing'));
+  await writeFile(
+    path.join(destinationRoot, 'existing', '.gitkeep'),
+    'keep marker'
+  );
+
+  const result = await copyScaffoldDirectories({
+    destinationRoot,
+    filesystem: createFlywheelDeps().filesystem,
+    sourceRoot,
+  });
+
+  expect(result).toEqual({
+    copied: ['new'],
+    skipped: ['existing', 'existing/.gitkeep'],
+  });
+  expect(
+    await readFile(path.join(destinationRoot, 'existing/.gitkeep'), 'utf8')
+  ).toBe('keep marker');
 });
 
 test('deduplicates repeated manifest destinations in the report', async () => {
@@ -185,7 +223,7 @@ test('rejects transformed paths that escape the destination root', async () => {
   expect(await exists(path.join(destinationRoot, 'outside'))).toBe(false);
 });
 
-test('returns the directory-only customer setup result', async () => {
+test('returns the marker-aware customer setup result', async () => {
   const sourceRoot = await makeDirectory('customer-scaffold');
   const destinationRoot = await makeDirectory('customer-repository');
   await writeFile(

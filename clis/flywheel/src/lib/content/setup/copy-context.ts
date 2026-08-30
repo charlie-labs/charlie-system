@@ -13,7 +13,10 @@ export type CopyContext = Readonly<{
   readonly destinationRoot: string;
   readonly directoryManifest?: ScaffoldDirectoryManifest;
   readonly filesystem: AsyncFileSystem;
+  readonly handledDirectories: Set<string>;
   readonly report: MutableSetupReport;
+  readonly shouldCopyDirectory?: (sourceRelativePath: string) => boolean;
+  readonly shouldCopyFile?: (sourceRelativePath: string) => boolean;
   readonly transform: ScaffoldCopyTransform;
 }>;
 

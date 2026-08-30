@@ -37,11 +37,34 @@ const SOURCE_REPOSITORY_DIRECTORIES = [
   'repo-specific/__owner__/__name__/.agents/skills',
 ] as const;
 
-test('keeps the customer scaffold as a directory-only manifest', async () => {
+const CUSTOMER_MARKERS = [
+  '.flywheel/.gitkeep',
+  'customer-wide/.agents/daemons/pr-review/.gitkeep',
+  'customer-wide/.agents/skills/.gitkeep',
+  'customer-wide/catalog/.gitkeep',
+  'customer-wide/docs/.gitkeep',
+  'roles/.gitkeep',
+] as const;
+
+const SOURCE_REPOSITORY_MARKERS = [
+  '.flywheel/.gitkeep',
+  'customer-wide/.agents/daemons/.gitkeep',
+  'customer-wide/.agents/skills/.gitkeep',
+  'customer-wide/catalog/.gitkeep',
+  'customer-wide/docs/.gitkeep',
+  'repo-specific/__owner__/__name__/.agents/daemons/.gitkeep',
+  'repo-specific/__owner__/__name__/.agents/skills/.gitkeep',
+  'repo-specific/__owner__/__name__/catalog/.gitkeep',
+  'repo-specific/__owner__/__name__/docs/.gitkeep',
+] as const;
+
+test('keeps the customer scaffold directories and Git markers', async () => {
   const snapshot = await scaffoldSnapshot(CUSTOMER_SCAFFOLD_ROOT);
 
-  expect(snapshot.files).toEqual(['DIRECTORIES']);
-  expect(snapshot.directories).toEqual([]);
+  expect(snapshot.files).toEqual(
+    sortedPaths(['DIRECTORIES', ...CUSTOMER_MARKERS])
+  );
+  expect(snapshot.directories).toEqual(sortedPaths(CUSTOMER_DIRECTORIES));
   expect(snapshot.other).toEqual([]);
   expect(await readScaffoldFile('customer', 'DIRECTORIES')).toBe(
     `${CUSTOMER_DIRECTORIES.join('\n')}\n`
@@ -50,13 +73,18 @@ test('keeps the customer scaffold as a directory-only manifest', async () => {
     'customer-wide/.agents/daemons/pr-review/DAEMON.md'
   );
   expect(snapshot.files).not.toContain('roles/pr-autopilot.yaml');
+  await expectEmptyMarkers(CUSTOMER_SCAFFOLD_ROOT, CUSTOMER_MARKERS);
 });
 
-test('keeps the source-repository scaffold as a directory-only manifest', async () => {
+test('keeps the source-repository scaffold directories and Git markers', async () => {
   const snapshot = await scaffoldSnapshot(SOURCE_REPOSITORY_SCAFFOLD_ROOT);
 
-  expect(snapshot.files).toEqual(['DIRECTORIES']);
-  expect(snapshot.directories).toEqual([]);
+  expect(snapshot.files).toEqual(
+    sortedPaths(['DIRECTORIES', ...SOURCE_REPOSITORY_MARKERS])
+  );
+  expect(snapshot.directories).toEqual(
+    sortedPaths(SOURCE_REPOSITORY_DIRECTORIES)
+  );
   expect(snapshot.other).toEqual([]);
   expect(await readScaffoldFile('source-repo', 'DIRECTORIES')).toBe(
     `${SOURCE_REPOSITORY_DIRECTORIES.join('\n')}\n`
@@ -64,7 +92,29 @@ test('keeps the source-repository scaffold as a directory-only manifest', async 
   expect(snapshot.files).not.toContain(
     'customer-wide/catalog/repositories.yaml'
   );
+  await expectEmptyMarkers(
+    SOURCE_REPOSITORY_SCAFFOLD_ROOT,
+    SOURCE_REPOSITORY_MARKERS
+  );
 });
+
+async function expectEmptyMarkers(
+  root: string,
+  relativePaths: readonly string[]
+): Promise<void> {
+  await Promise.all(
+    relativePaths.map(async (relativePath) => {
+      expect(await readScaffoldFileAt(root, relativePath)).toBe('');
+    })
+  );
+}
+
+async function readScaffoldFileAt(
+  root: string,
+  relativePath: string
+): Promise<string> {
+  return readFile(path.join(root, relativePath), 'utf8');
+}
 
 async function readScaffoldFile(
   scaffold: 'customer' | 'source-repo',

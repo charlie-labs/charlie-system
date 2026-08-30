@@ -1,7 +1,7 @@
 import {
   CUSTOMER_SCAFFOLD_ROOT,
   SOURCE_REPOSITORY_SCAFFOLD_ROOT,
-} from '../../lib/content/setup/roots.js';
+} from '../../lib/content/setup/index.js';
 import { resolveRepositoryPath } from '../../lib/repository/path.js';
 import {
   createFlywheelDeps,

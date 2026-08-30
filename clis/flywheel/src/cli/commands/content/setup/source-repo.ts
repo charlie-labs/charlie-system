@@ -7,11 +7,11 @@ import {
 import { Args } from '@oclif/core';
 
 import { ContentOperationalError } from '../../../../lib/content/errors.js';
-import type { SetupResult } from '../../../../lib/content/setup/contract.js';
 import {
   runSourceRepositorySetup,
   type SourceRepositorySetupInput,
-} from '../../../../lib/content/setup/source-repo.js';
+  type SetupResult,
+} from '../../../../lib/content/setup/index.js';
 import { renderSetupResult } from '../../../output/setup.js';
 import { ContentCommand } from '../../../utils/content-command.js';
 import { contentSetupFlags } from '../../../utils/content-flags.js';
@@ -35,7 +35,7 @@ export default class SourceRepo extends ContentCommand<
   static override flags = super.registerManifest(contentSetupFlags);
   static override summary = 'Install a source-repository scaffold';
   static override description =
-    'Create absent directories from the package-owned source-repository scaffold for one owner/name identity. No source-repository checkout is read, and setup does not create content files, validate, commit, or push.';
+    'Create absent directories and .gitkeep marker files from the package-owned source-repository scaffold for one owner/name identity. No source-repository checkout is read, and setup does not validate, commit, or push.';
   static override examples = [
     '<%= config.bin %> <%= command.id %> acme/api',
     '<%= config.bin %> <%= command.id %> acme/api --repository-path /tmp/customer-knowledge',

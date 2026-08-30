@@ -15,14 +15,20 @@ afterEach(cleanupTemporaryDirectories);
 
 const CUSTOMER_DIRECTORIES = [
   '.flywheel',
+  '.flywheel/.gitkeep',
   'customer-wide',
   'customer-wide/.agents',
   'customer-wide/.agents/daemons',
   'customer-wide/.agents/daemons/pr-review',
+  'customer-wide/.agents/daemons/pr-review/.gitkeep',
   'customer-wide/.agents/skills',
+  'customer-wide/.agents/skills/.gitkeep',
   'customer-wide/catalog',
+  'customer-wide/catalog/.gitkeep',
   'customer-wide/docs',
+  'customer-wide/docs/.gitkeep',
   'roles',
+  'roles/.gitkeep',
 ] as const;
 
 const SOURCE_REPOSITORY_DIRECTORIES = [
@@ -87,6 +93,7 @@ test('keeps production setup diagnostics on stderr in human mode', async () => {
       ...CUSTOMER_DIRECTORIES.map((directory) => `- ${directory}`),
       'skipped: none',
       'validation: not performed; run content validate before treating the repository as valid or durable',
+      'markers: empty scaffold directories include .gitkeep files for later Git tracking',
       'changes: setup changes have not been committed or pushed',
       '',
     ].join('\n')
@@ -142,6 +149,7 @@ test('scaffolds only absent customer directories in human mode', async () => {
       'skipped:',
       '- customer-wide',
       'validation: not performed; run content validate before treating the repository as valid or durable',
+      'markers: empty scaffold directories include .gitkeep files for later Git tracking',
       'changes: setup changes have not been committed or pushed',
       '',
     ].join('\n')

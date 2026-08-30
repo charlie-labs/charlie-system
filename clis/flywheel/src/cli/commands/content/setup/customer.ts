@@ -6,8 +6,10 @@ import {
 } from '@charlie-labs/oclif-plugin-helpers';
 
 import { ContentOperationalError } from '../../../../lib/content/errors.js';
-import type { SetupResult } from '../../../../lib/content/setup/contract.js';
-import { runCustomerSetup } from '../../../../lib/content/setup/customer.js';
+import {
+  runCustomerSetup,
+  type SetupResult,
+} from '../../../../lib/content/setup/index.js';
 import { renderSetupResult } from '../../../output/setup.js';
 import { ContentCommand } from '../../../utils/content-command.js';
 import { contentSetupFlags } from '../../../utils/content-flags.js';
@@ -25,7 +27,7 @@ export default class Customer extends ContentCommand<
   static override flags = super.registerManifest(contentSetupFlags);
   static override summary = 'Install the fixed customer scaffold';
   static override description =
-    'Create absent directories from the package-owned customer scaffold without reading or changing existing destinations. Setup does not create content files, validate, commit, or push.';
+    'Create absent directories and .gitkeep marker files from the package-owned customer scaffold without reading or changing existing destinations. Setup does not validate, commit, or push.';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --repository-path /tmp/customer-knowledge',
