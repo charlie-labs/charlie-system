@@ -73,7 +73,7 @@ export function helpEntries(
     nextHeading < 0 ? afterHeading : afterHeading.slice(0, nextHeading);
   const entries: string[] = [];
   for (const line of section.split('\n')) {
-    const match = /^  ([a-z]+(?: [a-z]+){0,2})\s{2,}\S/u.exec(line);
+    const match = /^  ([a-z][a-z-]*(?: [a-z][a-z-]*){0,2})\s{2,}\S/u.exec(line);
     const entry = match?.[1];
     if (entry !== undefined) {
       entries.push(entry);

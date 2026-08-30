@@ -36,3 +36,7 @@ export const contentShowFlags = defineFlags({
 export const contentRelatedFlags = defineFlags({
   'repository-path': repositoryPathFlag,
 });
+
+export const contentSetupFlags = defineFlags({
+  'repository-path': repositoryPathFlag,
+});

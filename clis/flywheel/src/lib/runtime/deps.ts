@@ -1,12 +1,21 @@
 import type { Dirent, Stats } from 'node:fs';
-import { lstat, readdir, readFile, stat } from 'node:fs/promises';
+import {
+  lstat,
+  mkdir,
+  readdir,
+  readFile,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 
 export type AsyncFileSystem = Readonly<{
+  readonly mkdir: (directoryPath: string) => Promise<void>;
   readonly readFile: (filePath: string) => Promise<string>;
   readonly readFileBytes: (filePath: string) => Promise<Uint8Array>;
   readonly readdir: (directoryPath: string) => Promise<Dirent[]>;
   readonly lstat: (filePath: string) => Promise<Stats>;
   readonly stat: (filePath: string) => Promise<Stats>;
+  readonly writeFile: (filePath: string, bytes: Uint8Array) => Promise<void>;
 }>;
 
 export type ProcessResult = Readonly<{
@@ -31,12 +40,18 @@ export type FlywheelDeps = Readonly<{
 export function createFlywheelDeps(): FlywheelDeps {
   return {
     filesystem: {
+      mkdir: async (directoryPath) => {
+        await mkdir(directoryPath);
+      },
       readFile: (filePath) => readFile(filePath, 'utf8'),
       readFileBytes: (filePath) => readFile(filePath),
       readdir: (directoryPath) =>
         readdir(directoryPath, { withFileTypes: true }),
       lstat: (filePath) => lstat(filePath),
       stat: (filePath) => stat(filePath),
+      writeFile: async (filePath, bytes) => {
+        await writeFile(filePath, bytes, { flag: 'wx' });
+      },
     },
     process: {
       run: runProcess,
