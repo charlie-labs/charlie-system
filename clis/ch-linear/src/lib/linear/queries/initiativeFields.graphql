@@ -1,0 +1,11 @@
+fragment InitiativeFields on Initiative {
+  id
+  name
+  description
+  targetDate
+  startedAt
+  completedAt
+  color
+  createdAt
+  updatedAt
+}

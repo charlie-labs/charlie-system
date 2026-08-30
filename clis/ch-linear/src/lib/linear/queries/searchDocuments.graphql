@@ -1,0 +1,20 @@
+query SearchDocuments($term: String!, $first: Int = 20, $after: String) {
+  searchDocuments(term: $term, first: $first, after: $after) {
+    nodes {
+      id
+      slugId
+      title
+      project {
+        name
+      }
+      creator {
+        displayName
+        name
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

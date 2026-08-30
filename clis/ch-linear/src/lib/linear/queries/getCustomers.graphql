@@ -1,0 +1,20 @@
+query GetCustomers($first: Int = 50, $after: String) {
+  customers(first: $first, after: $after) {
+    nodes {
+      id
+      name
+      tier {
+        id
+        name
+      }
+      status {
+        id
+        name
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

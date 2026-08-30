@@ -1,0 +1,18 @@
+mutation UpdateIssue($id: String!, $input: IssueUpdateInput!) {
+  issueUpdate(id: $id, input: $input) {
+    success
+    lastSyncId
+    issue {
+      id
+      identifier
+      title
+      delegate {
+        ...UserLite
+      }
+      createdAt
+      updatedAt
+      completedAt
+      canceledAt
+    }
+  }
+}

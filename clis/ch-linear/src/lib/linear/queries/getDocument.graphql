@@ -1,0 +1,26 @@
+query GetDocument($id: String!) {
+  document(id: $id) {
+    id
+    slugId
+    title
+    content
+    createdAt
+    updatedAt
+    icon
+    color
+    project {
+      id
+      name
+    }
+    team {
+      id
+      key
+      name
+    }
+    creator {
+      id
+      displayName
+      name
+    }
+  }
+}

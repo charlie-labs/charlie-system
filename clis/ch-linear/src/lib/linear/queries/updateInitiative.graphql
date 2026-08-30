@@ -1,0 +1,10 @@
+# import "./initiativeFields.graphql"
+
+mutation UpdateInitiative($id: String!, $input: InitiativeUpdateInput!) {
+  initiativeUpdate(id: $id, input: $input) {
+    success
+    initiative {
+      ...InitiativeFields
+    }
+  }
+}

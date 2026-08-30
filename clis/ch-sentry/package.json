@@ -1,0 +1,56 @@
+{
+  "name": "@charlie-labs/ch-sentry",
+  "version": "0.1.2",
+  "private": true,
+  "sideEffects": false,
+  "bin": {
+    "ch-sentry": "./bin/run.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "bun run ./bin/run.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@charlie-labs/oclif-plugin-helpers-zod3": "workspace:*",
+    "@oclif/core": "^4.10.6",
+    "@oclif/plugin-help": "^6.2.25",
+    "@oclif/plugin-not-found": "^3.2.24",
+    "@oclif/plugin-plugins": "^5.4.49",
+    "dotenv": "^16.6.1",
+    "zod3": "npm:zod@^3.25.76"
+  },
+  "devDependencies": {
+    "msw": "^2.10.5"
+  },
+  "oclif": {
+    "bin": "ch-sentry",
+    "commands": "./src/cli/commands",
+    "dirname": "ch-sentry",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins",
+      "@oclif/plugin-not-found"
+    ],
+    "topicSeparator": " ",
+    "description": "A CLI for interacting with Sentry projects, issues, events, releases, and tags.",
+    "topics": {
+      "events": {
+        "description": "list and view events for an issue."
+      },
+      "issues": {
+        "description": "list and view issues for a project."
+      },
+      "projects": {
+        "description": "list and view projects."
+      },
+      "releases": {
+        "description": "list recent releases for an organization."
+      },
+      "tags": {
+        "description": "list tags for a project and view a tag's values."
+      }
+    }
+  }
+}

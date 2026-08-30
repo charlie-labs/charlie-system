@@ -1,0 +1,11 @@
+mutation CustomerNeedUpdate($id: String!, $input: CustomerNeedUpdateInput!) {
+  customerNeedUpdate(id: $id, input: $input) {
+    success
+    need {
+      id
+      body
+      priority
+      archivedAt
+    }
+  }
+}

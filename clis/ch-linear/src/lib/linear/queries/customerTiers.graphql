@@ -1,0 +1,12 @@
+query CustomerTiers($first: Int = 100, $after: String) {
+  customerTiers(first: $first, after: $after) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      id
+      name
+    }
+  }
+}
