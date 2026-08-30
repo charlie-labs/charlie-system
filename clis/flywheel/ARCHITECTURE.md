@@ -1,9 +1,9 @@
 # Flywheel CLI architecture
 
-The Flywheel CLI treats the customer knowledge repository as canonical authored
-source. Commands inspect that source through a small set of composable library
-boundaries; they do not establish competing interpretations of repository
-layout, artifact identity, references, or validity.
+The Flywheel CLI treats the Flywheel repository as canonical authored source.
+Commands inspect that source through a small set of composable library
+boundaries; they do not establish competing interpretations of Flywheel
+repository layout, artifact identity, references, or validity.
 
 The fuller design and delivery rationale lives in
 [`architecture-plan.md`](../../architecture-plan.md). This document records the
@@ -15,27 +15,28 @@ The library behaves like a small compiler whose stages can also be used
 independently when an operation does not need the complete semantic model:
 
 ```text
-repository source
+Flywheel repository source
   -> discovery and classification
-  -> repository inventory
+  -> Flywheel repository inventory
   -> typed artifact compilation
   -> reference resolution
   -> relationship graph
-  -> repository validation
+  -> Flywheel repository validation
   -> command-specific projections
   -> rendering
 ```
 
 Exact source inspection, artifact lookup, relationship traversal, and ranked
 retrieval are distinct operations. For example, exact text search may consume a
-repository inventory directly, while semantic retrieval must consume a
-validated repository projection. Commands should request the narrowest stage
-that satisfies their contract.
+Flywheel repository inventory directly, while semantic retrieval must consume a
+validated Flywheel repository projection. Commands should request the narrowest
+stage that satisfies their contract.
 
 ## Component boundaries
 
-- The repository boundary owns paths, repository regions, repository
-  identities, selections, source access, discovery, and entry classification.
+- The Flywheel repository boundary owns paths, Flywheel repository regions,
+  repo-specific identities, selections, source access, discovery, and entry
+  classification.
 - Artifact components own their public artifact contract and parser. Parser
   implementation types, including Markdown AST types, remain private.
 - Reference resolution owns the distinction between authored references and
@@ -43,12 +44,12 @@ that satisfies their contract.
   it.
 - Graph construction owns relationships and their provenance. Derived indexes
   are replaceable views, not canonical data.
-- Validation consumes the repository projection. The projection never depends
-  on validation.
+- Validation consumes the Flywheel repository projection. The projection never
+  depends on validation.
 - Retrieval and management capabilities consume upstream values without
-  redefining repository or artifact semantics.
+  redefining Flywheel repository or artifact semantics.
 - CLI commands translate arguments into library inputs and render library
-  results. Repository semantics do not live in command modules.
+  results. Flywheel repository semantics do not live in command modules.
 
 Public component outputs are plain values. A component exposes a narrow
 contract rather than its local helper types, parser objects, filesystem
@@ -62,11 +63,11 @@ public contract.
 
 ## Authority and provenance
 
-Compilation may normalize repository paths, construct canonical identities,
-and resolve references, but it must preserve the evidence from which those
-values were derived. Authored references and resolved references are distinct
-values, and every derived relationship identifies its authored or structural
-provenance.
+Compilation may normalize Flywheel repository paths, construct canonical
+identities, and resolve references, but it must preserve the evidence from which
+those values were derived. Authored references and resolved references are
+distinct values, and every derived relationship identifies its authored or
+structural provenance.
 
 External targets may exist as identities and graph neighbors without fetching
 their live content. Likewise, retrieval results present source-authored content
@@ -77,19 +78,19 @@ Derived state must never silently rewrite or reinterpret canonical content.
 
 1. Canonical authored files remain authoritative. Indexes, caches, search
    passages, and other projections are derived and replaceable.
-2. Repository regions form a closed set. Each path is classified exactly once
-   as a recognized artifact, artifact support, Flywheel tooling state,
-   prohibited content, visible unsupported content, or ordinary repository
-   infrastructure outside the governed regions. Downstream stages consume the
-   classification instead of rediscovering regions from path strings.
+2. Flywheel repository regions form a closed set. Each path is classified exactly
+   once as a recognized artifact, artifact support, Flywheel tooling state,
+   prohibited content, visible unsupported content, or ordinary infrastructure
+   outside the governed Flywheel repository regions. Downstream stages consume
+   the classification instead of rediscovering regions from path strings.
 3. Support files inherit the ownership and eligibility of their containing
    artifact, but are not independently parsed artifacts.
-4. Repository paths are Charlie-relative, normalized, and prevented from
-   escaping the selected repository root.
-5. Repository selection is explicit. Library behavior must not depend on
-   ambient customer, source-repository, Task, or provider context.
-6. One operation observes one repository-source state. Files are listed and
-   read through batch-capable boundaries so implementations do not require a
+4. Flywheel repository paths are Charlie-relative, normalized, and prevented
+   from escaping the selected Flywheel repository root.
+5. Flywheel repository selection is explicit. Library behavior must not depend
+   on ambient customer, source-repository, Task, or provider context.
+6. One operation observes one Flywheel repository source state. Files are listed
+   and read through batch-capable boundaries so implementations do not require a
    process or parser setup per file.
 7. Canonical file bytes are parsed at most once per compilation. Downstream
    stages consume typed results rather than rereading or reparsing source.
@@ -112,16 +113,16 @@ Derived state must never silently rewrite or reinterpret canonical content.
     result. Whether an operation fails or returns partial results is an
     explicit part of that operation's contract.
 15. Command output is a final boundary. Operations return structured values
-    before rendering, and rendered text does not feed back into repository
-    semantics.
+    before rendering, and rendered text does not feed back into Flywheel
+    repository semantics.
 
 ## Operation contracts
 
 Exact source inspection, artifact lookup, relationship traversal, and ranked
-retrieval share repository authority but retain separate contracts:
+retrieval share Flywheel repository authority but retain separate contracts:
 
-- exact text search consumes the permitted repository inventory and bypasses
-  semantic parsing, graph construction, validation, and ranking;
+- exact text search consumes the permitted Flywheel repository inventory and
+  bypasses semantic parsing, graph construction, validation, and ranking;
 - artifact lookup resolves known Flywheel identities rather than treating
   arbitrary external identities as inspectable local content;
 - relationship traversal consumes the graph and may return unresolved or
@@ -129,7 +130,7 @@ retrieval share repository authority but retain separate contracts:
 - ranked retrieval consumes eligible source-authored knowledge together with
   an explicit validation assessment.
 
-For ranked retrieval, repository, lifecycle, and content-type eligibility is
+For ranked retrieval, Flywheel repository, lifecycle, and content-type eligibility is
 applied before candidate limits or ranking cutoffs. Backend candidates remain
 distinct from public results. User-visible limits count artifacts rather than
 internal passages, and passages remain grouped beneath their source artifact.
@@ -146,7 +147,7 @@ Dependencies point from stable source concepts toward increasingly derived
 capabilities:
 
 ```text
-repository
+Flywheel repository
   -> artifacts and targets
   -> reference resolution
   -> graph and projection
@@ -161,7 +162,7 @@ contracts of earlier stages, but not on another component's internal helpers.
 Full compilation is an orchestration capability, not the only library API.
 Deterministic stages remain independently callable so operations can stop at
 the narrowest sufficient representation and future implementations can replace
-an expensive stage without changing repository semantics.
+an expensive stage without changing Flywheel repository semantics.
 
 ## Performance posture
 

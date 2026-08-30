@@ -159,7 +159,7 @@ test('rejects files reached through a symbolic-link directory', async () => {
   expect(error).toBeInstanceOf(RepositorySourceError);
 });
 
-test('reports an unreadable repository root through the source boundary', async () => {
+test('reports an unreadable Flywheel repository root through the source boundary', async () => {
   const missingPath = path.join(
     await makeTemporaryDirectory(),
     'does-not-exist'
@@ -172,7 +172,7 @@ test('reports an unreadable repository root through the source boundary', async 
   const error = await captureError(source.listEntries());
 
   expect(error).toMatchObject({
-    message: `cannot read selected repository: ${missingPath}`,
+    message: `cannot read selected Flywheel repository: ${missingPath}`,
     name: 'RepositorySourceError',
   });
 });

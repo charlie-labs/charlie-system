@@ -20,7 +20,7 @@ test('assesses a conforming compiled repository as valid', async () => {
   expect(report).toEqual({ diagnostics: [], status: 'valid' });
 });
 
-test('keeps unknown Document metadata visible in the repository assessment', async () => {
+test('keeps unknown Document metadata visible in the Flywheel repository assessment', async () => {
   const files = validRepositoryFiles();
   const guide = files['customer-wide/docs/guide.md'];
   if (guide === undefined) throw new Error('document fixture is missing');

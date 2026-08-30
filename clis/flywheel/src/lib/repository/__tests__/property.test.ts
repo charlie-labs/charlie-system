@@ -22,7 +22,7 @@ function compareRepositoryStrings(left: string, right: string): number {
   return left < right ? -1 : 1;
 }
 
-test('governed repository paths normalize deterministically and idempotently', () => {
+test('governed Flywheel repository paths normalize deterministically and idempotently', () => {
   assert(
     fc.property(governedPathArbitrary, (candidate) => {
       const normalized = normalizeRepositoryRelativePath(candidate);
@@ -52,7 +52,7 @@ test('representative repository classification semantics are explicit', () => {
   );
 });
 
-test('repository discovery is independent of source entry order', async () => {
+test('Flywheel repository discovery is independent of source entry order', async () => {
   const entries: readonly RepositorySourceEntry[] = [
     { kind: 'directory', path: 'repo-specific/acme/api' },
     { kind: 'directory', path: 'customer-wide/docs' },
@@ -93,7 +93,7 @@ test('repository discovery is independent of source entry order', async () => {
   );
 });
 
-test('repository selections normalize, deduplicate, and resolve only known repositories', () => {
+test('Flywheel repository selections normalize, deduplicate, and resolve only known repo-specific regions', () => {
   assert(
     fc.property(
       fc.array(

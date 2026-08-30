@@ -117,7 +117,9 @@ const searchOptions = {
 
 const unavailableSource: RepositorySource = {
   listEntries: () =>
-    Promise.reject(new RepositorySourceError('repository is unavailable')),
+    Promise.reject(
+      new RepositorySourceError('Flywheel repository is unavailable')
+    ),
   readFiles: () => Promise.resolve([]),
   state: { kind: 'working-tree', repositoryPath: '/missing' },
 };

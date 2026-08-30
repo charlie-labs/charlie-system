@@ -62,7 +62,7 @@ test('applies repository, lifecycle, and content-type eligibility explicitly', a
   ).toBe(false);
 });
 
-test('normalizes default scope and rejects an unknown selected repository', async () => {
+test('normalizes default scope and rejects an unknown selected Flywheel repository', async () => {
   const repository = await compileAndAssessRepository(corpusSource());
   const source = projectKnowledge(repository);
   const defaultScope = scope();
@@ -78,7 +78,7 @@ test('normalizes default scope and rejects an unknown selected repository', asyn
       repository.projection.inventory,
       scope({ repositoryIds: ['acme/missing'] })
     )
-  ).toThrow('selected repository does not exist: acme/missing');
+  ).toThrow('selected Flywheel repository does not exist: acme/missing');
 });
 
 function scope(

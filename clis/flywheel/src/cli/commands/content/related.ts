@@ -33,7 +33,7 @@ export default class Related extends ContentCommand<
     }),
   };
   static override description =
-    'Compile the repository graph once and traverse its local incoming and outgoing relationships without fetching external content.';
+    'Compile the Flywheel repository graph once and traverse its local incoming and outgoing relationships without fetching external content.';
   static override examples = [
     '<%= config.bin %> <%= command.id %> customer-wide/docs/guide.md',
     '<%= config.bin %> <%= command.id %> component:default/api --json',

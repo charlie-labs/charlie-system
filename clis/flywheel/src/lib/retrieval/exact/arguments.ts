@@ -67,7 +67,7 @@ function validatePathOperand(
 
 function invalidPath(operand: string): ExactSearchInvocationError {
   return new ExactSearchInvocationError(
-    `ripgrep path is not a repository-relative admitted path: ${operand}`
+    `ripgrep path is not a Flywheel repository-relative admitted path: ${operand}`
   );
 }
 

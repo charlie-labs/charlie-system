@@ -9,15 +9,18 @@ import {
 afterEach(cleanupTemporaryDirectories);
 
 test('proves root, topic, and exact leaf command help', async () => {
-  const [root, content, knowledge, skill, preset] = await Promise.all([
-    runCli(['--help']),
-    runCli(['content', '--help']),
-    runCli(['knowledge', '--help']),
-    runCli(['skill', '--help']),
-    runCli(['skill', 'preset', '--help']),
-  ]);
+  const [root, content, knowledge, skill, preset, validate] = await Promise.all(
+    [
+      runCli(['--help']),
+      runCli(['content', '--help']),
+      runCli(['knowledge', '--help']),
+      runCli(['skill', '--help']),
+      runCli(['skill', 'preset', '--help']),
+      runCli(['content', 'validate', '--help']),
+    ]
+  );
 
-  for (const result of [root, content, knowledge, skill, preset]) {
+  for (const result of [root, content, knowledge, skill, preset, validate]) {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe('');
   }
@@ -55,4 +58,10 @@ test('proves root, topic, and exact leaf command help', async () => {
     'skill preset list',
     'skill preset show',
   ]);
+  expect(validate.stdout).toContain(
+    '--repository-path=<value>  Flywheel repository path'
+  );
+  expect(validate.stdout).toContain('/home/user/.charlie/flywheel');
+  expect(validate.stdout).not.toContain(['customer', 'knowledge'].join('-'));
+  expect(validate.stdout).not.toContain(['knowledge', 'repository'].join(' '));
 });

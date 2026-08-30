@@ -28,7 +28,7 @@ export default class Validate extends ContentCommand<
 > {
   static override args = {
     paths: Args.string({
-      description: 'One or more repository-relative Flywheel paths',
+      description: 'One or more paths relative to the Flywheel repository',
       multiple: true,
       required: false,
     }),
@@ -36,7 +36,7 @@ export default class Validate extends ContentCommand<
   static override flags = super.registerManifest(contentValidateFlags);
   static override summary = 'Validate the compiled Flywheel repository';
   static override description =
-    'Compile and assess Flywheel artifacts, references, relationships, and repository invariants without formatting, repairing, or rewriting content.';
+    'Compile and assess Flywheel artifacts, references, relationships, and Flywheel repository invariants without formatting, repairing, or rewriting content.';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> customer-wide/docs',

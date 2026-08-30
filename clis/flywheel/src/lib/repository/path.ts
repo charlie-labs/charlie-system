@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { RepositoryPath } from './contract.js';
 import { RepositoryPathError } from './errors.js';
 
-export const DEFAULT_REPOSITORY_PATH = '/home/user/.charlie/customer-knowledge';
+export const DEFAULT_REPOSITORY_PATH = '/home/user/.charlie/flywheel';
 
 export type RepositoryPathOptions = Readonly<{
   readonly cwd: string;
@@ -36,7 +36,9 @@ export function normalizeRepositoryRelativePath(
     candidate.includes('\0') ||
     path.posix.isAbsolute(candidate)
   ) {
-    throw new RepositoryPathError(`invalid repository path: ${candidate}`);
+    throw new RepositoryPathError(
+      `invalid Flywheel repository path: ${candidate}`
+    );
   }
 
   const normalized = path.posix.normalize(candidate);
@@ -46,7 +48,7 @@ export function normalizeRepositoryRelativePath(
     normalized.startsWith('../')
   ) {
     throw new RepositoryPathError(
-      `repository path escapes the selected repository: ${candidate}`
+      `Flywheel repository path escapes the selected Flywheel repository: ${candidate}`
     );
   }
   return normalized;
@@ -60,7 +62,7 @@ export function resolveRepositoryEntryPath(
   const resolved = path.resolve(repositoryPath, normalized);
   if (!isWithinRepository(repositoryPath, resolved)) {
     throw new RepositoryPathError(
-      `repository path escapes the selected repository: ${relativePath}`
+      `Flywheel repository path escapes the selected Flywheel repository: ${relativePath}`
     );
   }
   return resolved;
@@ -73,14 +75,14 @@ export function toRepositoryRelativePath(
 ): RepositoryPath {
   if (!isWithinRepository(repositoryPath, absolutePath)) {
     throw new RepositoryPathError(
-      `path is outside the selected repository: ${absolutePath}`
+      `path is outside the selected Flywheel repository: ${absolutePath}`
     );
   }
   const relativePath = path.relative(repositoryPath, absolutePath);
   if (source === 'filesystem-entry') {
     if (relativePath === '') {
       throw new RepositoryPathError(
-        `path does not identify a repository entry: ${absolutePath}`
+        `path does not identify a Flywheel repository entry: ${absolutePath}`
       );
     }
     return relativePath.split(path.sep).join('/');

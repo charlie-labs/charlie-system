@@ -61,7 +61,7 @@ function inventoryEntryDiagnostics(
 function unsupportedEntryDiagnostics(
   entry: Extract<RepositoryEntry, { readonly kind: 'unsupported' }>
 ): readonly ValidationDiagnostic[] {
-  const message = `repository entry is unsupported: ${entry.reason}`;
+  const message = `Flywheel repository entry is unsupported: ${entry.reason}`;
   return entry.region === undefined
     ? [
         validationWarning({
@@ -124,7 +124,8 @@ function compilationCoverageDiagnostics(
         : [
             validationError({
               impact: 'invalid',
-              message: 'compiled artifact is absent from repository inventory',
+              message:
+                'compiled artifact is absent from Flywheel repository inventory',
               path,
               ruleId: 'FW-PROJECTION-COMPILATION-UNKNOWN',
             }),

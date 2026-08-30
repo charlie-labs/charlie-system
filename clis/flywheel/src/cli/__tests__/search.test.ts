@@ -44,7 +44,7 @@ test('renders source-faithful results and a score-free JSON boundary', async () 
   expect(human.exitCode).toBe(0);
   expect(human.stderr).toBe('');
   expect(human.stdout).toContain(
-    'repositories: customer-wide and all repositories'
+    'Flywheel repos: customer-wide and all Flywheel repos'
   );
   expect(human.stdout).toContain(
     'Production deployments require approval.[^proof]'

@@ -11,7 +11,7 @@ export function normalizeRepositoryId(candidate: string): RepositoryId {
     !segments.every((segment) => REPOSITORY_ID_SEGMENT.test(segment))
   ) {
     throw new RepositoryIdentityError(
-      `invalid repository selection, expected owner/name: ${candidate}`
+      `invalid Flywheel repository selection, expected owner/name: ${candidate}`
     );
   }
   return normalized;

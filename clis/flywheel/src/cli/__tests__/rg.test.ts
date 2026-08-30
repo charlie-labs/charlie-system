@@ -10,7 +10,7 @@ import {
 
 afterEach(cleanupTemporaryDirectories);
 
-test('searches only the exact corpus admitted by repository selection', async () => {
+test('searches only the exact corpus admitted by Flywheel repository selection', async () => {
   const repositoryPath = await exactSearchRepository();
 
   const all = await searchMarker(repositoryPath, []);
@@ -86,7 +86,7 @@ test('rejects an explicit path that traverses a repository symlink', async () =>
 
   expect(result.exitCode).toBe(2);
   expect(result.stdout).toBe('');
-  expect(result.stderr).toContain('repository-relative admitted path');
+  expect(result.stderr).toContain('Flywheel repository-relative admitted path');
 });
 
 async function exactSearchRepository(): Promise<string> {

@@ -22,20 +22,20 @@ source repositories, providers, tasks, transcripts, or lifecycle state.
 
 ## Development
 
-Run the CLI from the repository root:
+Run the CLI from the `charlie-system` checkout root:
 
 ```sh
 bun run cli --help
 ```
 
-Run the executable proof from the repository root with:
+Run the executable proof from the `charlie-system` checkout root with:
 
 ```sh
 bun run test:flywheel
 ```
 
-The default repository path is `/home/user/.charlie/customer-knowledge`.
-Use `--repository-path` to point at a checkout-local knowledge repository for
+The default Flywheel repository path is `/home/user/.charlie/flywheel`.
+Use `--repository-path` to point at a checkout-local Flywheel repository for
 tests and development. `content rg` requires a literal `--` before the
 ripgrep arguments; `content validate` is deterministic, offline, and
 read-only. Use `content show <target>` to inspect one compiled artifact by
@@ -44,10 +44,10 @@ inspect that section, for example
 `content show customer-wide/docs/guide.md#operations`. Add `--json` for the
 structured inspection result, and place `--repository-path` before or after the
 target. `knowledge search` ranks source-faithful Doc and Catalog passages
-from explicit repository, lifecycle, and content-type scope; it does not use
+from explicit Flywheel repository, lifecycle, and content-type scope; it does not use
 ambient Task context or fetch external content. Invalid and incomplete
-repository assessments fail closed instead of becoming empty or partial search
-results. Use `skill preset list` to inspect available local Skill identities
+Flywheel repository assessments fail closed instead of becoming empty or
+partial search results. Use `skill preset list` to inspect available local Skill identities
 and `skill preset show placeholder-skill` to print its payload and
 specialization guidance. The package does not read a general configuration
 file or ambient customer, source-repository, or Task context.

@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const repositoryPathFlag = {
   oclif: Flags.string({
     description:
-      'Charlie knowledge repository path (defaults to /home/user/.charlie/customer-knowledge)',
+      'Flywheel repository path (defaults to /home/user/.charlie/flywheel)',
   }),
   schema: z.string().optional(),
 } as const;
@@ -20,7 +20,7 @@ export const repositorySelectionFlagDefinitions = {
   },
   repo: {
     oclif: Flags.string({
-      description: 'Include one repo-specific region as owner/name',
+      description: 'Include one Flywheel repo-specific region as owner/name',
       multiple: true,
       multipleNonGreedy: true,
     }),

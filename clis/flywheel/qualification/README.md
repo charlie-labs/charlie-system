@@ -16,12 +16,12 @@ Operational owner: Flywheel maintainers (Riley).
 
 The versioned corpus is
 [`retrieval-corpus.v1.json`](./retrieval-corpus.v1.json). It reuses the
-committed reference repository fixture and reports artifact-level Recall@K for
+committed Flywheel repository fixture and reports artifact-level Recall@K for
 each query plus a macro-average for each K. The report includes retrieved and
 relevant canonical artifact IDs so ranking changes can be inspected without
 turning the versioned `artifact-recall-at-k-v1` metric into a hard threshold.
 
-Run it from the repository root:
+Run it from the `charlie-system` checkout root:
 
 ```sh
 bun run --cwd clis/flywheel qualification:retrieval
@@ -32,13 +32,13 @@ and deterministic for the same source, corpus, and implementation.
 
 ## Performance scenario
 
-The performance suite creates a deterministic temporary repository larger than
+The performance suite creates a deterministic temporary Flywheel repository larger than
 the committed fixture, then times the existing production stage boundaries
-from discovery through aggregate retrieval. It emits bounded repository shape,
+from discovery through aggregate retrieval. It emits bounded Flywheel repository shape,
 validation, retrieval, environment, and per-stage timing metadata. It does not
 add production telemetry, caches, or timing thresholds.
 
-Run it from the repository root:
+Run it from the `charlie-system` checkout root:
 
 ```sh
 bun run --cwd clis/flywheel qualification:performance

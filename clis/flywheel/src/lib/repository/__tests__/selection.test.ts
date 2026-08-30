@@ -17,7 +17,7 @@ const inventory = {
   state: { kind: 'working-tree', repositoryPath: '/knowledge' },
 } satisfies RepositoryInventory;
 
-describe('repository selection construction', () => {
+describe('Flywheel repository selection construction', () => {
   test('represents the three supported selection forms explicitly', () => {
     expect(
       createRepositorySelection({
@@ -58,7 +58,7 @@ describe('repository selection construction', () => {
   });
 });
 
-describe('repository selection resolution', () => {
+describe('Flywheel repository selection resolution', () => {
   test('resolves all, customer-wide-only, and known named repositories', () => {
     expect(
       resolveSelectedRepositoryIds(
@@ -89,6 +89,8 @@ describe('repository selection resolution', () => {
         },
         inventory
       )
-    ).toThrow('selected repository does not exist: missing/repository');
+    ).toThrow(
+      'selected Flywheel repository does not exist: missing/repository'
+    );
   });
 });
