@@ -5,6 +5,7 @@ export function renderSetupResult(result: SetupResult): string {
     formatPaths('copied', result.copied),
     formatPaths('skipped', result.skipped),
     'validation: not performed; run content validate before treating the repository as valid or durable',
+    'changes: setup changes have not been committed or pushed',
   ].join('\n');
 }
 

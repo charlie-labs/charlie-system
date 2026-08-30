@@ -87,6 +87,7 @@ test('keeps production setup diagnostics on stderr in human mode', async () => {
       ...CUSTOMER_DIRECTORIES.map((directory) => `- ${directory}`),
       'skipped: none',
       'validation: not performed; run content validate before treating the repository as valid or durable',
+      'changes: setup changes have not been committed or pushed',
       '',
     ].join('\n')
   );
@@ -141,6 +142,7 @@ test('scaffolds only absent customer directories in human mode', async () => {
       'skipped:',
       '- customer-wide',
       'validation: not performed; run content validate before treating the repository as valid or durable',
+      'changes: setup changes have not been committed or pushed',
       '',
     ].join('\n')
   );
