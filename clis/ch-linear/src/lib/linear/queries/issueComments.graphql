@@ -1,0 +1,20 @@
+# Retrieves the 20 most-recent comments for a given Linear issue
+query IssueComments($issueId: String!, $first: Int!) {
+  issue(id: $issueId) {
+    createdAt
+    updatedAt
+    completedAt
+    canceledAt
+    comments(first: $first) {
+      nodes {
+        id
+        body
+        createdAt
+        user {
+          name
+          displayName
+        }
+      }
+    }
+  }
+}

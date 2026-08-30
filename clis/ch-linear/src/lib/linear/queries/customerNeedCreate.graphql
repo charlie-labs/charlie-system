@@ -1,0 +1,15 @@
+mutation CustomerNeedCreate($input: CustomerNeedCreateInput!) {
+  customerNeedCreate(input: $input) {
+    success
+    need {
+      id
+      body
+      priority
+      archivedAt
+      customer {
+        id
+        name
+      }
+    }
+  }
+}

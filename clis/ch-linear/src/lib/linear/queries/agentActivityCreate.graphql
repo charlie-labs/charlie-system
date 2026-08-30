@@ -1,0 +1,44 @@
+mutation AgentActivityCreate($input: AgentActivityCreateInput!) {
+  agentActivityCreate(input: $input) {
+    success
+    lastSyncId
+    agentActivity {
+      id
+      createdAt
+      updatedAt
+      ephemeral
+      signal
+      signalMetadata
+      contextualMetadata
+      content {
+        __typename
+        ... on AgentActivityThoughtContent {
+          type
+          body
+        }
+        ... on AgentActivityActionContent {
+          type
+          action
+          parameter
+          result
+        }
+        ... on AgentActivityResponseContent {
+          type
+          body
+        }
+        ... on AgentActivityPromptContent {
+          type
+          body
+        }
+        ... on AgentActivityErrorContent {
+          type
+          body
+        }
+        ... on AgentActivityElicitationContent {
+          type
+          body
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+mutation DocumentCreate($input: DocumentCreateInput!) {
+  documentCreate(input: $input) {
+    success
+    document {
+      id
+      slugId
+      title
+      project {
+        name
+      }
+      creator {
+        displayName
+        name
+      }
+    }
+  }
+}

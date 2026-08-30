@@ -1,0 +1,176 @@
+# Linear Issue – full detail
+query GetIssue($id: String!) {
+  issue(id: $id) {
+    id
+    identifier
+    title
+    description
+    createdAt
+    updatedAt
+    completedAt
+    canceledAt
+    estimate
+    priority
+    priorityLabel
+    url
+
+    team {
+      id
+      key
+      name
+    }
+
+    parent {
+      id
+      identifier
+      title
+    }
+
+    project {
+      id
+      name
+      slugId
+      color
+    }
+
+    state {
+      id
+      name
+      type
+      color
+      position
+    }
+
+    assignee {
+      ...UserLite
+    }
+    # Delegated agent (if any)
+    delegate {
+      ...UserLite
+    }
+
+    labels {
+      nodes {
+        id
+        name
+        color
+      }
+    }
+
+    # Associated customer needs (max 50, ordered by most-recent update)
+    needs(first: 50, orderBy: updatedAt) {
+      nodes {
+        id
+        body
+        priority
+        createdAt
+        archivedAt
+        customer {
+          id
+          name
+          tier {
+            name
+          }
+        }
+        creator {
+          id
+          name
+          displayName
+        }
+      }
+    }
+
+    # Direct sub-issues (children → subIssues, max 50)
+    subIssues: children(first: 50) {
+      nodes {
+        id
+        identifier
+        title
+        estimate
+        priority
+        priorityLabel
+        state {
+          id
+          name
+          type
+          color
+          position
+        }
+        assignee {
+          ...UserLite
+        }
+        delegate {
+          ...UserLite
+        }
+        labels {
+          nodes {
+            id
+            name
+            color
+          }
+        }
+      }
+    }
+    # Related issues (max 50)
+    relatedIssues: relations(first: 50) {
+      nodes {
+        relatedIssue {
+          id
+          identifier
+          title
+          estimate
+          priority
+          priorityLabel
+          state {
+            id
+            name
+            type
+            color
+            position
+          }
+          assignee {
+            ...UserLite
+          }
+          delegate {
+            ...UserLite
+          }
+          labels {
+            nodes {
+              id
+              name
+              color
+            }
+          }
+        }
+      }
+    }
+
+    # Most-recent comments (max 20)
+    comments(first: 20) {
+      nodes {
+        id
+        body
+        createdAt
+        user {
+          id
+          name
+          displayName
+        }
+      }
+    }
+
+    # Attachments (max 10)
+    attachments(first: 10) {
+      nodes {
+        id
+        title
+        subtitle
+        url
+        sourceType
+        metadata
+        createdAt
+        updatedAt
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+query GetWorkflowStates($first: Int = 50, $after: String) {
+  workflowStates(first: $first, after: $after) {
+    nodes {
+      id
+      name
+      type
+      color
+      position
+      team {
+        id
+        name
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

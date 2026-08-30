@@ -1,0 +1,22 @@
+mutation AgentActivityCreatePrompt($input: AgentActivityCreatePromptInput!) {
+  agentActivityCreatePrompt(input: $input) {
+    success
+    lastSyncId
+    agentActivity {
+      id
+      createdAt
+      updatedAt
+      ephemeral
+      signal
+      signalMetadata
+      contextualMetadata
+      content {
+        __typename
+        ... on AgentActivityPromptContent {
+          type
+          body
+        }
+      }
+    }
+  }
+}
