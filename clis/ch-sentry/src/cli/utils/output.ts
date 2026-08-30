@@ -3,8 +3,6 @@ type JsonCapable = Readonly<{
 }>;
 
 export function outputResult<T>(command: JsonCapable, result: T): T {
-  if (command.jsonEnabled?.()) {
-    process.stdout.write(`${JSON.stringify(result)}\n`);
-  }
+  void command;
   return result;
 }
