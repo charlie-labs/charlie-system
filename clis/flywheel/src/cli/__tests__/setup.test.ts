@@ -19,7 +19,7 @@ test('registers both setup command contracts', () => {
   expect(SourceRepo.args).toHaveProperty('repository');
 });
 
-test('reports unavailable customer scaffolds as one JSON error value', async () => {
+test('copies the production customer scaffold as one JSON result', async () => {
   const repositoryPath = await makeRepository({});
   const result = await runCli([
     'content',
@@ -30,24 +30,24 @@ test('reports unavailable customer scaffolds as one JSON error value', async () 
     '--json',
   ]);
 
-  expect(result.exitCode).toBe(2);
+  expect(result.exitCode).toBe(0);
   expect(result.stderr).toBe('');
-  const output: unknown = JSON.parse(result.stdout);
-  expect(output).toMatchObject({
-    error: {
-      copied: [],
-      exitCode: 2,
-      skipped: [],
-      type: 'ContentSetupError',
-    },
+  expect(JSON.parse(result.stdout)).toEqual({
+    copied: [
+      'customer-wide',
+      'customer-wide/.agents',
+      'customer-wide/.agents/daemons',
+      'customer-wide/.agents/daemons/pr-review',
+      'customer-wide/.agents/daemons/pr-review/DAEMON.md',
+      'roles',
+      'roles/pr-autopilot.yaml',
+    ],
+    skipped: [],
+    validationPerformed: false,
   });
-  expect(isSetupErrorOutput(output)).toBe(true);
-  if (isSetupErrorOutput(output)) {
-    expect(output.error.reason).toContain('source entry cannot be inspected');
-  }
 });
 
-test('keeps setup diagnostics on stderr in human mode', async () => {
+test('keeps production setup diagnostics on stderr in human mode', async () => {
   const repositoryPath = await makeRepository({});
   const result = await runCli([
     'content',
@@ -57,9 +57,23 @@ test('keeps setup diagnostics on stderr in human mode', async () => {
     repositoryPath,
   ]);
 
-  expect(result.exitCode).toBe(2);
+  expect(result.exitCode).toBe(0);
   expect(result.stdout).toBe('');
-  expect(result.stderr).toContain('content setup cannot copy');
+  expect(result.stderr).toBe(
+    [
+      'copied:',
+      '- customer-wide',
+      '- customer-wide/.agents',
+      '- customer-wide/.agents/daemons',
+      '- customer-wide/.agents/daemons/pr-review',
+      '- customer-wide/.agents/daemons/pr-review/DAEMON.md',
+      '- roles',
+      '- roles/pr-autopilot.yaml',
+      'skipped: none',
+      'validation: not performed; run content validate before treating the repository as valid or durable',
+      '',
+    ].join('\n')
+  );
 });
 
 test('rejects an invalid source-repository identity without scaffold access', async () => {
@@ -121,6 +135,17 @@ test('renders a successful customer setup only on stderr in human mode', async (
 
 test('returns the successful transformed source-repository result in JSON mode', async () => {
   const sourceRoot = await makeRepository({
+    DIRECTORIES: [
+      'repo-specific',
+      'repo-specific/__owner__',
+      'repo-specific/__owner__/__name__',
+      'repo-specific/__owner__/__name__/catalog',
+      'repo-specific/__owner__/__name__/docs',
+      'repo-specific/__owner__/__name__/.agents',
+      'repo-specific/__owner__/__name__/.agents/daemons',
+      'repo-specific/__owner__/__name__/.agents/skills',
+      '',
+    ].join('\n'),
     '__owner__/__name__/README.md':
       'repository: __repository_id__\nowner: __owner__\nname: __name__\n',
     '__repository_id__.md': 'repository: __repository_id__\n',
@@ -134,26 +159,26 @@ test('returns the successful transformed source-repository result in JSON mode',
   );
 
   expect(result.result).toEqual({
-    copied: ['__repository_id__.md', 'acme', 'acme/api', 'acme/api/README.md'],
+    copied: [
+      '__repository_id__.md',
+      'acme',
+      'acme/api',
+      'acme/api/README.md',
+      'repo-specific',
+      'repo-specific/acme',
+      'repo-specific/acme/api',
+      'repo-specific/acme/api/.agents',
+      'repo-specific/acme/api/.agents/daemons',
+      'repo-specific/acme/api/.agents/skills',
+      'repo-specific/acme/api/catalog',
+      'repo-specific/acme/api/docs',
+    ],
     skipped: [],
     validationPerformed: false,
   });
   expect(result.stdout).toBe('');
   expect(result.stderr).toBe('');
 });
-
-type SetupErrorOutput = Readonly<{
-  readonly error: Readonly<{ readonly reason: string }>;
-}>;
-
-function isSetupErrorOutput(value: unknown): value is SetupErrorOutput {
-  if (!isRecord(value) || !isRecord(value.error)) return false;
-  return typeof value.error.reason === 'string';
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
 
 type CapturedSetupResult = Readonly<{
   readonly result: unknown;

@@ -23,9 +23,11 @@ it never materializes or installs a preset. Setup is the only content command
 that writes: it copies absent entries from inspectable, package-owned scaffold
 trees, leaves every existing destination unchanged, and reports `copied` and
 `skipped` paths. Setup never reads a source-repository checkout, compares
-content, validates the resulting repository, commits, or pushes. The CLI does
-not read or modify source repositories, providers, tasks, transcripts, or
-lifecycle state.
+content, validates the resulting repository, commits, or pushes. Setup requires
+that the package scaffold and selected destination are not concurrently mutated
+while it runs; static symbolic-link and path checks do not claim race safety
+outside that precondition. The CLI does not read or modify source repositories,
+providers, tasks, transcripts, or lifecycle state.
 
 ## Development
 
@@ -61,14 +63,17 @@ file or ambient customer, source-repository, or Task context.
 
 `content setup customer` and `content setup source-repo <owner/name>` use
 package-owned scaffold roots and create only missing directories and files.
-The source-repository identity is normalized as `owner/name`; its scaffold may
-use `__owner__` and `__name__` as path components. Scaffold UTF-8 text may
-also use `__repository_id__` alongside those two tokens. Both commands return
-`validationPerformed: false` in JSON mode
-and print the same copy report in human mode. This checkout intentionally does
-not provide authoritative customer Role/Daemon content or a Repository entity
-schema/filename; those product inputs must land before production scaffold
-payloads are added.
+The customer scaffold currently installs the selected `pr-autopilot` Role and
+its `pr-review` Daemon. The source-repository scaffold installs the minimal
+customer-wide `customer-wide/catalog/repositories.yaml` Repository entity and
+uses its package-owned `DIRECTORIES` manifest to retain the empty matching
+`catalog`, `docs`, `.agents/daemons`, and `.agents/skills` roots that Git cannot
+track by itself. The source-repository identity is normalized as `owner/name`;
+scaffold paths use `__owner__` and `__name__`, while UTF-8 text may also use the
+narrow `__repository_id__` token. Neither command reads the source repository
+named by the argument. Both commands return `validationPerformed: false` and
+the same copy report in JSON and human modes; run `content validate` before
+treating the working tree as valid or durable.
 
 ## Qualification
 

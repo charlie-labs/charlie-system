@@ -191,9 +191,54 @@ test('returns the copy-only customer setup result', async () => {
   });
 });
 
+test('is a repeated no-op and preserves the first customer setup', async () => {
+  const sourceRoot = await makeDirectory('customer-scaffold');
+  const destinationRoot = await makeDirectory('customer-repository');
+  await writeFile(path.join(sourceRoot, 'README.md'), 'authoritative scaffold');
+
+  const first = await runCustomerSetup({
+    destinationRoot,
+    filesystem: createFlywheelDeps().filesystem,
+    sourceRoot,
+  });
+  const second = await runCustomerSetup({
+    destinationRoot,
+    filesystem: createFlywheelDeps().filesystem,
+    sourceRoot,
+  });
+
+  expect(first).toEqual({
+    copied: ['README.md'],
+    skipped: [],
+    validationPerformed: false,
+  });
+  expect(second).toEqual({
+    copied: [],
+    skipped: ['README.md'],
+    validationPerformed: false,
+  });
+  expect(await readFile(path.join(destinationRoot, 'README.md'), 'utf8')).toBe(
+    'authoritative scaffold'
+  );
+});
+
 test('normalizes a source-repository identity and substitutes path and content tokens', async () => {
   const sourceRoot = await makeDirectory('source-repo-scaffold');
   const destinationRoot = await makeDirectory('customer-repository');
+  await writeFile(
+    path.join(sourceRoot, 'DIRECTORIES'),
+    [
+      'repo-specific',
+      'repo-specific/__owner__',
+      'repo-specific/__owner__/__name__',
+      'repo-specific/__owner__/__name__/catalog',
+      'repo-specific/__owner__/__name__/docs',
+      'repo-specific/__owner__/__name__/.agents',
+      'repo-specific/__owner__/__name__/.agents/daemons',
+      'repo-specific/__owner__/__name__/.agents/skills',
+      '',
+    ].join('\n')
+  );
   const templateDirectory = path.join(sourceRoot, '__owner__', '__name__');
   await mkdir(templateDirectory, { recursive: true });
   await writeFile(
@@ -213,7 +258,20 @@ test('normalizes a source-repository identity and substitutes path and content t
   });
 
   expect(result).toEqual({
-    copied: ['__repository_id__.md', 'acme', 'acme/api', 'acme/api/README.md'],
+    copied: [
+      '__repository_id__.md',
+      'acme',
+      'acme/api',
+      'acme/api/README.md',
+      'repo-specific',
+      'repo-specific/acme',
+      'repo-specific/acme/api',
+      'repo-specific/acme/api/.agents',
+      'repo-specific/acme/api/.agents/daemons',
+      'repo-specific/acme/api/.agents/skills',
+      'repo-specific/acme/api/catalog',
+      'repo-specific/acme/api/docs',
+    ],
     skipped: [],
     validationPerformed: false,
   });

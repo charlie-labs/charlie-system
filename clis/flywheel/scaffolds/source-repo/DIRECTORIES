@@ -1,0 +1,8 @@
+repo-specific
+repo-specific/__owner__
+repo-specific/__owner__/__name__
+repo-specific/__owner__/__name__/catalog
+repo-specific/__owner__/__name__/docs
+repo-specific/__owner__/__name__/.agents
+repo-specific/__owner__/__name__/.agents/daemons
+repo-specific/__owner__/__name__/.agents/skills

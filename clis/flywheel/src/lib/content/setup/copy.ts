@@ -12,7 +12,10 @@ import {
   type CopyContext,
   type MutableSetupReport,
 } from './copy-context.js';
-import { ensureDestinationRoot } from './copy-destination.js';
+import {
+  ensureDestinationDirectory,
+  ensureDestinationRoot,
+} from './copy-destination.js';
 import {
   copyDirectoryEntry,
   copyFileEntry,
@@ -30,6 +33,9 @@ export async function copyScaffoldTree(
 ): Promise<SetupCopyResult> {
   const context: CopyContext = {
     destinationRoot: path.resolve(input.destinationRoot),
+    ...(input.directoryManifest === undefined
+      ? {}
+      : { directoryManifest: input.directoryManifest }),
     filesystem: input.filesystem,
     report: { copied: [], skipped: [] },
     transform: input.transform ?? IDENTITY_TRANSFORM,
@@ -37,7 +43,36 @@ export async function copyScaffoldTree(
   await assertSourceDirectory(context, input.sourceRoot);
   await ensureDestinationRoot(context);
   await copyDirectory(context, input.sourceRoot, '');
+  await copyManifestDirectories(context, input.directoryManifest);
   return sortedReport(context.report);
+}
+
+async function copyManifestDirectories(
+  context: CopyContext,
+  manifest: ScaffoldCopyInput['directoryManifest']
+): Promise<void> {
+  if (manifest === undefined) return;
+  await manifest.directories.reduce(
+    (previous, sourcePath) =>
+      previous.then(() => copyManifestDirectory(context, sourcePath)),
+    Promise.resolve()
+  );
+}
+
+async function copyManifestDirectory(
+  context: CopyContext,
+  sourcePath: string
+): Promise<void> {
+  const destinationRelativePath = mapDestinationPath(
+    context.transform,
+    sourcePath,
+    context.report
+  );
+  await ensureDestinationDirectory(
+    context,
+    path.join(context.destinationRoot, destinationRelativePath),
+    destinationRelativePath
+  );
 }
 
 async function copyDirectory(
@@ -88,6 +123,16 @@ async function copyEntry(
     sourcePath,
     context.report
   );
+  if (sourceRelativePath === context.directoryManifest?.sourcePath) {
+    if (!sourceStats.isFile()) {
+      throwSetupError(
+        context.report,
+        sourceRelativePath,
+        'source entry is not a regular file or directory'
+      );
+    }
+    return;
+  }
   const destinationRelativePath = mapDestinationPath(
     context.transform,
     sourceRelativePath,

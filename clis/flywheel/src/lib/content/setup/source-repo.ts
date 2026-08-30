@@ -1,11 +1,17 @@
+import path from 'node:path';
+
 import { normalizeRepositoryId } from '../../repository/identity.js';
 import { ContentInvocationError } from '../errors.js';
+import { ContentSetupError } from '../setup-error.js';
 import type {
   ScaffoldCopyInput,
+  ScaffoldDirectoryManifest,
   ScaffoldCopyTransform,
   SetupResult,
 } from './contract.js';
 import { copyScaffoldTree } from './copy.js';
+
+const DIRECTORY_MANIFEST_PATH = 'DIRECTORIES';
 
 export type SourceRepositorySetupInput = Readonly<
   ScaffoldCopyInput & {
@@ -18,8 +24,62 @@ export async function runSourceRepositorySetup(
 ): Promise<SetupResult> {
   const repositoryId = normalizeRepositoryIdOrThrow(input.repositoryId);
   const transform = createSourceRepositoryTransform(repositoryId);
-  const result = await copyScaffoldTree({ ...input, transform });
+  const directoryManifest = await readDirectoryManifest(input);
+  const result = await copyScaffoldTree({
+    ...input,
+    directoryManifest,
+    transform,
+  });
   return { ...result, validationPerformed: false };
+}
+
+async function readDirectoryManifest(
+  input: SourceRepositorySetupInput
+): Promise<ScaffoldDirectoryManifest> {
+  const sourcePath = path.join(input.sourceRoot, DIRECTORY_MANIFEST_PATH);
+  let sourceStats: Awaited<
+    ReturnType<SourceRepositorySetupInput['filesystem']['lstat']>
+  >;
+  try {
+    sourceStats = await input.filesystem.lstat(sourcePath);
+  } catch (error) {
+    throw new ContentSetupError(
+      DIRECTORY_MANIFEST_PATH,
+      `source directory manifest cannot be inspected: ${errorMessage(error)}`,
+      { copied: [], skipped: [] },
+      { cause: error }
+    );
+  }
+  if (!sourceStats.isFile()) {
+    throw new ContentSetupError(
+      DIRECTORY_MANIFEST_PATH,
+      'source directory manifest is not a regular file',
+      { copied: [], skipped: [] }
+    );
+  }
+  let contents: string;
+  try {
+    contents = await input.filesystem.readFile(sourcePath);
+  } catch (error) {
+    throw new ContentSetupError(
+      DIRECTORY_MANIFEST_PATH,
+      `source directory manifest cannot be read: ${errorMessage(error)}`,
+      { copied: [], skipped: [] },
+      { cause: error }
+    );
+  }
+  const directories = contents
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+  if (directories.length === 0) {
+    throw new ContentSetupError(
+      DIRECTORY_MANIFEST_PATH,
+      'source directory manifest is empty',
+      { copied: [], skipped: [] }
+    );
+  }
+  return { directories, sourcePath: DIRECTORY_MANIFEST_PATH };
 }
 
 function normalizeRepositoryIdOrThrow(candidate: string): string {
@@ -58,4 +118,8 @@ function substituteText(bytes: Uint8Array, repositoryId: string): Uint8Array {
     .replaceAll('__name__', name ?? '')
     .replaceAll('__repository_id__', repositoryId);
   return substituted === text ? bytes : new TextEncoder().encode(substituted);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
