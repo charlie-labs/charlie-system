@@ -1,0 +1,9 @@
+.flywheel
+customer-wide
+customer-wide/catalog
+customer-wide/docs
+customer-wide/.agents
+customer-wide/.agents/daemons
+customer-wide/.agents/daemons/pr-review
+customer-wide/.agents/skills
+roles

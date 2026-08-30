@@ -16,7 +16,7 @@ export class ContentSetupError extends Error {
     result: SetupCopyResult,
     options?: ErrorOptions
   ) {
-    super(`content setup cannot copy ${path}: ${reason}`, options);
+    super(`content setup cannot scaffold ${path}: ${reason}`, options);
     this.name = 'ContentSetupError';
     this.path = path;
     this.reason = reason;

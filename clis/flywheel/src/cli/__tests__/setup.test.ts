@@ -13,13 +13,43 @@ import {
 
 afterEach(cleanupTemporaryDirectories);
 
+const CUSTOMER_DIRECTORIES = [
+  '.flywheel',
+  'customer-wide',
+  'customer-wide/.agents',
+  'customer-wide/.agents/daemons',
+  'customer-wide/.agents/daemons/pr-review',
+  'customer-wide/.agents/skills',
+  'customer-wide/catalog',
+  'customer-wide/docs',
+  'roles',
+] as const;
+
+const SOURCE_REPOSITORY_DIRECTORIES = [
+  '.flywheel',
+  'customer-wide',
+  'customer-wide/.agents',
+  'customer-wide/.agents/daemons',
+  'customer-wide/.agents/skills',
+  'customer-wide/catalog',
+  'customer-wide/docs',
+  'repo-specific',
+  'repo-specific/acme',
+  'repo-specific/acme/api',
+  'repo-specific/acme/api/.agents',
+  'repo-specific/acme/api/.agents/daemons',
+  'repo-specific/acme/api/.agents/skills',
+  'repo-specific/acme/api/catalog',
+  'repo-specific/acme/api/docs',
+] as const;
+
 test('registers both setup command contracts', () => {
   expect(Customer.summary).toBe('Install the fixed customer scaffold');
   expect(SourceRepo.summary).toBe('Install a source-repository scaffold');
   expect(SourceRepo.args).toHaveProperty('repository');
 });
 
-test('copies the production customer scaffold as one JSON result', async () => {
+test('scaffolds the production customer directories as one JSON result', async () => {
   const repositoryPath = await makeRepository({});
   const result = await runCli([
     'content',
@@ -33,15 +63,7 @@ test('copies the production customer scaffold as one JSON result', async () => {
   expect(result.exitCode).toBe(0);
   expect(result.stderr).toBe('');
   expect(JSON.parse(result.stdout)).toEqual({
-    copied: [
-      'customer-wide',
-      'customer-wide/.agents',
-      'customer-wide/.agents/daemons',
-      'customer-wide/.agents/daemons/pr-review',
-      'customer-wide/.agents/daemons/pr-review/DAEMON.md',
-      'roles',
-      'roles/pr-autopilot.yaml',
-    ],
+    copied: [...CUSTOMER_DIRECTORIES],
     skipped: [],
     validationPerformed: false,
   });
@@ -62,13 +84,7 @@ test('keeps production setup diagnostics on stderr in human mode', async () => {
   expect(result.stderr).toBe(
     [
       'copied:',
-      '- customer-wide',
-      '- customer-wide/.agents',
-      '- customer-wide/.agents/daemons',
-      '- customer-wide/.agents/daemons/pr-review',
-      '- customer-wide/.agents/daemons/pr-review/DAEMON.md',
-      '- roles',
-      '- roles/pr-autopilot.yaml',
+      ...CUSTOMER_DIRECTORIES.map((directory) => `- ${directory}`),
       'skipped: none',
       'validation: not performed; run content validate before treating the repository as valid or durable',
       '',
@@ -96,15 +112,13 @@ test('rejects an invalid source-repository identity without scaffold access', as
   });
 });
 
-test('renders a successful customer setup only on stderr in human mode', async () => {
+test('scaffolds only absent customer directories in human mode', async () => {
   const sourceRoot = await makeRepository({
-    'existing.txt': 'source value',
-    'nested/new.txt': 'nested value',
-    'new.txt': 'new value',
+    DIRECTORIES: ['customer-wide', 'customer-wide/docs', 'roles'].join('\n'),
+    'README.md': 'do not install',
   });
   const repositoryPath = await makeRepository({
-    'existing.txt': 'keep value',
-    'nested/.keep': 'keep directory',
+    'customer-wide/existing.txt': 'keep infrastructure',
   });
 
   const result = await runSetupCommand(
@@ -114,28 +128,34 @@ test('renders a successful customer setup only on stderr in human mode', async (
   );
 
   expect(result.result).toEqual({
-    copied: ['nested/new.txt', 'new.txt'],
-    skipped: ['existing.txt', 'nested'],
+    copied: ['customer-wide/docs', 'roles'],
+    skipped: ['customer-wide'],
     validationPerformed: false,
   });
   expect(result.stdout).toBe('');
   expect(result.stderr).toBe(
     [
       'copied:',
-      '- nested/new.txt',
-      '- new.txt',
+      '- customer-wide/docs',
+      '- roles',
       'skipped:',
-      '- existing.txt',
-      '- nested',
+      '- customer-wide',
       'validation: not performed; run content validate before treating the repository as valid or durable',
       '',
     ].join('\n')
   );
 });
 
-test('returns the successful transformed source-repository result in JSON mode', async () => {
+test('returns only transformed source-repository directories in JSON mode', async () => {
   const sourceRoot = await makeRepository({
     DIRECTORIES: [
+      '.flywheel',
+      'customer-wide',
+      'customer-wide/catalog',
+      'customer-wide/docs',
+      'customer-wide/.agents',
+      'customer-wide/.agents/daemons',
+      'customer-wide/.agents/skills',
       'repo-specific',
       'repo-specific/__owner__',
       'repo-specific/__owner__/__name__',
@@ -146,9 +166,7 @@ test('returns the successful transformed source-repository result in JSON mode',
       'repo-specific/__owner__/__name__/.agents/skills',
       '',
     ].join('\n'),
-    '__owner__/__name__/README.md':
-      'repository: __repository_id__\nowner: __owner__\nname: __name__\n',
-    '__repository_id__.md': 'repository: __repository_id__\n',
+    'README.md': 'do not install',
   });
   const repositoryPath = await makeRepository({});
 
@@ -159,20 +177,7 @@ test('returns the successful transformed source-repository result in JSON mode',
   );
 
   expect(result.result).toEqual({
-    copied: [
-      '__repository_id__.md',
-      'acme',
-      'acme/api',
-      'acme/api/README.md',
-      'repo-specific',
-      'repo-specific/acme',
-      'repo-specific/acme/api',
-      'repo-specific/acme/api/.agents',
-      'repo-specific/acme/api/.agents/daemons',
-      'repo-specific/acme/api/.agents/skills',
-      'repo-specific/acme/api/catalog',
-      'repo-specific/acme/api/docs',
-    ],
+    copied: [...SOURCE_REPOSITORY_DIRECTORIES],
     skipped: [],
     validationPerformed: false,
   });

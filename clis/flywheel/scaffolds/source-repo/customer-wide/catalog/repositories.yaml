@@ -1,9 +1,0 @@
-apiVersion: backstage.io/v1alpha1
-kind: Repository
-metadata:
-  name: __repository_id__
-  title: __repository_id__
-  description: Customer source repository tracked by Charlie.
-  annotations:
-    charlie.ai/review-every: 90d
-spec: {}

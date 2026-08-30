@@ -35,7 +35,7 @@ export default class SourceRepo extends ContentCommand<
   static override flags = super.registerManifest(contentSetupFlags);
   static override summary = 'Install a source-repository scaffold';
   static override description =
-    'Copy absent package-owned source-repository scaffold entries for one owner/name identity. No source-repository checkout is read, and setup does not validate, commit, or push.';
+    'Create absent directories from the package-owned source-repository scaffold for one owner/name identity. No source-repository checkout is read, and setup does not create content files, validate, commit, or push.';
   static override examples = [
     '<%= config.bin %> <%= command.id %> acme/api',
     '<%= config.bin %> <%= command.id %> acme/api --repository-path /tmp/customer-knowledge',

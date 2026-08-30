@@ -26,15 +26,14 @@ afterEach(async () => {
   );
 });
 
-test('copies absent entries, skips existing entries, and reports sorted paths', async () => {
+test('scaffolds manifest directories and ignores other source files', async () => {
   const sourceRoot = await makeDirectory('source');
   const destinationRoot = await makeDirectory('destination');
-  await mkdir(path.join(sourceRoot, 'empty-dir'));
-  await writeFile(path.join(sourceRoot, 'alpha.txt'), 'source alpha');
-  await mkdir(path.join(sourceRoot, 'nested'));
-  await writeFile(path.join(sourceRoot, 'nested', 'beta.txt'), 'source beta');
-  await writeFile(path.join(destinationRoot, 'alpha.txt'), 'keep alpha');
-  await mkdir(path.join(destinationRoot, 'nested'));
+  await writeFile(
+    path.join(sourceRoot, 'DIRECTORIES'),
+    ['empty-dir', 'nested', 'nested/deep'].join('\n')
+  );
+  await writeFile(path.join(sourceRoot, 'README.md'), 'do not install');
 
   const result = await copyScaffoldTree({
     destinationRoot,
@@ -43,52 +42,80 @@ test('copies absent entries, skips existing entries, and reports sorted paths', 
   });
 
   expect(result).toEqual({
-    copied: ['empty-dir', 'nested/beta.txt'],
-    skipped: ['alpha.txt', 'nested'],
+    copied: ['empty-dir', 'nested', 'nested/deep'],
+    skipped: [],
   });
-  expect(await readFile(path.join(destinationRoot, 'alpha.txt'), 'utf8')).toBe(
-    'keep alpha'
-  );
-  expect(
-    await readFile(path.join(destinationRoot, 'nested', 'beta.txt'), 'utf8')
-  ).toBe('source beta');
+  expect(await exists(path.join(destinationRoot, 'README.md'))).toBe(false);
 });
 
-test('does not read source bytes for an existing destination file', async () => {
+test('does not read source content files', async () => {
   const sourceRoot = await makeDirectory('source');
   const destinationRoot = await makeDirectory('destination');
-  const existingSource = path.join(sourceRoot, 'existing.txt');
-  const newSource = path.join(sourceRoot, 'new.txt');
-  await writeFile(existingSource, 'source value');
-  await writeFile(newSource, 'new value');
-  await writeFile(path.join(destinationRoot, 'existing.txt'), 'keep value');
+  await writeFile(path.join(sourceRoot, 'DIRECTORIES'), 'directory\n');
+  await writeFile(path.join(sourceRoot, 'content.md'), 'do not install');
   const baseFilesystem = createFlywheelDeps().filesystem;
-  const readPaths: string[] = [];
 
   const result = await copyScaffoldTree({
     destinationRoot,
     filesystem: {
       ...baseFilesystem,
-      readFileBytes: async (filePath) => {
-        readPaths.push(filePath);
-        return baseFilesystem.readFileBytes(filePath);
-      },
+      readFileBytes: failIfContentRead,
     },
     sourceRoot,
   });
 
-  expect(result).toEqual({
-    copied: ['new.txt'],
-    skipped: ['existing.txt'],
+  expect(result).toEqual({ copied: ['directory'], skipped: [] });
+});
+
+test('skips existing directories and preserves their contents', async () => {
+  const sourceRoot = await makeDirectory('source');
+  const destinationRoot = await makeDirectory('destination');
+  await writeFile(
+    path.join(sourceRoot, 'DIRECTORIES'),
+    ['existing', 'existing/child', 'new'].join('\n')
+  );
+  await mkdir(path.join(destinationRoot, 'existing'));
+  await writeFile(path.join(destinationRoot, 'existing', 'keep.txt'), 'keep');
+
+  const result = await copyScaffoldTree({
+    destinationRoot,
+    filesystem: createFlywheelDeps().filesystem,
+    sourceRoot,
   });
-  expect(readPaths).toEqual([newSource]);
+
+  expect(result).toEqual({
+    copied: ['existing/child', 'new'],
+    skipped: ['existing'],
+  });
+  expect(
+    await readFile(path.join(destinationRoot, 'existing/keep.txt'), 'utf8')
+  ).toBe('keep');
+});
+
+test('deduplicates repeated manifest destinations in the report', async () => {
+  const sourceRoot = await makeDirectory('source');
+  const destinationRoot = await makeDirectory('destination');
+  await writeFile(
+    path.join(sourceRoot, 'DIRECTORIES'),
+    ['directory', 'directory', 'directory/child'].join('\n')
+  );
+
+  const result = await copyScaffoldTree({
+    destinationRoot,
+    filesystem: createFlywheelDeps().filesystem,
+    sourceRoot,
+  });
+
+  expect(result).toEqual({
+    copied: ['directory', 'directory/child'],
+    skipped: [],
+  });
 });
 
 test('fails on a destination structural mismatch without replacing it', async () => {
   const sourceRoot = await makeDirectory('source');
   const destinationRoot = await makeDirectory('destination');
-  await mkdir(path.join(sourceRoot, 'nested'));
-  await writeFile(path.join(sourceRoot, 'nested', 'file.txt'), 'source');
+  await writeFile(path.join(sourceRoot, 'DIRECTORIES'), 'nested\n');
   await writeFile(path.join(destinationRoot, 'nested'), 'keep');
 
   const error = await captureFailure(() =>
@@ -110,73 +137,59 @@ test('fails on a destination structural mismatch without replacing it', async ()
   );
 });
 
-test('rejects source and destination symbolic links without following them', async () => {
+test('rejects a symbolic-link directory manifest without following it', async () => {
   const sourceRoot = await makeDirectory('source');
   const destinationRoot = await makeDirectory('destination');
-  await writeFile(path.join(sourceRoot, 'target.txt'), 'target');
-  await symlink(
-    path.join(sourceRoot, 'target.txt'),
-    path.join(sourceRoot, 'link.txt')
+  const outsideManifest = path.join(
+    await makeDirectory('outside'),
+    'DIRECTORIES'
   );
-
-  const sourceError = await captureFailure(() =>
-    copyScaffoldTree({
-      destinationRoot,
-      filesystem: createFlywheelDeps().filesystem,
-      sourceRoot,
-    })
-  );
-  expect(sourceError).toMatchObject({
-    path: 'link.txt',
-    reason: 'source entry is not a regular file or directory',
-  });
-
-  const cleanSourceRoot = await makeDirectory('clean-source');
-  await writeFile(path.join(cleanSourceRoot, 'file.txt'), 'source');
-  const outsidePath = path.join(await makeDirectory('outside'), 'file.txt');
-  await writeFile(outsidePath, 'outside');
-  await symlink(outsidePath, path.join(destinationRoot, 'file.txt'));
-
-  const destinationError = await captureFailure(() =>
-    copyScaffoldTree({
-      destinationRoot,
-      filesystem: createFlywheelDeps().filesystem,
-      sourceRoot: cleanSourceRoot,
-    })
-  );
-  expect(destinationError).toMatchObject({
-    path: 'file.txt',
-    reason: 'destination is a symbolic link',
-  });
-  expect(await readFile(outsidePath, 'utf8')).toBe('outside');
-});
-
-test('rejects transformed paths that escape the destination root', async () => {
-  const sourceRoot = await makeDirectory('source');
-  const destinationRoot = await makeDirectory('destination');
-  await writeFile(path.join(sourceRoot, 'file.txt'), 'source');
+  await writeFile(outsideManifest, 'directory\n');
+  await symlink(outsideManifest, path.join(sourceRoot, 'DIRECTORIES'));
 
   const error = await captureFailure(() =>
     copyScaffoldTree({
       destinationRoot,
       filesystem: createFlywheelDeps().filesystem,
       sourceRoot,
-      transform: {
-        destinationPath: () => '../outside.txt',
-        fileBytes: (_sourcePath, bytes) => bytes,
-      },
     })
   );
 
   expect(error).toBeInstanceOf(ContentSetupError);
-  expect(error).toMatchObject({ path: 'file.txt' });
-  expect(await exists(path.join(destinationRoot, 'outside.txt'))).toBe(false);
+  expect(error).toMatchObject({
+    path: 'DIRECTORIES',
+    reason: 'source directory manifest is not a regular file',
+  });
+  expect(await exists(path.join(destinationRoot, 'directory'))).toBe(false);
 });
 
-test('returns the copy-only customer setup result', async () => {
+test('rejects transformed paths that escape the destination root', async () => {
+  const sourceRoot = await makeDirectory('source');
+  const destinationRoot = await makeDirectory('destination');
+  await writeFile(path.join(sourceRoot, 'DIRECTORIES'), 'directory\n');
+
+  const error = await captureFailure(() =>
+    copyScaffoldTree({
+      destinationRoot,
+      filesystem: createFlywheelDeps().filesystem,
+      sourceRoot,
+      transform: { destinationPath: () => '../outside' },
+    })
+  );
+
+  expect(error).toBeInstanceOf(ContentSetupError);
+  expect(error).toMatchObject({ path: 'directory' });
+  expect(await exists(path.join(destinationRoot, 'outside'))).toBe(false);
+});
+
+test('returns the directory-only customer setup result', async () => {
   const sourceRoot = await makeDirectory('customer-scaffold');
   const destinationRoot = await makeDirectory('customer-repository');
-  await writeFile(path.join(sourceRoot, 'README.md'), 'authoritative scaffold');
+  await writeFile(
+    path.join(sourceRoot, 'DIRECTORIES'),
+    ['customer-wide', 'customer-wide/docs', 'roles'].join('\n')
+  );
+  await writeFile(path.join(sourceRoot, 'README.md'), 'do not install');
 
   const result = await runCustomerSetup({
     destinationRoot,
@@ -185,44 +198,14 @@ test('returns the copy-only customer setup result', async () => {
   });
 
   expect(result).toEqual({
-    copied: ['README.md'],
+    copied: ['customer-wide', 'customer-wide/docs', 'roles'],
     skipped: [],
     validationPerformed: false,
   });
+  expect(await exists(path.join(destinationRoot, 'README.md'))).toBe(false);
 });
 
-test('is a repeated no-op and preserves the first customer setup', async () => {
-  const sourceRoot = await makeDirectory('customer-scaffold');
-  const destinationRoot = await makeDirectory('customer-repository');
-  await writeFile(path.join(sourceRoot, 'README.md'), 'authoritative scaffold');
-
-  const first = await runCustomerSetup({
-    destinationRoot,
-    filesystem: createFlywheelDeps().filesystem,
-    sourceRoot,
-  });
-  const second = await runCustomerSetup({
-    destinationRoot,
-    filesystem: createFlywheelDeps().filesystem,
-    sourceRoot,
-  });
-
-  expect(first).toEqual({
-    copied: ['README.md'],
-    skipped: [],
-    validationPerformed: false,
-  });
-  expect(second).toEqual({
-    copied: [],
-    skipped: ['README.md'],
-    validationPerformed: false,
-  });
-  expect(await readFile(path.join(destinationRoot, 'README.md'), 'utf8')).toBe(
-    'authoritative scaffold'
-  );
-});
-
-test('normalizes a source-repository identity and substitutes path and content tokens', async () => {
+test('normalizes source-repository paths without reprocessing replacement text', async () => {
   const sourceRoot = await makeDirectory('source-repo-scaffold');
   const destinationRoot = await makeDirectory('customer-repository');
   await writeFile(
@@ -231,56 +214,35 @@ test('normalizes a source-repository identity and substitutes path and content t
       'repo-specific',
       'repo-specific/__owner__',
       'repo-specific/__owner__/__name__',
-      'repo-specific/__owner__/__name__/catalog',
       'repo-specific/__owner__/__name__/docs',
-      'repo-specific/__owner__/__name__/.agents',
-      'repo-specific/__owner__/__name__/.agents/daemons',
-      'repo-specific/__owner__/__name__/.agents/skills',
-      '',
     ].join('\n')
-  );
-  const templateDirectory = path.join(sourceRoot, '__owner__', '__name__');
-  await mkdir(templateDirectory, { recursive: true });
-  await writeFile(
-    path.join(templateDirectory, 'README.md'),
-    'repository: __repository_id__\nowner: __owner__\nname: __name__\n'
-  );
-  await writeFile(
-    path.join(sourceRoot, '__repository_id__.md'),
-    'repository: __repository_id__\n'
   );
 
   const result = await runSourceRepositorySetup({
     destinationRoot,
     filesystem: createFlywheelDeps().filesystem,
-    repositoryId: ' acme/api ',
+    repositoryId: 'acme__name__/api',
     sourceRoot,
   });
 
   expect(result).toEqual({
     copied: [
-      '__repository_id__.md',
-      'acme',
-      'acme/api',
-      'acme/api/README.md',
       'repo-specific',
-      'repo-specific/acme',
-      'repo-specific/acme/api',
-      'repo-specific/acme/api/.agents',
-      'repo-specific/acme/api/.agents/daemons',
-      'repo-specific/acme/api/.agents/skills',
-      'repo-specific/acme/api/catalog',
-      'repo-specific/acme/api/docs',
+      'repo-specific/acme__name__',
+      'repo-specific/acme__name__/api',
+      'repo-specific/acme__name__/api/docs',
     ],
     skipped: [],
     validationPerformed: false,
   });
   expect(
-    await readFile(path.join(destinationRoot, 'acme/api/README.md'), 'utf8')
-  ).toBe('repository: acme/api\nowner: acme\nname: api\n');
+    await exists(
+      path.join(destinationRoot, 'repo-specific/acme__name__/api/docs')
+    )
+  ).toBe(true);
   expect(
-    await readFile(path.join(destinationRoot, '__repository_id__.md'), 'utf8')
-  ).toBe('repository: acme/api\n');
+    await exists(path.join(destinationRoot, 'repo-specific/acmeapi/api'))
+  ).toBe(false);
 });
 
 test('rejects an invalid source-repository identity before filesystem work', async () => {
@@ -308,6 +270,10 @@ async function makeDirectory(name: string): Promise<string> {
   const directory = await mkdtemp(`/tmp/flywheel-setup-${name}-`);
   temporaryDirectories.push(directory);
   return directory;
+}
+
+function failIfContentRead(_filePath: string): Promise<Uint8Array> {
+  throw new Error('content files must not be read');
 }
 
 async function exists(filePath: string): Promise<boolean> {

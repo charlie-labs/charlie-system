@@ -25,7 +25,7 @@ export default class Customer extends ContentCommand<
   static override flags = super.registerManifest(contentSetupFlags);
   static override summary = 'Install the fixed customer scaffold';
   static override description =
-    'Copy absent entries from the package-owned customer scaffold without reading or changing existing destinations. Setup does not validate, commit, or push.';
+    'Create absent directories from the package-owned customer scaffold without reading or changing existing destinations. Setup does not create content files, validate, commit, or push.';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --repository-path /tmp/customer-knowledge',

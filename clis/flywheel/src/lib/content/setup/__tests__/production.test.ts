@@ -1,8 +1,7 @@
 import { afterEach, expect, test } from 'bun:test';
 import {
-  mkdir,
   mkdtemp,
-  readFile,
+  readdir,
   rm,
   stat,
   symlink,
@@ -12,7 +11,11 @@ import path from 'node:path';
 
 import { createFlywheelDeps } from '../../../runtime/deps.js';
 import { ContentSetupError } from '../../setup-error.js';
-import { SOURCE_REPOSITORY_SCAFFOLD_ROOT } from '../roots.js';
+import { runCustomerSetup } from '../customer.js';
+import {
+  CUSTOMER_SCAFFOLD_ROOT,
+  SOURCE_REPOSITORY_SCAFFOLD_ROOT,
+} from '../roots.js';
 import { runSourceRepositorySetup } from '../source-repo.js';
 
 const temporaryDirectories: string[] = [];
@@ -25,48 +28,89 @@ afterEach(async () => {
   );
 });
 
-test('reads only the package scaffold for source-repository setup', async () => {
-  const sourceRoot = await makeDirectory('source-repo-scaffold');
+test('reads only the package directory manifest for both setup commands', async () => {
+  const customerSourceRoot = await makeDirectory('customer-scaffold');
+  const sourceRepositorySourceRoot = await makeDirectory(
+    'source-repo-scaffold'
+  );
   const destinationRoot = await makeDirectory('customer-repository');
   await writeFile(
-    path.join(sourceRoot, 'DIRECTORIES'),
-    'repo-specific\nrepo-specific/__owner__\nrepo-specific/__owner__/__name__\n'
+    path.join(customerSourceRoot, 'DIRECTORIES'),
+    'customer-wide\n'
   );
-  await mkdir(path.join(sourceRoot, '__owner__', '__name__'), {
-    recursive: true,
-  });
   await writeFile(
-    path.join(sourceRoot, '__owner__', '__name__', 'README.md'),
-    'repository: __repository_id__\n'
+    path.join(sourceRepositorySourceRoot, 'DIRECTORIES'),
+    'repo-specific\n'
+  );
+  await writeFile(path.join(customerSourceRoot, 'content.md'), 'do not read');
+  await writeFile(
+    path.join(sourceRepositorySourceRoot, 'content.md'),
+    'do not read'
   );
   const baseFilesystem = createFlywheelDeps().filesystem;
   const manifestReads: string[] = [];
-  const sourceByteReads: string[] = [];
 
+  const filesystem = {
+    ...baseFilesystem,
+    readFile: async (filePath: string) => {
+      manifestReads.push(filePath);
+      return baseFilesystem.readFile(filePath);
+    },
+    readFileBytes: failIfContentRead,
+  };
+
+  await runCustomerSetup({
+    destinationRoot,
+    filesystem,
+    sourceRoot: customerSourceRoot,
+  });
   await runSourceRepositorySetup({
     destinationRoot,
-    filesystem: {
-      ...baseFilesystem,
-      readFile: async (filePath) => {
-        manifestReads.push(filePath);
-        return baseFilesystem.readFile(filePath);
-      },
-      readFileBytes: async (filePath) => {
-        sourceByteReads.push(filePath);
-        return baseFilesystem.readFileBytes(filePath);
-      },
-    },
+    filesystem,
     repositoryId: 'acme/api',
-    sourceRoot,
+    sourceRoot: sourceRepositorySourceRoot,
   });
 
-  expect(manifestReads).toEqual([path.join(sourceRoot, 'DIRECTORIES')]);
-  expect(sourceByteReads).toEqual([
-    path.join(sourceRoot, '__owner__', '__name__', 'README.md'),
+  expect(manifestReads).toEqual([
+    path.join(customerSourceRoot, 'DIRECTORIES'),
+    path.join(sourceRepositorySourceRoot, 'DIRECTORIES'),
   ]);
 });
 
-test('materializes the production Repository entity and all source-repository roots', async () => {
+test('materializes the production customer directory tree and remains create-only', async () => {
+  const destinationRoot = await makeDirectory('customer-repository');
+
+  const first = await runCustomerSetup({
+    destinationRoot,
+    filesystem: createFlywheelDeps().filesystem,
+    sourceRoot: CUSTOMER_SCAFFOLD_ROOT,
+  });
+  const second = await runCustomerSetup({
+    destinationRoot,
+    filesystem: createFlywheelDeps().filesystem,
+    sourceRoot: CUSTOMER_SCAFFOLD_ROOT,
+  });
+
+  expect(first.validationPerformed).toBe(false);
+  expect(first.copied).toEqual([
+    '.flywheel',
+    'customer-wide',
+    'customer-wide/.agents',
+    'customer-wide/.agents/daemons',
+    'customer-wide/.agents/daemons/pr-review',
+    'customer-wide/.agents/skills',
+    'customer-wide/catalog',
+    'customer-wide/docs',
+    'roles',
+  ]);
+  expect(first.skipped).toEqual([]);
+  expect(second.copied).toEqual([]);
+  expect(second.skipped).toEqual(first.copied);
+  expect(await filePaths(destinationRoot)).toEqual([]);
+  await expectDirectories(destinationRoot, first.copied);
+});
+
+test('materializes the production source-repository directory tree without content files', async () => {
   const destinationRoot = await makeDirectory('customer-repository');
 
   const first = await runSourceRepositorySetup({
@@ -83,44 +127,28 @@ test('materializes the production Repository entity and all source-repository ro
   });
 
   expect(first.validationPerformed).toBe(false);
-  expect(first.copied).toContain('customer-wide/catalog/repositories.yaml');
+  expect(first.copied).toEqual([
+    '.flywheel',
+    'customer-wide',
+    'customer-wide/.agents',
+    'customer-wide/.agents/daemons',
+    'customer-wide/.agents/skills',
+    'customer-wide/catalog',
+    'customer-wide/docs',
+    'repo-specific',
+    'repo-specific/acme',
+    'repo-specific/acme/api',
+    'repo-specific/acme/api/.agents',
+    'repo-specific/acme/api/.agents/daemons',
+    'repo-specific/acme/api/.agents/skills',
+    'repo-specific/acme/api/catalog',
+    'repo-specific/acme/api/docs',
+  ]);
+  expect(first.skipped).toEqual([]);
   expect(second.copied).toEqual([]);
-  expect(second.skipped).toContain('customer-wide/catalog/repositories.yaml');
-  await Promise.all(
-    [
-      'customer-wide/docs',
-      'customer-wide/.agents',
-      'customer-wide/.agents/daemons',
-      'customer-wide/.agents/skills',
-      'repo-specific/acme/api/catalog',
-      'repo-specific/acme/api/docs',
-      'repo-specific/acme/api/.agents/daemons',
-      'repo-specific/acme/api/.agents/skills',
-    ].map(async (relativePath) => {
-      expect(
-        (await stat(path.join(destinationRoot, relativePath))).isDirectory()
-      ).toBe(true);
-    })
-  );
-  expect(
-    await readFile(
-      path.join(destinationRoot, 'customer-wide/catalog/repositories.yaml'),
-      'utf8'
-    )
-  ).toBe(
-    [
-      'apiVersion: backstage.io/v1alpha1',
-      'kind: Repository',
-      'metadata:',
-      '  name: acme/api',
-      '  title: acme/api',
-      '  description: Customer source repository tracked by Charlie.',
-      '  annotations:',
-      '    charlie.ai/review-every: 90d',
-      'spec: {}',
-      '',
-    ].join('\n')
-  );
+  expect(second.skipped).toEqual(first.copied);
+  expect(await filePaths(destinationRoot)).toEqual([]);
+  await expectDirectories(destinationRoot, first.copied);
 });
 
 test('rejects a symbolic-link directory manifest without following it', async () => {
@@ -147,7 +175,7 @@ test('rejects a symbolic-link directory manifest without following it', async ()
     path: 'DIRECTORIES',
     reason: 'source directory manifest is not a regular file',
   });
-  expect(await exists(path.join(destinationRoot, 'repo-specific'))).toBe(false);
+  expect(await filePaths(destinationRoot)).toEqual([]);
 });
 
 async function makeDirectory(name: string): Promise<string> {
@@ -156,14 +184,70 @@ async function makeDirectory(name: string): Promise<string> {
   return directory;
 }
 
-async function exists(filePath: string): Promise<boolean> {
-  try {
-    await Bun.file(filePath).stat();
-    return true;
-  } catch {
-    return false;
-  }
+function failIfContentRead(_filePath: string): Promise<Uint8Array> {
+  throw new Error('content files must not be read');
 }
+
+async function expectDirectories(
+  root: string,
+  relativePaths: readonly string[]
+): Promise<void> {
+  await Promise.all(
+    relativePaths.map(async (relativePath) => {
+      expect((await stat(path.join(root, relativePath))).isDirectory()).toBe(
+        true
+      );
+    })
+  );
+}
+
+async function filePaths(root: string): Promise<readonly string[]> {
+  const entries = await walk(root, root);
+  return sortedPaths(entries.map((entry) => entry.path));
+}
+
+function sortedPaths(paths: readonly string[]): string[] {
+  const sorted: string[] = [];
+  for (const candidatePath of paths) {
+    const index = sorted.findIndex(
+      (existingPath) => existingPath.localeCompare(candidatePath) > 0
+    );
+    if (index < 0) {
+      sorted.push(candidatePath);
+    } else {
+      sorted.splice(index, 0, candidatePath);
+    }
+  }
+  return sorted;
+}
+
+async function walk(
+  root: string,
+  directory: string
+): Promise<readonly FileEntry[]> {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(
+    entries.map(async (entry) => {
+      const absolutePath = path.join(directory, entry.name);
+      const relativePath = path
+        .relative(root, absolutePath)
+        .split(path.sep)
+        .join('/');
+      if (!entry.isDirectory()) {
+        return entry.isFile()
+          ? [{ kind: 'file' as const, path: relativePath }]
+          : [];
+      }
+      return walk(root, absolutePath);
+    })
+  );
+  return nested.flat();
+}
+
+type FileEntry = Readonly<{
+  readonly kind: 'file';
+  readonly path: string;
+}>;
 
 async function captureFailure(
   operation: () => Promise<unknown>

@@ -97,7 +97,7 @@ async function handleExistingDirectory(
   return true;
 }
 
-export async function inspectDestination(
+async function inspectDestination(
   context: CopyContext,
   destinationPath: string
 ): Promise<Stats | undefined> {
@@ -114,7 +114,7 @@ export async function inspectDestination(
   }
 }
 
-export function throwDestinationType(
+function throwDestinationType(
   context: CopyContext,
   destinationPath: string,
   stats: Stats

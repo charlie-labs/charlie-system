@@ -1,3 +1,0 @@
-schemaVersion: role.v0
-id: pr-autopilot
-objective: Move pull requests toward human-ready or merge-ready outcomes with less human input.

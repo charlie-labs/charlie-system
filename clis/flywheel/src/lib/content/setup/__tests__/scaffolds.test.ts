@@ -2,39 +2,25 @@ import { expect, test } from 'bun:test';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { artifactInput } from '../../../artifacts/__tests__/parse-input.js';
-import { parseCatalogArtifact } from '../../../artifacts/catalog/parse.js';
-import { parseDaemonArtifact } from '../../../artifacts/daemon/parse.js';
-import { parseRoleArtifact } from '../../../artifacts/role/parse.js';
 import {
   CUSTOMER_SCAFFOLD_ROOT,
   SOURCE_REPOSITORY_SCAFFOLD_ROOT,
 } from '../roots.js';
 
-const CUSTOMER_FILES = [
-  'customer-wide/.agents/daemons/pr-review/DAEMON.md',
-  'roles/pr-autopilot.yaml',
-] as const;
-
 const CUSTOMER_DIRECTORIES = [
+  '.flywheel',
   'customer-wide',
+  'customer-wide/catalog',
+  'customer-wide/docs',
   'customer-wide/.agents',
   'customer-wide/.agents/daemons',
   'customer-wide/.agents/daemons/pr-review',
+  'customer-wide/.agents/skills',
   'roles',
 ] as const;
 
-const SOURCE_REPOSITORY_FILES = [
-  'customer-wide/catalog/repositories.yaml',
-  'DIRECTORIES',
-] as const;
-
 const SOURCE_REPOSITORY_DIRECTORIES = [
-  'customer-wide',
-  'customer-wide/catalog',
-] as const;
-
-const SOURCE_REPOSITORY_ROOTS = [
+  '.flywheel',
   'customer-wide',
   'customer-wide/catalog',
   'customer-wide/docs',
@@ -51,105 +37,33 @@ const SOURCE_REPOSITORY_ROOTS = [
   'repo-specific/__owner__/__name__/.agents/skills',
 ] as const;
 
-test('keeps the customer scaffold to the selected Role and Daemon contract', async () => {
+test('keeps the customer scaffold as a directory-only manifest', async () => {
   const snapshot = await scaffoldSnapshot(CUSTOMER_SCAFFOLD_ROOT);
 
-  expect(snapshot.files).toEqual([...CUSTOMER_FILES]);
-  expect(snapshot.directories).toEqual([...CUSTOMER_DIRECTORIES]);
+  expect(snapshot.files).toEqual(['DIRECTORIES']);
+  expect(snapshot.directories).toEqual([]);
   expect(snapshot.other).toEqual([]);
-  expect(snapshot.files).not.toContain('README.md');
-  expect(snapshot.files).not.toContain('customer-wide/catalog/entities.yaml');
-  expect(snapshot.files).not.toContain(
-    'customer-wide/.agents/skills/placeholder/SKILL.md'
+  expect(await readScaffoldFile('customer', 'DIRECTORIES')).toBe(
+    `${CUSTOMER_DIRECTORIES.join('\n')}\n`
   );
+  expect(snapshot.files).not.toContain(
+    'customer-wide/.agents/daemons/pr-review/DAEMON.md'
+  );
+  expect(snapshot.files).not.toContain('roles/pr-autopilot.yaml');
 });
 
-test('keeps the source-repository scaffold to one Repository entity and explicit roots', async () => {
+test('keeps the source-repository scaffold as a directory-only manifest', async () => {
   const snapshot = await scaffoldSnapshot(SOURCE_REPOSITORY_SCAFFOLD_ROOT);
 
-  expect(snapshot.files).toEqual([...SOURCE_REPOSITORY_FILES]);
-  expect(snapshot.directories).toEqual([...SOURCE_REPOSITORY_DIRECTORIES]);
+  expect(snapshot.files).toEqual(['DIRECTORIES']);
+  expect(snapshot.directories).toEqual([]);
   expect(snapshot.other).toEqual([]);
   expect(await readScaffoldFile('source-repo', 'DIRECTORIES')).toBe(
-    `${SOURCE_REPOSITORY_ROOTS.join('\n')}\n`
+    `${SOURCE_REPOSITORY_DIRECTORIES.join('\n')}\n`
   );
-  expect(snapshot.files).not.toContain('customer-wide/docs/placeholder.md');
   expect(snapshot.files).not.toContain(
-    'repo-specific/__owner__/__name__/catalog/placeholder.yaml'
+    'customer-wide/catalog/repositories.yaml'
   );
-});
-
-test('production Role scaffold parses as the current Role contract', async () => {
-  const roleContents = await readScaffoldFile(
-    'customer',
-    'roles/pr-autopilot.yaml'
-  );
-  const role = parseRoleArtifact(
-    artifactInput('role', 'roles/pr-autopilot.yaml', roleContents, {
-      kind: 'roles',
-    })
-  );
-  expect(role).toMatchObject({
-    artifacts: [
-      {
-        kind: 'role',
-        objective:
-          'Move pull requests toward human-ready or merge-ready outcomes with less human input.',
-        roleId: 'pr-autopilot',
-        schemaVersion: 'role.v0',
-      },
-    ],
-    kind: 'parsed',
-    problems: [],
-  });
-});
-
-test('production Daemon scaffold parses as the current Daemon contract', async () => {
-  const daemonPath = 'customer-wide/.agents/daemons/pr-review/DAEMON.md';
-  const daemon = parseDaemonArtifact(
-    artifactInput(
-      'daemon',
-      daemonPath,
-      await readScaffoldFile('customer', daemonPath),
-      { kind: 'customer-wide' }
-    )
-  );
-  expect(daemon).toMatchObject({
-    artifacts: [
-      {
-        daemonId: 'pr-review',
-        kind: 'daemon',
-        role: 'pr-autopilot',
-        schemaVersion: 'daemon.v0',
-      },
-    ],
-    kind: 'parsed',
-    problems: [],
-  });
-});
-
-test('production Repository scaffold parses as the current Catalog contract', async () => {
-  const catalogPath = 'customer-wide/catalog/repositories.yaml';
-  const catalog = parseCatalogArtifact(
-    artifactInput(
-      'catalog',
-      catalogPath,
-      await readScaffoldFile('source-repo', catalogPath)
-    )
-  );
-  expect(catalog).toMatchObject({
-    artifacts: [
-      {
-        annotations: { 'charlie.ai/review-every': '90d' },
-        entityKind: 'Repository',
-        kind: 'catalog',
-        name: '__repository_id__',
-        title: '__repository_id__',
-      },
-    ],
-    kind: 'parsed',
-    problems: [],
-  });
 });
 
 async function readScaffoldFile(
