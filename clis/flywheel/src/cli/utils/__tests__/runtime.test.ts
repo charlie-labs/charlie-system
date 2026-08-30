@@ -20,7 +20,7 @@ const testDeps: FlywheelDeps = {
 };
 
 describe('buildFlywheelRuntime', () => {
-  test('resolves the v0 repository path without ambient context', () => {
+  test('resolves the default Flywheel repository path without ambient context', () => {
     const runtime = buildFlywheelRuntime({ cwd: '/tmp/checkout' });
 
     expect(runtime.repositoryPath).toBe(DEFAULT_REPOSITORY_PATH);
@@ -29,12 +29,10 @@ describe('buildFlywheelRuntime', () => {
   test('resolves an explicit relative development path from the supplied cwd', () => {
     const runtime = buildFlywheelRuntime({
       cwd: '/tmp/checkout',
-      repositoryPath: './fixtures/customer-knowledge',
+      repositoryPath: './fixtures/flywheel',
     });
 
-    expect(runtime.repositoryPath).toBe(
-      '/tmp/checkout/fixtures/customer-knowledge'
-    );
+    expect(runtime.repositoryPath).toBe('/tmp/checkout/fixtures/flywheel');
   });
 
   test('preserves injected asynchronous effects', () => {

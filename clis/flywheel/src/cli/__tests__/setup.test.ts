@@ -114,7 +114,7 @@ test('rejects an invalid source-repository identity without scaffold access', as
   expect(JSON.parse(result.stdout)).toMatchObject({
     error: {
       message:
-        'invalid repository selection, expected owner/name: acme/not valid',
+        'invalid Flywheel repository selection, expected owner/name: acme/not valid',
       type: 'ContentInvocationError',
     },
   });

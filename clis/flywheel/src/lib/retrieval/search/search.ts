@@ -133,8 +133,8 @@ function unavailableAssessment(
     diagnostics: assessment.repository.validation.diagnostics,
     kind: 'unavailable',
     message: incomplete
-      ? 'repository projection is incomplete'
-      : 'repository assessment is invalid',
+      ? 'Flywheel repository projection is incomplete'
+      : 'Flywheel repository assessment is invalid',
     reason: incomplete ? 'projection-incomplete' : 'repository-invalid',
   };
 }

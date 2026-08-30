@@ -57,7 +57,7 @@ test('composes discovery and exact search with Charlie-relative scope', async ()
   ]);
 });
 
-test('preserves an admitted repository-relative path operand', async () => {
+test('preserves an admitted Flywheel repository-relative path operand', async () => {
   const repositoryPath = await makeRepository({
     'customer-wide/docs/guide.md': 'incident\n',
   });

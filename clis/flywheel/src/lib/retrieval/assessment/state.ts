@@ -17,5 +17,7 @@ export function retrievalAssessmentState(
 }
 
 function unreachable(value: never): never {
-  throw new Error(`unsupported repository validation status: ${String(value)}`);
+  throw new Error(
+    `unsupported Flywheel repository validation status: ${String(value)}`
+  );
 }

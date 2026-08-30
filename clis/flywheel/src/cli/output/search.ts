@@ -45,7 +45,7 @@ export function renderKnowledgeSearch(
 function renderContext(context: SearchContext): string {
   return [
     `query: ${context.query}`,
-    `repositories: ${renderRepositorySelection(context.repositorySelection)}`,
+    `Flywheel repos: ${renderRepositorySelection(context.repositorySelection)}`,
     `lifecycle: ${context.lifecycleSelection.kind === 'active-only' ? 'active only' : 'active and non-active'}`,
     `content types: ${context.contentTypes.join(', ')}`,
   ].join('\n');
@@ -56,9 +56,9 @@ function renderRepositorySelection(selection: RepositorySelection): string {
     case 'customer-wide-only':
       return 'customer-wide only';
     case 'customer-wide-and-all-repositories':
-      return 'customer-wide and all repositories';
+      return 'customer-wide and all Flywheel repos';
     case 'customer-wide-and-repositories':
-      return `customer-wide and ${selection.repositories.join(', ')}`;
+      return `customer-wide and Flywheel repo(s): ${selection.repositories.join(', ')}`;
   }
   return unreachable(selection);
 }

@@ -48,7 +48,7 @@ export function resolveSelectedRepositoryIds(
   for (const repositoryId of selection.repositories) {
     if (!known.has(repositoryId)) {
       throw new RepositorySelectionError(
-        `selected repository does not exist: ${repositoryId}`
+        `selected Flywheel repository does not exist: ${repositoryId}`
       );
     }
   }

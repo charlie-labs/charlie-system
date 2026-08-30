@@ -245,7 +245,7 @@ test('reports inactive exclusions and rejects unknown repositories', async () =>
   }
   expect(unknownRepository).toEqual({
     kind: 'invalid-selection',
-    message: 'selected repository does not exist: acme/missing',
+    message: 'selected Flywheel repository does not exist: acme/missing',
   });
 });
 

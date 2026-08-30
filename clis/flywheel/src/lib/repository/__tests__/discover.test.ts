@@ -8,7 +8,7 @@ import type {
 } from '../contract.js';
 import { discoverRepository } from '../discover.js';
 
-test('lists once, does not read content, and discovers repository regions', async () => {
+test('lists once, does not read content, and discovers Flywheel repository regions', async () => {
   const { calls, inventory, source } = await discoverFixture();
 
   expect(calls).toEqual({ list: 1, read: 0 });

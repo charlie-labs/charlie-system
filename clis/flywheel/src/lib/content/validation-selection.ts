@@ -38,7 +38,7 @@ export function resolveValidationSelection({
     );
     if (!existingPaths.has(repositoryRelativePath)) {
       throw new ContentInvocationError(
-        `selected repository path does not exist: ${requestedPath}`
+        `selected Flywheel repository path does not exist: ${requestedPath}`
       );
     }
     assertValidationContent(

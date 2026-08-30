@@ -5,7 +5,7 @@ import { ExactSearchOperationalError } from '../errors.js';
 import { runExactSearch } from '../execute.js';
 import { repositoryInventory } from './test-utils.js';
 
-test('executes a plan from the repository root and returns ripgrep output', async () => {
+test('executes a plan from the Flywheel repository root and returns ripgrep output', async () => {
   const calls: Array<
     Readonly<{
       args: readonly string[];

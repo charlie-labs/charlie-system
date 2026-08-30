@@ -41,7 +41,7 @@ export const knowledgeSearchFlags = defineFlags({
   },
   'repository-path': repositoryPathFlag,
 }).withPredicate(
-  'repository selection options are mutually exclusive',
+  'Flywheel repository selection options are mutually exclusive',
   ({ repo, 'customer-wide-only': customerWideOnly }) =>
     repositorySelectionIsValid(customerWideOnly, repo),
   {

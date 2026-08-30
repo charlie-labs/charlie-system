@@ -63,5 +63,5 @@ test('fails named selection before planning an unknown repository', () => {
       },
       ['incident']
     )
-  ).toThrow('selected repository does not exist: missing/repository');
+  ).toThrow('selected Flywheel repository does not exist: missing/repository');
 });

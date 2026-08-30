@@ -65,7 +65,7 @@ async function collectDirectory(
     entries = await filesystem.readdir(directoryPath);
   } catch (error) {
     throw new RepositorySourceError(
-      `cannot list repository directory: ${directoryPath}`,
+      `cannot list Flywheel repository directory: ${directoryPath}`,
       { cause: error }
     );
   }
@@ -151,7 +151,7 @@ async function readWorkingTreeFile(
     const stats = await filesystem.lstat(absolutePath);
     if (!stats.isFile()) {
       throw new RepositorySourceError(
-        `repository path is not a regular file: ${repositoryFilePath}`
+        `Flywheel repository path is not a regular file: ${repositoryFilePath}`
       );
     }
     return {
@@ -167,7 +167,7 @@ async function readWorkingTreeFile(
       throw error;
     }
     throw new RepositorySourceError(
-      `cannot read repository file: ${repositoryFilePath}`,
+      `cannot read Flywheel repository file: ${repositoryFilePath}`,
       { cause: error }
     );
   }
@@ -189,7 +189,7 @@ async function assertDirectoryAncestors(
   );
   if (stats.some((item) => !item.isDirectory())) {
     throw new RepositorySourceError(
-      `repository path traverses a non-directory entry: ${repositoryFilePath}`
+      `Flywheel repository path traverses a non-directory entry: ${repositoryFilePath}`
     );
   }
 }
@@ -202,7 +202,7 @@ async function assertRepositoryDirectory(
     const stats = await filesystem.stat(repositoryPath);
     if (!stats.isDirectory()) {
       throw new RepositorySourceError(
-        `selected repository path is not a directory: ${repositoryPath}`
+        `selected Flywheel repository path is not a directory: ${repositoryPath}`
       );
     }
   } catch (error) {
@@ -210,7 +210,7 @@ async function assertRepositoryDirectory(
       throw error;
     }
     throw new RepositorySourceError(
-      `cannot read selected repository: ${repositoryPath}`,
+      `cannot read selected Flywheel repository: ${repositoryPath}`,
       { cause: error }
     );
   }
