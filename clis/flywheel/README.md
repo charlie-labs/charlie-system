@@ -62,8 +62,9 @@ file or ambient customer, source-repository, or Task context.
 `content setup customer` and `content setup source-repo <owner/name>` use
 package-owned scaffold roots and create only missing directories and files.
 The source-repository identity is normalized as `owner/name`; its scaffold may
-use the tokens `__owner__`, `__name__`, and `__repository_id__` in paths or
-UTF-8 text. Both commands return `validationPerformed: false` in JSON mode
+use `__owner__` and `__name__` as path components. Scaffold UTF-8 text may
+also use `__repository_id__` alongside those two tokens. Both commands return
+`validationPerformed: false` in JSON mode
 and print the same copy report in human mode. This checkout intentionally does
 not provide authoritative customer Role/Daemon content or a Repository entity
 schema/filename; those product inputs must land before production scaffold

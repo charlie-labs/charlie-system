@@ -191,7 +191,7 @@ test('returns the copy-only customer setup result', async () => {
   });
 });
 
-test('normalizes a source-repository identity and substitutes only scaffold tokens', async () => {
+test('normalizes a source-repository identity and substitutes path and content tokens', async () => {
   const sourceRoot = await makeDirectory('source-repo-scaffold');
   const destinationRoot = await makeDirectory('customer-repository');
   const templateDirectory = path.join(sourceRoot, '__owner__', '__name__');
@@ -199,6 +199,10 @@ test('normalizes a source-repository identity and substitutes only scaffold toke
   await writeFile(
     path.join(templateDirectory, 'README.md'),
     'repository: __repository_id__\nowner: __owner__\nname: __name__\n'
+  );
+  await writeFile(
+    path.join(sourceRoot, '__repository_id__.md'),
+    'repository: __repository_id__\n'
   );
 
   const result = await runSourceRepositorySetup({
@@ -209,13 +213,16 @@ test('normalizes a source-repository identity and substitutes only scaffold toke
   });
 
   expect(result).toEqual({
-    copied: ['acme', 'acme/api', 'acme/api/README.md'],
+    copied: ['__repository_id__.md', 'acme', 'acme/api', 'acme/api/README.md'],
     skipped: [],
     validationPerformed: false,
   });
   expect(
     await readFile(path.join(destinationRoot, 'acme/api/README.md'), 'utf8')
   ).toBe('repository: acme/api\nowner: acme\nname: api\n');
+  expect(
+    await readFile(path.join(destinationRoot, '__repository_id__.md'), 'utf8')
+  ).toBe('repository: acme/api\n');
 });
 
 test('rejects an invalid source-repository identity before filesystem work', async () => {

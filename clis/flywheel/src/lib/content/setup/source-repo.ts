@@ -40,8 +40,7 @@ function createSourceRepositoryTransform(
     destinationPath: (sourcePath) =>
       sourcePath
         .replaceAll('__owner__', owner ?? '')
-        .replaceAll('__name__', name ?? '')
-        .replaceAll('__repository_id__', repositoryId),
+        .replaceAll('__name__', name ?? ''),
     fileBytes: (_sourcePath, bytes) => substituteText(bytes, repositoryId),
   };
 }
