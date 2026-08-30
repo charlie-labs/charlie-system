@@ -1,0 +1,68 @@
+{
+  "name": "@charlie-labs/ch-slack",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "bin": {
+    "ch-slack": "./bin/run.js"
+  },
+  "scripts": {
+    "dev": "bun run ./bin/dev.js",
+    "start": "bun run ./bin/run.js",
+    "test": "vitest run",
+    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@charlie-labs/format-for": "workspace:*",
+    "@charlie-labs/oclif-plugin-helpers-zod3": "workspace:*",
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6",
+    "@oclif/plugin-not-found": "^3",
+    "@oclif/plugin-plugins": "^5",
+    "ky": "^1.2.1",
+    "zod3": "npm:zod@^3.25.76"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  },
+  "oclif": {
+    "bin": "ch-slack",
+    "dirname": "ch-slack",
+    "commands": "./src/cli/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins",
+      "@oclif/plugin-not-found"
+    ],
+    "additionalHelpFlags": [
+      "-h"
+    ],
+    "topicSeparator": " ",
+    "description": "ch-slack is a command-line interface (CLI) for interacting with the Slack API from your terminal.",
+    "topics": {
+      "auth": {
+        "description": "Authentication helpers"
+      },
+      "channel": {
+        "description": "Channel discovery and history"
+      },
+      "thread": {
+        "description": "Thread inspection"
+      },
+      "message": {
+        "description": "Message authoring and maintenance"
+      },
+      "react": {
+        "description": "Emoji reactions"
+      },
+      "dm": {
+        "description": "Direct messages"
+      },
+      "files": {
+        "description": "File uploads"
+      }
+    }
+  }
+}
