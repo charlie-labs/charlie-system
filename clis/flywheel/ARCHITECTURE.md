@@ -1,15 +1,9 @@
 # Flywheel CLI architecture
 
 The Flywheel CLI treats the customer knowledge repository as canonical authored
-source. Inspection commands consume that source through a small set of
-composable library boundaries; they do not establish competing interpretations
-of repository layout, artifact identity, references, or validity. The explicit
-`content setup` commands are the separate bootstrap boundary: they copy only
-missing entries from package-owned scaffold trees into the selected knowledge
-repository and do not compile, validate, compare, repair, or publish content.
-The operation requires that its package scaffold and selected destination are
-not concurrently mutated; static symbolic-link and path checks are not a claim
-of race safety outside that precondition.
+source. Commands inspect that source through a small set of composable library
+boundaries; they do not establish competing interpretations of repository
+layout, artifact identity, references, or validity.
 
 The fuller design and delivery rationale lives in
 [`architecture-plan.md`](../../architecture-plan.md). This document records the
@@ -42,11 +36,6 @@ that satisfies their contract.
 
 - The repository boundary owns paths, repository regions, repository
   identities, selections, source access, discovery, and entry classification.
-- The setup boundary owns package-scaffold traversal and create-only writes to
-  the selected knowledge repository. It does not read source-repository
-  checkouts or existing destination file bytes. Setup assumes no concurrent
-  mutation of the scaffold or destination during one operation; its static
-  symbolic-link and path checks do not provide a stronger race guarantee.
 - Artifact components own their public artifact contract and parser. Parser
   implementation types, including Markdown AST types, remain private.
 - Reference resolution owns the distinction between authored references and
@@ -139,11 +128,6 @@ retrieval share repository authority but retain separate contracts:
   external identities without fetching them; and
 - ranked retrieval consumes eligible source-authored knowledge together with
   an explicit validation assessment.
-- setup copies an inspectable package-owned scaffold tree, leaves existing
-  destination entries unchanged, and returns deterministic copied/skipped
-  paths without performing validation, source-checkout reads, or Git
-  operations. It reports the explicit source-repository directory manifest as
-  created or reused roots rather than treating it as destination content.
 
 For ranked retrieval, repository, lifecycle, and content-type eligibility is
 applied before candidate limits or ranking cutoffs. Backend candidates remain
@@ -219,17 +203,6 @@ Each component owns focused tests for its local semantics. Boundary tests cover
 the values exchanged between components, and a small number of end-to-end
 fixtures prove composition across stages. CLI tests concentrate on argument
 handling, exit behavior, and rendering rather than duplicating library tests.
-
-Setup tests additionally cover create-only copying, empty directories,
-structural mismatches, symbolic-link rejection, traversal rejection, identity
-normalization, directory-manifest roots, exact production scaffold inventory,
-repeated no-op behavior, preservation, substitutions, no source-checkout or
-Git access, and JSON/human output separation. Concurrent filesystem mutation is
-outside the setup guarantee and is not treated as a tested success condition.
-
-Setup intentionally does not validate the resulting repository. The later
-`content validate` command is the gate for artifact, placement, reference,
-graph, and freshness validity before a separate durable Git operation.
 
 Performance-sensitive invariants should be proved structurally where possible:
 one source listing per operation, batch reads, parse-once compilation, and no

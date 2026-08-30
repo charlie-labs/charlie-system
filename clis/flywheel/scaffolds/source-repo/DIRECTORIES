@@ -1,3 +1,9 @@
+customer-wide
+customer-wide/catalog
+customer-wide/docs
+customer-wide/.agents
+customer-wide/.agents/daemons
+customer-wide/.agents/skills
 repo-specific
 repo-specific/__owner__
 repo-specific/__owner__/__name__

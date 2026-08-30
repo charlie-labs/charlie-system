@@ -29,7 +29,6 @@ export default class Customer extends ContentCommand<
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --repository-path /tmp/customer-knowledge',
-    '<%= config.bin %> <%= command.id %> --json',
   ];
 
   static override buildDeps(): ContentSetupDeps {

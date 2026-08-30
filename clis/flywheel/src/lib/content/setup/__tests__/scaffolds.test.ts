@@ -35,6 +35,12 @@ const SOURCE_REPOSITORY_DIRECTORIES = [
 ] as const;
 
 const SOURCE_REPOSITORY_ROOTS = [
+  'customer-wide',
+  'customer-wide/catalog',
+  'customer-wide/docs',
+  'customer-wide/.agents',
+  'customer-wide/.agents/daemons',
+  'customer-wide/.agents/skills',
   'repo-specific',
   'repo-specific/__owner__',
   'repo-specific/__owner__/__name__',

@@ -88,6 +88,10 @@ test('materializes the production Repository entity and all source-repository ro
   expect(second.skipped).toContain('customer-wide/catalog/repositories.yaml');
   await Promise.all(
     [
+      'customer-wide/docs',
+      'customer-wide/.agents',
+      'customer-wide/.agents/daemons',
+      'customer-wide/.agents/skills',
       'repo-specific/acme/api/catalog',
       'repo-specific/acme/api/docs',
       'repo-specific/acme/api/.agents/daemons',

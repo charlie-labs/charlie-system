@@ -39,7 +39,6 @@ export default class SourceRepo extends ContentCommand<
   static override examples = [
     '<%= config.bin %> <%= command.id %> acme/api',
     '<%= config.bin %> <%= command.id %> acme/api --repository-path /tmp/customer-knowledge',
-    '<%= config.bin %> <%= command.id %> acme/api --json',
   ];
 
   static override buildDeps(): ContentSetupDeps {

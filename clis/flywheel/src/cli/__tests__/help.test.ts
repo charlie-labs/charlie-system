@@ -62,3 +62,16 @@ test('proves root, topic, and exact leaf command help', async () => {
     'skill preset show',
   ]);
 });
+
+test('keeps setup help focused while retaining JSON output support', async () => {
+  const [customer, sourceRepo] = await Promise.all([
+    runCli(['content', 'setup', 'customer', '--help']),
+    runCli(['content', 'setup', 'source-repo', '--help']),
+  ]);
+
+  for (const result of [customer, sourceRepo]) {
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout.split('EXAMPLES\n')[1]).not.toContain('--json');
+  }
+});
