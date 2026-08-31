@@ -38,7 +38,7 @@ export default class SourceRepo extends ContentCommand<
     'Create absent directories and .gitkeep marker files from the package-owned source-repository scaffold for one owner/name identity. No source-repository checkout is read, and setup does not validate, commit, or push.';
   static override examples = [
     '<%= config.bin %> <%= command.id %> acme/api',
-    '<%= config.bin %> <%= command.id %> acme/api --repository-path /tmp/customer-knowledge',
+    '<%= config.bin %> <%= command.id %> acme/api --repository-path /tmp/flywheel',
   ];
 
   static override buildDeps(): ContentSetupDeps {
