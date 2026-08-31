@@ -40,6 +40,7 @@ export default class Validate extends ContentCommand<
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> customer-wide/docs',
+    '<%= config.bin %> <%= command.id %> --staged --json',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
@@ -67,7 +68,9 @@ export default class Validate extends ContentCommand<
     const result = await runContentValidation({
       filesystem: runtime.deps.filesystem,
       paths: extractValidationPaths(this.argv),
+      process: runtime.deps.process,
       repositoryPath: runtime.repositoryPath,
+      staged: parsed.staged,
     });
     if (!this.jsonEnabled()) {
       for (const diagnostic of result.diagnostics) {

@@ -120,11 +120,14 @@ type ReferenceRepositoryOverlay =
   | 'duplicate'
   | 'malformed'
   | 'prohibited-unsupported'
+  | 'review-invalid'
+  | 'review-state'
   | 'secret'
   | 'symlink'
   | 'unresolved';
 
 export type ReferenceRepositoryOptions = Readonly<{
+  readonly git?: boolean;
   readonly overlay?: ReferenceRepositoryOverlay;
 }>;
 

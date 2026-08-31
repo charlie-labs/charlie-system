@@ -2,7 +2,7 @@ export type RepositoryPath = string;
 export type RepositoryId = string;
 
 export type RepositoryState = Readonly<{
-  readonly kind: 'working-tree';
+  readonly kind: 'index' | 'working-tree';
   readonly repositoryPath: string;
 }>;
 

@@ -96,7 +96,10 @@ function expectKnowledgeAndSkillHelp(
   preset: CliResult
 ) {
   expect(helpEntries(knowledge.stdout, 'COMMANDS')).toEqual([
+    'knowledge checkpoint',
+    'knowledge due',
     'knowledge search',
+    'knowledge validate',
   ]);
   expect(helpEntries(skill.stdout, 'TOPICS')).toEqual(['skill preset']);
   expect(helpEntries(preset.stdout, 'COMMANDS')).toEqual([
@@ -112,7 +115,10 @@ function expectKnowledgeAndSkillHelp(
     'content rg',
     'content show',
     'content validate',
+    'knowledge checkpoint',
+    'knowledge due',
     'knowledge search',
+    'knowledge validate',
     'skill preset list',
     'skill preset show',
   ]);

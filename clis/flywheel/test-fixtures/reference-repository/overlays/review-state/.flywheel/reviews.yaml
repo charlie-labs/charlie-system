@@ -1,0 +1,14 @@
+schemaVersion: 1
+reviews:
+  - target: 'document:customer-wide%2Fdocs%2Fdeprecated-guide.md'
+    reviewedAt: '2026-08-31T00:00:00Z'
+    contentHash: 'sha256:4278c2d20ef99222f3fb3fc63ca21911b327a4b3da8cefda639b128cb2e04878'
+    rootTaskId: 'tsk_fixture'
+  - target: 'document:customer-wide%2Fdocs%2Frelease-guide.md'
+    reviewedAt: '2020-01-01T00:00:00Z'
+    contentHash: 'sha256:fc5e33a47384005fa1ae6b149322ec2abe7fecc8a7c1bf233fb3613d99f61869'
+    rootTaskId: 'tsk_fixture'
+  - target: 'document:repo-specific%2Facme%2Fapi%2Fdocs%2Fservice-guide.md'
+    reviewedAt: '2026-08-31T00:00:00Z'
+    contentHash: 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
+    rootTaskId: 'tsk_fixture'

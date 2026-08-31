@@ -14,6 +14,7 @@ import {
   KnowledgeOperationalError,
   KnowledgeSearchError,
 } from '../errors/knowledge-errors.js';
+import { KnowledgeValidationError } from '../errors/knowledge-validation-error.js';
 import {
   isOclifParserError,
   oclifExit,
@@ -34,7 +35,11 @@ export abstract class KnowledgeCommand<
         new KnowledgeInvocationError(summarizeKnowledgeParserError(error))
       );
     }
-    if (oclifExit(error) === 1 && !(error instanceof KnowledgeSearchError)) {
+    if (
+      oclifExit(error) === 1 &&
+      !(error instanceof KnowledgeSearchError) &&
+      !(error instanceof KnowledgeValidationError)
+    ) {
       return super.catch(
         new KnowledgeOperationalError('knowledge command failed unexpectedly', {
           cause: error,

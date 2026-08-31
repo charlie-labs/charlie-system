@@ -49,3 +49,18 @@ export const knowledgeSearchFlags = defineFlags({
     path: ['repo'],
   }
 );
+
+export const knowledgeRepositoryFlags = defineFlags({
+  'repository-path': repositoryPathFlag,
+});
+
+export const knowledgeCheckpointFlags = defineFlags({
+  'repository-path': repositoryPathFlag,
+  'root-task-id': {
+    oclif: Flags.string({
+      description: 'Task root that owns this review checkpoint',
+      required: true,
+    }),
+    schema: z.string().min(1),
+  },
+});
