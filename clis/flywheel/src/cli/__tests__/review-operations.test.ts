@@ -38,6 +38,23 @@ test('validates, reports, and checkpoints a Knowledge target through the CLI', a
   await expectCheckpoint(repositoryPath, target);
 });
 
+test('knowledge due reports incomplete content with a successful query exit', async () => {
+  const fixture = await referenceRepository({ overlay: 'malformed' });
+  const result = await runCli([
+    'knowledge',
+    'due',
+    '--repository-path',
+    fixture.repositoryPath,
+    '--json',
+  ]);
+
+  expect(result.exitCode).toBe(0);
+  expect(result.stderr).toBe('');
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    status: 'incomplete',
+  });
+});
+
 test('content validate --staged uses the CLI exact-index path', async () => {
   const fixture = await referenceRepository({ git: true });
   const guidePath = path.join(

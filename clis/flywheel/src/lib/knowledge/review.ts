@@ -268,7 +268,22 @@ export async function hashKnowledgeTarget(
         `Knowledge target is missing from repository: ${artifact.path}`
       );
     }
-    return sha256(read.bytes);
+    return hashKnowledgeTargetBytes(artifact, read.bytes);
+  }
+  return hashKnowledgeTargetBytes(artifact);
+}
+
+export function hashKnowledgeTargetBytes(
+  artifact: DocumentArtifact | CatalogArtifact,
+  bytes?: Uint8Array
+): string {
+  if (artifact.kind === 'document') {
+    if (bytes === undefined) {
+      throw new RangeError(
+        `Document source bytes are required for target: ${artifact.path}`
+      );
+    }
+    return sha256(bytes);
   }
   return sha256(new TextEncoder().encode(canonicalCatalogEntity(artifact)));
 }

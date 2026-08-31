@@ -187,6 +187,103 @@ test('checkpoint replaces records with one deterministic manifest write', async 
   expect(writes).toHaveLength(beforeInvalidCheckpoint);
 });
 
+test('knowledge due reports incomplete content without failing the query', async () => {
+  const fixture = await referenceRepository({ overlay: 'malformed' });
+
+  const result = await runKnowledgeDue({
+    filesystem: deps.filesystem,
+    repositoryPath: fixture.repositoryPath,
+  });
+
+  expect(result.status).toBe('incomplete');
+  expect(result.findings.length).toBeGreaterThan(0);
+  expect(
+    result.diagnostics.some(
+      (diagnostic) =>
+        diagnostic.path === 'customer-wide/docs/malformed.md' &&
+        diagnostic.impact === 'incomplete'
+    )
+  ).toBe(true);
+});
+
+test('checkpoint rejects a Document mutation before writing the manifest', async () => {
+  const repositoryPath = await makeRepository({ [guidePath]: validGuide });
+  const guideAbsolutePath = path.join(repositoryPath, guidePath);
+  let guideReads = 0;
+  const writes: string[] = [];
+  const filesystem: AsyncFileSystem = {
+    ...deps.filesystem,
+    readFileBytes: async (filePath) => {
+      if (filePath === guideAbsolutePath && guideReads++ === 1) {
+        await writeFile(
+          guideAbsolutePath,
+          validGuide.replace('guide body', 'changed after validation')
+        );
+      }
+      return deps.filesystem.readFileBytes(filePath);
+    },
+    writeFile: async (filePath, bytes, options) => {
+      writes.push(filePath);
+      await deps.filesystem.writeFile(filePath, bytes, options);
+    },
+  };
+
+  expect(
+    runKnowledgeCheckpoint({
+      filesystem,
+      now: new Date('2026-08-01T12:34:56Z'),
+      repositoryPath,
+      rootTaskId: 'tsk_review',
+      targets: [guideTarget],
+    })
+  ).rejects.toMatchObject({
+    message: `cannot checkpoint Knowledge target changed after validation: ${guideTarget}`,
+  });
+  expect(writes).toEqual([]);
+});
+
+test('checkpoint rejects a Catalog mutation before writing the manifest', async () => {
+  const fixture = await referenceRepository();
+  const catalogPath = 'customer-wide/catalog/entities.yaml';
+  const catalogAbsolutePath = path.join(fixture.repositoryPath, catalogPath);
+  const catalogTarget = 'catalog:component%3Adefault%2Fapi';
+  let catalogReads = 0;
+  const writes: string[] = [];
+  const filesystem: AsyncFileSystem = {
+    ...deps.filesystem,
+    readFileBytes: async (filePath) => {
+      if (filePath === catalogAbsolutePath && catalogReads++ === 1) {
+        const contents = await readFile(catalogAbsolutePath, 'utf8');
+        await writeFile(
+          catalogAbsolutePath,
+          contents.replace(
+            'Customer-facing release API',
+            'Changed after validation'
+          )
+        );
+      }
+      return deps.filesystem.readFileBytes(filePath);
+    },
+    writeFile: async (filePath, bytes, options) => {
+      writes.push(filePath);
+      await deps.filesystem.writeFile(filePath, bytes, options);
+    },
+  };
+
+  expect(
+    runKnowledgeCheckpoint({
+      filesystem,
+      now: new Date('2026-08-01T12:34:56Z'),
+      repositoryPath: fixture.repositoryPath,
+      rootTaskId: 'tsk_review',
+      targets: [catalogTarget],
+    })
+  ).rejects.toMatchObject({
+    message: `cannot checkpoint Knowledge target changed after validation: ${catalogTarget}`,
+  });
+  expect(writes).toEqual([]);
+});
+
 test('knowledge validation diagnoses unknown review targets', async () => {
   const repositoryPath = await makeRepository({
     [guidePath]: validGuide,

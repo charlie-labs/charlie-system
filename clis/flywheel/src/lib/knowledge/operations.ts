@@ -11,6 +11,7 @@ import { buildRepositoryIndexes } from '../projection/indexes.js';
 import type {
   RepositoryEntry,
   RepositoryPath,
+  RepositorySource,
 } from '../repository/contract.js';
 import { createWorkingTreeSource } from '../repository/source/working-tree.js';
 import type { AsyncFileSystem } from '../runtime/deps.js';
@@ -27,6 +28,7 @@ import { validateRepository } from '../validation/validate.js';
 import {
   deriveFreshness,
   hashKnowledgeTarget,
+  hashKnowledgeTargetBytes,
   isValidRootTaskId,
   knowledgeArtifacts,
   readReviewManifest,
@@ -134,11 +136,19 @@ export async function runKnowledgeDue(
     ...manifest.diagnostics,
     ...reviewTargetDiagnostics(manifest.manifest, artifacts),
   ];
+  const diagnostics = [
+    ...knowledgeDiagnostics(
+      report,
+      knowledgeEntryPaths(projection.inventory.entries),
+      artifacts
+    ),
+    ...manifestDiagnostics,
+  ];
   if (manifestDiagnostics.length > 0) {
     return {
-      diagnostics: manifestDiagnostics,
+      diagnostics,
       findings: [],
-      status: validationReport(manifestDiagnostics).status,
+      status: validationReport(diagnostics).status,
     };
   }
   const hashes = new Map<TargetId, string>();
@@ -149,18 +159,14 @@ export async function runKnowledgeDue(
     );
   }
   return {
-    diagnostics: knowledgeDiagnostics(
-      report,
-      knowledgeEntryPaths(projection.inventory.entries),
-      artifacts
-    ),
+    diagnostics,
     findings: deriveFreshness(
       artifacts,
       manifest.manifest.records,
       hashes,
       input.now ?? new Date()
     ),
-    status: 'valid',
+    status: validationReport(diagnostics).status,
   };
 }
 
@@ -178,11 +184,15 @@ export async function runKnowledgeCheckpoint(
       'knowledge checkpoint requires at least one target'
     );
   }
-  const source = createWorkingTreeSource({
-    filesystem: input.filesystem,
-    repositoryPath: input.repositoryPath,
-  });
+  const observed = createObservedSource(
+    createWorkingTreeSource({
+      filesystem: input.filesystem,
+      repositoryPath: input.repositoryPath,
+    })
+  );
+  const source = observed.source;
   const projection = await compileRepository(source);
+  const validatedBytes = observed.snapshot();
   const indexes = buildRepositoryIndexes(projection);
   const report = validateRepository(projection, indexes);
   const artifacts = knowledgeArtifacts(
@@ -234,13 +244,19 @@ export async function runKnowledgeCheckpoint(
     );
   }
   const reviewedAt = checkpointTimestamp(input.now ?? new Date());
-  const replacements = await checkpointRecords({
+  const replacements = checkpointRecords({
     artifactsById,
     canonicalTargets,
     report,
+    validatedBytes,
     rootTaskId,
     reviewedAt,
+  });
+  await assertCheckpointTargetsUnchanged({
+    artifactsById,
+    canonicalTargets,
     source,
+    validatedBytes,
   });
   const records = new Map(
     manifest.manifest.records.map((record) => [record.target, record])
@@ -275,38 +291,109 @@ type CheckpointRecordInput = Readonly<{
   readonly report: ValidationReport;
   readonly rootTaskId: string;
   readonly reviewedAt: string;
-  readonly source: ReturnType<typeof createWorkingTreeSource>;
+  readonly validatedBytes: ReadonlyMap<RepositoryPath, Uint8Array>;
 }>;
 
-async function checkpointRecords(
+function checkpointRecords(
   input: CheckpointRecordInput
-): Promise<readonly ReviewRecord[]> {
-  return Promise.all(
-    input.canonicalTargets.map(async (id) => {
-      const artifact = input.artifactsById.get(id);
-      if (artifact === undefined) {
-        throw new ContentInvocationError(
-          `checkpoint target is not Knowledge content: ${id}`
-        );
-      }
-      const diagnostics = knowledgeDiagnostics(
-        input.report,
-        [artifact.path],
-        [artifact]
-      ).filter((diagnostic) => diagnostic.impact !== 'none');
-      if (diagnostics.length > 0) {
-        throw new ContentInvocationError(
-          `cannot checkpoint invalid Knowledge target: ${id}`
-        );
-      }
-      return {
-        contentHash: await hashKnowledgeTarget(input.source, artifact),
-        reviewedAt: input.reviewedAt,
-        rootTaskId: input.rootTaskId,
-        target: id,
-      };
-    })
+): readonly ReviewRecord[] {
+  return input.canonicalTargets.map((id) => {
+    const artifact = input.artifactsById.get(id);
+    if (artifact === undefined) {
+      throw new ContentInvocationError(
+        `checkpoint target is not Knowledge content: ${id}`
+      );
+    }
+    const diagnostics = knowledgeDiagnostics(
+      input.report,
+      [artifact.path],
+      [artifact]
+    ).filter((diagnostic) => diagnostic.impact !== 'none');
+    if (diagnostics.length > 0) {
+      throw new ContentInvocationError(
+        `cannot checkpoint invalid Knowledge target: ${id}`
+      );
+    }
+    return {
+      contentHash: hashKnowledgeTargetBytes(
+        artifact,
+        input.validatedBytes.get(artifact.path)
+      ),
+      reviewedAt: input.reviewedAt,
+      rootTaskId: input.rootTaskId,
+      target: id,
+    };
+  });
+}
+
+type CheckpointConsistencyInput = Readonly<{
+  readonly artifactsById: ReadonlyMap<
+    TargetId,
+    DocumentArtifact | CatalogArtifact
+  >;
+  readonly canonicalTargets: readonly TargetId[];
+  readonly source: RepositorySource;
+  readonly validatedBytes: ReadonlyMap<RepositoryPath, Uint8Array>;
+}>;
+
+async function assertCheckpointTargetsUnchanged(
+  input: CheckpointConsistencyInput
+): Promise<void> {
+  const targets = input.canonicalTargets.map((id) => {
+    const artifact = input.artifactsById.get(id);
+    if (artifact === undefined) {
+      throw new ContentInvocationError(
+        `checkpoint target is not Knowledge content: ${id}`
+      );
+    }
+    return { artifact, id };
+  });
+  const reads = await input.source.readFiles(
+    targets.map(({ artifact }) => artifact.path)
   );
+  const readsByPath = new Map(reads.map((read) => [read.path, read]));
+  for (const { artifact, id } of targets) {
+    const expected = input.validatedBytes.get(artifact.path);
+    const actual = readsByPath.get(artifact.path);
+    if (
+      expected === undefined ||
+      actual === undefined ||
+      actual.kind === 'missing' ||
+      !sameBytes(expected, actual.bytes)
+    ) {
+      throw new ContentInvocationError(
+        `cannot checkpoint Knowledge target changed after validation: ${id}`
+      );
+    }
+  }
+}
+
+function createObservedSource(source: RepositorySource): Readonly<{
+  readonly snapshot: () => ReadonlyMap<RepositoryPath, Uint8Array>;
+  readonly source: RepositorySource;
+}> {
+  const firstReads = new Map<RepositoryPath, Uint8Array>();
+  return {
+    snapshot: () => new Map(firstReads),
+    source: {
+      listEntries: source.listEntries,
+      readFiles: async (paths) => {
+        const reads = await source.readFiles(paths);
+        for (const read of reads) {
+          if (read.kind === 'read' && !firstReads.has(read.path)) {
+            firstReads.set(read.path, read.bytes.slice());
+          }
+        }
+        return reads;
+      },
+      state: source.state,
+    },
+  };
+}
+
+function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.byteLength !== right.byteLength) return false;
+  return left.every((value, index) => value === right[index]);
 }
 
 function knowledgeDiagnostics(
