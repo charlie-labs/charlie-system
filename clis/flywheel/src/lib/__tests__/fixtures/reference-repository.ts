@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function, no-await-in-loop */
+
 import {
   mkdtemp,
   mkdir,
@@ -11,6 +13,7 @@ import {
 import path from 'node:path';
 
 import type { RepositorySource } from '../../repository/contract.js';
+import { createIndexSource } from '../../repository/source/index.js';
 import { createWorkingTreeSource } from '../../repository/source/working-tree.js';
 import { createFlywheelDeps } from '../../runtime/deps.js';
 import { referenceRepositoryManifest } from './reference-repository-manifest.js';
@@ -45,10 +48,34 @@ export async function referenceRepository(
     throw error;
   }
 
+  const deps = createFlywheelDeps();
+  if (options.git === true) {
+    for (const args of [
+      ['init', '--quiet'],
+      ['config', 'user.email', 'fixture@example.test'],
+      ['config', 'user.name', 'Flywheel Fixture'],
+      ['add', '--all'],
+    ]) {
+      const result = await deps.process.run('git', args, {
+        cwd: repositoryPath,
+      });
+      if (result.exitCode !== 0) {
+        await removeTemporaryDirectory(repositoryPath);
+        throw new Error(
+          `cannot initialize fixture Git repository: ${result.stderr}`
+        );
+      }
+    }
+  }
+
   const workingTreeSource = createWorkingTreeSource({
-    filesystem: createFlywheelDeps().filesystem,
+    filesystem: deps.filesystem,
     repositoryPath,
   });
+  const fixtureSource =
+    options.git === true
+      ? createIndexSource({ process: deps.process, repositoryPath })
+      : workingTreeSource;
   const observation: {
     listCalls: number;
     readCalls: number;
@@ -61,14 +88,14 @@ export async function referenceRepository(
   const source: RepositorySource = {
     listEntries: async () => {
       observation.listCalls += 1;
-      return workingTreeSource.listEntries();
+      return fixtureSource.listEntries();
     },
     readFiles: async (paths) => {
       observation.readCalls += 1;
       observation.readPaths.push([...paths]);
-      return workingTreeSource.readFiles(paths);
+      return fixtureSource.readFiles(paths);
     },
-    state: workingTreeSource.state,
+    state: fixtureSource.state,
   };
 
   return {

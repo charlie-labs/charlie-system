@@ -26,6 +26,13 @@ export const contentRgFlags = defineFlags({
 );
 
 export const contentValidateFlags = defineFlags({
+  staged: {
+    oclif: Flags.boolean({
+      default: false,
+      description: 'Validate the exact Git index instead of the working tree',
+    }),
+    schema: z.boolean().default(false),
+  },
   'repository-path': repositoryPathFlag,
 });
 

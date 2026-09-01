@@ -1,6 +1,7 @@
 import { RepositorySourceError } from '../repository/errors.js';
+import { createIndexSource } from '../repository/source/index.js';
 import { createWorkingTreeSource } from '../repository/source/working-tree.js';
-import type { AsyncFileSystem } from '../runtime/deps.js';
+import type { AsyncFileSystem, ProcessRunner } from '../runtime/deps.js';
 import { compileAndAssessRepository } from '../validation/assess.js';
 import { ContentOperationalError } from './errors.js';
 import type { ContentValidationResult } from './validation-contract.js';
@@ -13,17 +14,32 @@ import {
 export type ContentValidationInput = Readonly<{
   readonly filesystem: AsyncFileSystem;
   readonly paths: readonly string[];
+  readonly process?: ProcessRunner;
   readonly repositoryPath: string;
+  readonly staged?: boolean;
 }>;
 
 export async function runContentValidation(
   input: ContentValidationInput
 ): Promise<ContentValidationResult> {
   try {
-    const source = createWorkingTreeSource({
-      filesystem: input.filesystem,
-      repositoryPath: input.repositoryPath,
-    });
+    let source;
+    if (input.staged === true) {
+      if (input.process === undefined) {
+        throw new ContentOperationalError(
+          'staged content validation requires process dependencies'
+        );
+      }
+      source = createIndexSource({
+        process: input.process,
+        repositoryPath: input.repositoryPath,
+      });
+    } else {
+      source = createWorkingTreeSource({
+        filesystem: input.filesystem,
+        repositoryPath: input.repositoryPath,
+      });
+    }
     const repository = await compileAndAssessRepository(source);
     const selection = resolveValidationSelection({
       inventory: repository.projection.inventory,

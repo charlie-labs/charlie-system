@@ -1,0 +1,6 @@
+schemaVersion: 2
+reviews:
+  - target: document:missing
+    reviewedAt: yesterday
+    contentHash: not-a-sha256
+    rootTaskId: review
