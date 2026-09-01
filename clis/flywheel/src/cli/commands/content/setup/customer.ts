@@ -30,7 +30,7 @@ export default class Customer extends ContentCommand<
     'Create absent directories and .gitkeep marker files from the package-owned customer scaffold without reading or changing existing destinations. Setup does not validate, commit, or push.';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --repository-path /tmp/customer-knowledge',
+    '<%= config.bin %> <%= command.id %> --repository-path /tmp/flywheel',
   ];
 
   static override buildDeps(): ContentSetupDeps {
