@@ -55,9 +55,12 @@ function requireMatchingState(
   source: RepositorySource,
   inventory: RepositoryInventory
 ): void {
-  if (source.state.repositoryPath !== inventory.state.repositoryPath) {
+  if (
+    source.state.repositoryPath !== inventory.state.repositoryPath ||
+    source.state.kind !== inventory.state.kind
+  ) {
     throw new RepositorySourceError(
-      'Flywheel repository source and inventory describe different working trees'
+      'Flywheel repository source and inventory describe different repository states'
     );
   }
 }
